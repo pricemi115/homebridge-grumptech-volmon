@@ -1,0 +1,26 @@
+{
+  "name": "grumptech-fs-reporter",
+  "version": "0.0.1",
+  "description": "File System Info Reporter",
+  "main": "dist/grumptech-fs-reporter.js",
+  "scripts": {
+    "prepare": "npm run build",
+    "test-dbg": "node './dist/grumptech-fs-reporter.js'",
+    "test-rel": "node ./test/testscript.js '../dist/grumptech-fs-reporter.js'",
+    "build": "rollup -c rollup.config.js"
+  },
+  "keywords": [
+    "file system",
+    "snapshot",
+    "macOS"
+  ],
+  "author": "GrumpTech (Michael J. Price)",
+  "license": "ISC",
+  "devDependencies": {
+    "rollup-plugin-node-polyfills": "^0.2.1"
+  },
+  "dependencies": {
+    "debug": "^4.3.1",
+    "plist": "^3.0.1"
+  }
+}
