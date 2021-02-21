@@ -1,6 +1,6 @@
 # Homebridge Volume Monitor
 
-[Homebridge Volume Monitor](https://github.com/pricemi115/), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that allows information for mounted volumes to be published as _Battery Service_ accessories indicating. The battery level indicates percentage of free space remaining.
+[Homebridge Volume Monitor](https://github.com/pricemi115/homebridge-grumptech-volmon), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that allows information for mounted volumes to be published as _Battery Service_ accessories indicating. The battery level indicates percentage of free space remaining.
 
 ## Installation
 

@@ -1,8 +1,8 @@
 # Dependency directories
 node_modules/
 /debug
-dist/
 
 #VSCode Environment
+.vscode
 *.code-workspace
 

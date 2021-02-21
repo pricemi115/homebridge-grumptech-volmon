@@ -34,6 +34,13 @@
     "volume",
     "macOS"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pricemi115/homebridge-grumptech-volmon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pricemi115/homebridge-grumptech-volmon/issues"
+  },
   "author": "GrumpTech (Michael J. Price)",
   "license": "ISC",
   "devDependencies": {
