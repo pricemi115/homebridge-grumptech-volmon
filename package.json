@@ -1,22 +1,44 @@
 {
-  "name": "grumptech-fs-reporter",
-  "version": "0.0.1",
-  "description": "File System Info Reporter",
-  "main": "dist/grumptech-fs-reporter.js",
+  "name": "homebridge-grumptech-volmon",
+  "displayName": "Homebridge Volume Monitor",
+  "version": "0.0.5",
+  "description": "Free Space monitor for mounted volumes.",
+  "main": "dist/homebridge-grumptech-volmon.js",
+  "files": [
+    "dist/homebridge-grumptech-volmon.js",
+    "config/config-sample.json",
+    "config.schema.json",
+    "README.md"
+  ],
+  "config_info": {
+    "remarks": [
+      "The 'plugin' and 'platform' names MUST match the names called out in the 'platforms' section of the active config.json file.",
+      "If these values are changed, the module will need to be rebuilt. Run 'npm run build'."
+    ],
+    "plugin": "homebridge-grumptech-volmon",
+    "platform": "GrumpTechVolumeMonitorPlatform"
+  },
   "scripts": {
     "prepare": "npm run build",
-    "test-dbg": "node './dist/grumptech-fs-reporter.js'",
-    "test-rel": "node ./test/testscript.js '../dist/grumptech-fs-reporter.js'",
+    "run": "DEBUG=homebridge* homebridge -D -Q -P ./dist -U ./debug",
     "build": "rollup -c rollup.config.js"
   },
+  "engines": {
+    "homebridge": ">=1.1.0"
+  },
   "keywords": [
+    "homebridge",
+    "homebridge-plugin",
     "file system",
     "snapshot",
+    "volume",
     "macOS"
   ],
   "author": "GrumpTech (Michael J. Price)",
   "license": "ISC",
   "devDependencies": {
+    "@rollup/plugin-json": "^4.1.0",
+    "homebridge": "^1.1.7",
     "rollup-plugin-node-polyfills": "^0.2.1"
   },
   "dependencies": {

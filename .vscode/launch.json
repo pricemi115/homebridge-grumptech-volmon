@@ -1,21 +1,44 @@
 {
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
+            "name": "NPM Debug",
             "request": "launch",
-            "name": "Launch Program",
+            "command": "npm run run",
+            "envFile": "${workspaceFolder}/debug.env",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/dist/grumptech-fs-interrogator.js"
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "npm: prepare"
         },
         {
-            "type": "node-terminal",
-            "name": "Run Script: build",
+            "name": "NPM Build",
             "request": "launch",
-            "command": "npm run build",
-            "cwd": "${workspaceFolder}"
+            "runtimeArgs": [
+                "run-script",
+                "build"
+            ],
+            "runtimeExecutable": "npm",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Debug FSInterrogator",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "envFile": "${workspaceFolder}/debug.env",
+            "program": "${workspaceFolder}/dist/grumptech-fs-interrogator.js",
+            "preLaunchTask": "npm: prepare"
         }
     ]
 }
