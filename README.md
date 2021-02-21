@@ -1,6 +1,6 @@
 # Homebridge Volume Monitor
 
-[Homebridge Volume Monitor](https://github.com/pricemi115/homebridge-grumptech-volmon), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that allows information for mounted volumes to be published as _Battery Service_ accessories indicating. The battery level indicates percentage of free space remaining.
+[Homebridge Volume Monitor](https://github.com/pricemi115/homebridge-grumptech-volmon), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that allows information for mounted volumes to be published as _Battery Service_ accessories indicating the percentage of free space remaining.
 
 ## Installation
 
@@ -14,26 +14,17 @@ To install the plugin manually:
 - TODO: Write actual usage instructions, but there is almost nothing for the user to do.
 - TODO: Explain/Describe the process for configuring the plugin to be an _isolated child bridge_
 
-## Contributing
-
-1. Fork it!
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request
+## Restrictions
+This module operates by using shell commands to the `diskutil` program. Therefore, this module is only supported on the Apple OSX and macOS operating systems.
 
 ## History
 
 Version | Release Date | Comments
 ------: | :----------: | :-------
 0.0.5   | 2021-FEB-20 | Initial release to npm
-
+0.0.6   | 2021-FEB-23 | Big fix(es) and minor documentation updates.
 ## Known Issues
-* (TODO: bug reference):
-<br>Drobo 5D (direct connect Drobo) not detected as a _mounted, & visible_ volume. Thus, an accressory representing this volume is not published to Homekit.
-* (TODO: feature reference):
-<br>Must wait for the polling interval to see updates. Intend to add the ability for the user to force an update without having to wait for the polling interval to complete.
-
+Refer to the bugs and enhancements listed [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues)
 ## Contributing
 
 1. Fork it!
