@@ -3,6 +3,12 @@ Change history for _homebridge-grumptech-volmon_
 
 ---
 ---
+## [0.0.7] (Beta 3) - 2021-02-23
+
+### Fixes & Changes
+- FIXED: CHANGELOG.md was located correctly and now deployed.
+
+---
 ## [0.0.6] (Beta 2) - 2021-02-23
 
 ### Fixes & Changes
