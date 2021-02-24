@@ -109,14 +109,6 @@ class VolumeInterrogatorPlatform {
         this._config  = config;
         this._api     = api;
 
-        // Validate the supplied configuration.
-        if (!this._config.hasOwnProperty('name')) {
-            this._config['name'] = 'Unknown';
-        }
-        if (!this._config.hasOwnProperty('platform')) {
-            this._config['platform'] = 'Unknown';
-        }
-
         /* My local data */
         this._name = this._config['name'];
         this._alarmThreshold = DEFAULT_LOW_SPACE_THRESHOLD;
@@ -131,7 +123,7 @@ class VolumeInterrogatorPlatform {
         this._CB_VolumeIterrrogatorReady    = this._handleVolumeInterrogatorReady.bind(this);
 
         /* Log our creation */
-        this._log(`GrumpTechVolumeInterrogator: Creating Platform - ${this._name}`);
+        this._log(`Creating VolumeInterrogatorPlatform`);
 
         /* Create an empty map for our accessories */
         this._accessories = new Map();
@@ -186,7 +178,7 @@ class VolumeInterrogatorPlatform {
     ======================================================================== */
     async _doInitialization() {
 
-        this._log(`Homebridge Plug-In ${this._name} has finished launching.`);
+        this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
 
         let theSettings = undefined;
         if (this._config.hasOwnProperty('settings')) {

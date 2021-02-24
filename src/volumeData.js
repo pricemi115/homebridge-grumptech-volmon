@@ -23,7 +23,10 @@ const BLOCK_1K_TO_BYTES     = 1024.0;
 export const VOLUME_TYPES = {
     TYPE_UNKNOWN  : 'unknown',
     TYPE_HFS_PLUS : 'hfs',
-    TYPE_APFS     : 'apfs'
+    TYPE_APFS     : 'apfs',
+    TYPE_UDF      : 'udf',       /* Universal Disk Format (ISO, etc) */
+    TYPE_MSDOS    : 'msdos',      /* Typically used for EFI & FAT32 */
+    TYPE_NTFS     : 'ntfs'
 };
 
  /* ========================================================================
@@ -95,7 +98,7 @@ export class VolumeData {
                     volumeType = data.volume_type;
                 }
                 else {
-                    throw new RangeError(`Unrecognized volume type specified. (${data.volumeType})`);
+                    throw new RangeError(`Unrecognized volume type specified. (${data.volume_type})`);
                 }
             }
             if (data.hasOwnProperty('mount_point') &&
@@ -142,7 +145,7 @@ export class VolumeData {
                 visible = data.visible;
             }
         }
- 
+
         // Initialize data members.
         this._name              = name;
         this._disk_identifier   = diskIdentifier;
