@@ -5,7 +5,7 @@
    ========================================================================== */
 'use strict';
 
-const _debug = require('debug')('homebridge-controller');
+const _debug = require('debug')('homebridge');
 import { version as PLUGIN_VER }      from '../package.json';
 import { config_info as CONFIG_INFO } from '../package.json';
 
@@ -170,7 +170,7 @@ class VolumeInterrogatorPlatform {
         if ((options.exit) || (options.cleanup)) {
             // Cleanup the garage controller system.
             if (this._volumeInterrogator != undefined) {
-                _debug(`Terminating the volume interrogator.`);
+                this._log.debug(`Terminating the volume interrogator.`);
                 await this._volumeInterrogator.Stop();
                 this._volumeInterrogator = undefined;
             }
@@ -284,7 +284,7 @@ class VolumeInterrogatorPlatform {
 
         for (const result of data.results) {
             if (result.IsMounted) {
-                _debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
+                this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
             }
 
             // Update the map of volume data.
@@ -356,7 +356,7 @@ class VolumeInterrogatorPlatform {
             throw new Error(`Accessory '${name}' is already registered.`);
         }
 
-        this._log(`Adding new accessory: name:'${name}'`);
+        this._log.debug(`Adding new accessory: name:'${name}'`);
 
         // uuid must be generated from a unique but not changing data source, theName should not be used in the most cases. But works in this specific example.
         const uuid = _hap.uuid.generate(name);
@@ -376,7 +376,7 @@ class VolumeInterrogatorPlatform {
             this._updateAccessory(accessory);
         }
         catch (error) {
-            _debug(`Error when configuring accessory.`);
+            this._log.debug(`Error when configuring accessory.`);
             console.log(error);
         }
 
@@ -397,7 +397,7 @@ class VolumeInterrogatorPlatform {
             throw new TypeError(`accessory must be a PlatformAccessory`);
         }
 
-        this._log("Configuring accessory %s", accessory.displayName);
+        this._log.debug("Configuring accessory %s", accessory.displayName);
 
         // Register to handle the Identify request for the accessory.
         // TO DO - probably does not work !!
@@ -410,7 +410,7 @@ class VolumeInterrogatorPlatform {
         // Is this accessory new to us?
         if (!this._accessories.has(accessory)){
             // Update our accessory listing
-            _debug(`Adding accessory '${accessory.displayName} to the accessories list. Count:${this._accessories.size}`);
+            this._log.debug(`Adding accessory '${accessory.displayName} to the accessories list. Count:${this._accessories.size}`);
             this._accessories.set(accessory.displayName, accessory);
         }
     }
@@ -432,7 +432,7 @@ class VolumeInterrogatorPlatform {
             throw new RangeError(`Accessory '${accessory.displayName}' is not registered.`);
         }
 
-        this._log.info(`Removing accessory '${accessory.displayName}'`);
+        this._log.debug(`Removing accessory '${accessory.displayName}'`);
 
         /* Unregister the accessory */
         this._api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -445,7 +445,7 @@ class VolumeInterrogatorPlatform {
     ======================================================================== */
     _removeAccessories() {
 
-        this._log(`Removing Accessories.`);
+        this._log.debug(`Removing Accessories: removeAll:${removeAll}`);
 
         // Make a list of accessories to be deleted.
         let purgeList = [];
