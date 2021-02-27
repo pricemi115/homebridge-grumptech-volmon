@@ -9,7 +9,8 @@
     "config/config-sample.json",
     "config.schema.json",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE.md"
   ],
   "config_info": {
     "remarks": [
