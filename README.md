@@ -24,6 +24,7 @@ Version | Release Date | Comments
 0.0.5   | 2021-FEB-20 | Initial release to npm
 0.0.6   | 2021-FEB-23 | Big fix(es) and minor documentation updates.
 0.0.7   | 2021-FEB-23 | Repository cleanup
+0.0.8   | 2021-FEB-27 | Issue#3 and other changes/improvements.
 ## Known Issues
 Refer to the bugs and enhancements listed [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues)
 ## Contributing
