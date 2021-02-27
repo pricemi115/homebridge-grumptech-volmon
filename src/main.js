@@ -246,44 +246,18 @@ class VolumeInterrogatorPlatform {
     ======================================================================== */
     configureAccessory(accessory) {
 
-        // This application has no need for history.
-        // If an accessory is restored, then destroy it, but do so asynchronously
-        setImmediate(() => {
-            this._api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-        });
-    }
-
- /* ========================================================================
-    Description: Helper to retrieve the specified characteristic.
-
-    @param {object} [accessoryKey]              - Key used to identify the accessory of interest. (Assumed to match the Accessory.context.key)
-    @param {object} [serviceTemplate]           - Template of the service being sought.
-    @param {object} [characteristicTemplate]    - Template of the characteristic being sought.
-
-    @return {object}  - Characteristic if match found. Otherwise undefined.
-    ======================================================================== */
-    _findCharacteristic(accessoryKey, serviceTemplate, characteristicTemplate) {
-        let matchedCharacteristic = undefined;
-
-        // Get a iterable list of Accessories
-        const iterAccessories = this._accessories.values();
-        for (let accessory of iterAccessories) {
-            if ((accessory.context.hasOwnProperty('key')) &&
-                (accessoryKey === accessory.context.key)) {
-                const service = accessory.getService(serviceTemplate);
-                // Is this a matching service?
-                if (service != undefined) {
-                    // Is there a matching characteristic?
-                    if (service.testCharacteristic(characteristicTemplate)) {
-                        // Match found.
-                        matchedCharacteristic = service.getCharacteristic(characteristicTemplate);
-                        break;
-                    }
-                }
+        // This application has no need for history of the Battery Service accessories..
+        // But we will record them anyway to remove them once the accessory loads.
+        let found = false;
+        for (const acc of this._accessories.values()) {
+            if (acc === accessory) {
+                found = true;
+                break;
             }
         }
-
-        return matchedCharacteristic;
+        if (!found) {
+            this._accessories.set(accessory.displayName, accessory);
+        }
     }
 
  /* ========================================================================
@@ -319,52 +293,34 @@ class VolumeInterrogatorPlatform {
 
         // Loop through the visible volumes and publish/update them.
         for (const volData of this._volumesData.values()) {
-            if (volData.IsVisible) {
-                try {
-                    // Is this volume known to us?
-                    if (this._accessories.has(volData.Name)) {
-                        // Exists. So update it
-                        this._updateAccessory(this._accessories.get(volData.Name));
-                    }
-                    else {
-                        // Does not exist. Add it
-                        this._addAccessory(volData.Name);
-                    }
+            try {
+                // Do we know this volume already?
+                const volIsKnown = this._accessories.has(volData.Name);
+
+                // Is this volume visible & new to us?
+                if ((volData.IsVisible) &&
+                    (!volIsKnown)) {
+                    // Does not exist. Add it
+                    this._addBatteryServiceAccessory(volData.Name);
                 }
-                catch(error) {
-                    _debug(`Error when managing accessory: ${volData.Name}`);
-                    console.log(error);
+
+                // Update the accessory if we know if this volume already
+                // (i.e. it is currently or was previously visible to us).
+                const theAccessory = this._accessories.get(volData.Name);
+                if (theAccessory !== undefined) {
+                    this._updateBatteryServiceAccessory(theAccessory);
                 }
             }
-        }
-
-        // Scan for any accessories that are no longer valid and purge them.
-        let purgeList = [];
-        for (const accessory of this._accessories.values()) {
-             // If this accessory is completely unknonw purge it.
-            let purge = (!this._volumesData.has(accessory.displayName));
-
-            // If the volume for this accessory is present, ensure it is visible.
-            if (!purge) {
-                const volData = this._volumesData.get(accessory.displayName);
-                purge = (!volData.IsVisible);
-            }
-
-            // Purge when needed.
-            if (purge) {
-                // Add this accessory to the purge list.
-                purgeList.push(accessory);
-            }
-        }
-        // Purge the accessories that were identified for removal.
-        for (const accessory of purgeList) {
-             try {
-                this._removeAccessory(accessory);
-            }
-            catch (error) {
-                _debug(`Error when purging accessory: ${volData.Name}`);
+            catch(error) {
+                this._log.debug(`Error when managing accessory: ${volData.Name}`);
                 console.log(error);
             }
+        }
+
+        // Ensure the switch is turned back off.
+        const serviceSwitch = this._switchRefresh.getService(MANUAL_REFRESH_SWITCH_NAME);
+        if (serviceSwitch !== undefined) {
+            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, false);
         }
 
         // With the accessories that remain, force an update.
@@ -509,19 +465,23 @@ class VolumeInterrogatorPlatform {
 
     @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
     ======================================================================== */
-    _updateAccessory(accessory) {
+    _updateBatteryServiceAccessory(accessory) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
             throw new TypeError(`Accessory must be a PlatformAccessory`);
         }
 
-        this._log(`Updating accessory '${accessory.displayName}'`);
+        this._log.debug(`Updating accessory '${accessory.displayName}'`);
 
-        let reachable = false;
-        let percentFree = 100.0;
-        let lowAlert = false;
-        let theModel = 'unknown';
-        let theSerialNumber = `00000000000000000`;
+        // Create an error to be used to indicate that the accessory is
+        // not reachable.
+        const error = new Error(`Volume '${accessory.displayName} is not reachable.`);
+
+        let percentFree     = error;
+        let lowAlert        = error;
+        let chargeState     = error;
+        let theModel        = error;
+        let theSerialNumber = error;
 
         // Is the volume associated with this directory known?
         if (this._volumesData.has(accessory.displayName)) {
@@ -536,8 +496,8 @@ class VolumeInterrogatorPlatform {
                 // Determine if the remaining space threshold has been exceeded.
                 lowAlert = (percentFree < this._alarmThreshold);
 
-                // Accessory is reachable
-                reachable = true;
+                // The charging state is always 'Not Chargable'.
+                chargeState = _hap.Characteristic.ChargingState.NOT_CHARGEABLE;
             }
 
             // Get Accessory Information
@@ -550,20 +510,18 @@ class VolumeInterrogatorPlatform {
         const batteryService = accessory.getService(_hap.Service.BatteryService);
         if (batteryService !== undefined) {
             /* Battery Charging State (Not applicable to this application) */
-            const batteryChargingState = batteryService.getCharacteristic(_hap.Characteristic.ChargingState);
-            if (batteryChargingState !== undefined) {
-                batteryChargingState.updateValue(_hap.Characteristic.ChargingState.NOT_CHARGEABLE);
-            }
+            batteryService.updateCharacteristic(_hap.Characteristic.ChargingState, chargeState);
+
             /* Battery Level Characteristic */
-            const batteryLevel = batteryService.getCharacteristic(_hap.Characteristic.BatteryLevel);
-            // Update the battery Level
-            if (batteryLevel !== undefined) {
-                batteryLevel.updateValue(percentFree);
-            }
+            batteryService.updateCharacteristic(_hap.Characteristic.BatteryLevel, percentFree);
+
             /* Low Battery Status (Used to indicate a nearly full volume) */
-            const lowBatteryStatus = batteryService.getCharacteristic(_hap.Characteristic.StatusLowBattery);
-            if (lowBatteryStatus !== undefined) {
-                lowBatteryStatus.updateValue(lowAlert);
+            batteryService.updateCharacteristic(_hap.Characteristic.StatusLowBattery, lowAlert);
+        }
+
+        // Update the accessory information
+        this._updateAccessoryInfo(accessory, {model:theModel, serialnum:theSerialNumber});
+    }
             }
         }
         /* Get the accessory info service. */
