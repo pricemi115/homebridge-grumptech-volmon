@@ -59,6 +59,7 @@ const PLATFORM_NAME = CONFIG_INFO.platform;
 const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
 const MIN_LOW_SPACE_THRESHOLD       = 0.0;
 const MAX_LOW_SPACE_THRESHOLD       = 100.0;
+const MANUAL_REFRESH_SWITCH_NAME    = 'Refresh';
 
 // Accessory must be created from PlatformAccessory Constructor
 let _PlatformAccessory  = undefined;
@@ -126,6 +127,9 @@ class VolumeInterrogatorPlatform {
 
         // Underlying engine
         this._volumeInterrogator = new _VolumeInterrogator();
+
+        // Reference to the "Refresh" accessory switch.
+        this._switchRefresh = undefined;
 
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
@@ -233,7 +237,39 @@ class VolumeInterrogatorPlatform {
 
         // We have no need to be aware of the past.
         // If accessories were restored, flush them away
-        this._removeAccessories();
+        this._removeAccessories(false);
+
+        // Determine if the Manual Refresh accessory already exists.
+        for (const accessory of this._accessories.values()) {
+            const switchRefresh = accessory.getService(MANUAL_REFRESH_SWITCH_NAME);
+            if (switchRefresh !== undefined)
+            {
+                // We found the Manual Redresh Switch.
+                this._switchRefresh = accessory;
+            }
+        }
+        // Creste the Manual Refresh switch accessory if needed.
+        if (this._switchRefresh === undefined) {
+            // Manual Refresh switch never existed. Make one now.
+            // uuid must be generated from a unique but not changing data source, theName should not be used in the most cases. But works in this specific example.
+            const uuid = _hap.uuid.generate(MANUAL_REFRESH_SWITCH_NAME);
+            this._switchRefresh = new _PlatformAccessory(MANUAL_REFRESH_SWITCH_NAME, uuid);
+            // Create our services.
+            this._switchRefresh.addService(_hap.Service.Switch, MANUAL_REFRESH_SWITCH_NAME);
+
+            // Update the accessory information.
+            this._updateAccessoryInfo(this._switchRefresh, {model:'refresh switch', serialnum:'00000001'});
+
+            // register the manual refresh switch
+            this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this._switchRefresh]);
+        }
+        // configure this accessory.
+        this._configureAccessory(this._switchRefresh);
+        // Set the wwitch to on while we wait for a response.
+        const serviceSwitch = this._switchRefresh.getService(MANUAL_REFRESH_SWITCH_NAME);
+        if (serviceSwitch !== undefined) {
+            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+        }
 
         // Start interrogation.
         this._volumeInterrogator.Start();
@@ -343,7 +379,7 @@ class VolumeInterrogatorPlatform {
     @throws {RangeError} - Thrown when 'name' length is 0
     @throws {Error} - Thrown when an accessory with 'name' is already registered.
     ======================================================================== */
-    _addAccessory(name) {
+    _addBatteryServiceAccessory(name) {
 
          // Validate arguments
         if ((name === undefined) || (typeof(name) !== 'string')) {
@@ -365,15 +401,9 @@ class VolumeInterrogatorPlatform {
         // Create our services.
         accessory.addService(_hap.Service.BatteryService, name);
 
-        // Update our accessory listing
-        this._accessories.set(name, accessory);
-
         try {
             // Configura the accessory
             this._configureAccessory(accessory);
-
-            // Update the accessory
-            this._updateAccessory(accessory);
         }
         catch (error) {
             this._log.debug(`Error when configuring accessory.`);
@@ -384,7 +414,7 @@ class VolumeInterrogatorPlatform {
     }
 
  /* ========================================================================
-    Description: Internal function to perform accessory configuration.
+    Description: Internal function to perform accessory configuration and internal 'registration' (appending to our list)
 
     @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
 
@@ -400,15 +430,22 @@ class VolumeInterrogatorPlatform {
         this._log.debug("Configuring accessory %s", accessory.displayName);
 
         // Register to handle the Identify request for the accessory.
-        // TO DO - probably does not work !!
-
-        accessory.on(PlatformAccessoryEvent.IDENTIFY, () => {
-            console.log("Identify !!");
+        accessory.on(_PlatformAccessory.PlatformAccessoryEvent.IDENTIFY, () => {
             this._log("%s identified!", accessory.displayName);
         });
 
+        // Does this accessory have a Switch service?
+        const serviceSwitch = accessory.getService(_hap.Service.Switch);
+        if (serviceSwitch !== undefined) {
+            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
+            // Register for the "get" event notification.
+            charOn.on('get', this._handleOnGet.bind(this, accessory));
+            // Register for the "get" event notification.
+            charOn.on('set', this._handleOnSet.bind(this, accessory));
+        }
+
         // Is this accessory new to us?
-        if (!this._accessories.has(accessory)){
+        if (!this._accessories.has(accessory.displayName)){
             // Update our accessory listing
             this._log.debug(`Adding accessory '${accessory.displayName} to the accessories list. Count:${this._accessories.size}`);
             this._accessories.set(accessory.displayName, accessory);
@@ -434,6 +471,18 @@ class VolumeInterrogatorPlatform {
 
         this._log.debug(`Removing accessory '${accessory.displayName}'`);
 
+        // Event Handler cleanup.
+        accessory.removeAllListeners(_PlatformAccessory.PlatformAccessoryEvent.IDENTIFY);
+        // Does this accessory have a Switch service?
+        const serviceSwitch = accessory.getService(_hap.Service.Switch);
+        if (serviceSwitch !== undefined) {
+            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
+            // Register for the "get" event notification.
+            charOn.off('get', this._handleOnGet.bind(this, accessory));
+            // Register for the "get" event notification.
+            charOn.off('set', this._handleOnSet.bind(this, accessory));
+        }
+
         /* Unregister the accessory */
         this._api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         /* remove the accessory from our mapping */
@@ -441,16 +490,24 @@ class VolumeInterrogatorPlatform {
     }
 
  /* ========================================================================
-    Description: Removes all of the platform accessories.
+    Description: Removes all of the `Battery Service` platform accessories.
+
+    @param {bool} [removeAll] - Flag indicating if all accessories should be
+                                removed, or only accessories with a Battery Service.
     ======================================================================== */
-    _removeAccessories() {
+    _removeAccessories(removeAll) {
 
         this._log.debug(`Removing Accessories: removeAll:${removeAll}`);
 
         // Make a list of accessories to be deleted.
         let purgeList = [];
         for (const accessory of this._accessories.values()) {
-            purgeList.push(accessory);
+            // Filter the accessories for the Battery Service accessories.
+            const batteryService = accessory.getService(_hap.Service.BatteryService);
+            if ((removeAll) ||
+                (batteryService !== undefined)) {
+                purgeList.push(accessory);
+            }
         }
         // Clean up
         for (const accessory of purgeList) {
@@ -522,27 +579,170 @@ class VolumeInterrogatorPlatform {
         // Update the accessory information
         this._updateAccessoryInfo(accessory, {model:theModel, serialnum:theSerialNumber});
     }
-            }
+
+ /* ========================================================================
+    Description: Update an accessory
+
+    @param {object} [accessory] - accessory to be updated.
+
+    @param {object} [info]                      - accessory information.
+    @param {string | Error} [info.model]        - accessory model number
+    @param {string | Error} [info.serialnum]    - accessory serial number.
+
+    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
+    @throws {TypeError} - Thrown when 'info' is not undefined, does not have the 'model' or 'serialnum' properties
+                          or the properties are not of the expected type.
+    ======================================================================== */
+    _updateAccessoryInfo(accessory, info) {
+        // Validate arguments
+        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
+            throw new TypeError(`Accessory must be a PlatformAccessory`);
         }
+        if ((info === undefined) ||
+            (!info.hasOwnProperty('model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
+            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.model instanceof Error))   ) {
+            throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are eother strings or Error`);
+        }
+
         /* Get the accessory info service. */
         const accessoryInfoService = accessory.getService(_hap.Service.AccessoryInformation);
         if (accessoryInfoService != undefined)
         {
             /* Manufacturer */
-            const manufacturer = accessoryInfoService.getCharacteristic(_hap.Characteristic.Manufacturer);
-            if (manufacturer != undefined) {
-                manufacturer.updateValue(`GrumpTech`);
-            }
+            accessoryInfoService.updateCharacteristic(_hap.Characteristic.Manufacturer, `GrumpTech`)
+
             /* Model */
-            const model = accessoryInfoService.getCharacteristic(_hap.Characteristic.Model);
-            if (model != undefined) {
-                model.updateValue(theModel);
-            }
+            accessoryInfoService.updateCharacteristic(_hap.Characteristic.Model, info.model)
+
             /* Serial Number */
-            const serialNumber = accessoryInfoService.getCharacteristic(_hap.Characteristic.SerialNumber);
-            if (serialNumber != undefined) {
-                 serialNumber.updateValue(theSerialNumber);
+            accessoryInfoService.updateCharacteristic(_hap.Characteristic.SerialNumber, info.serialnum)
+        }
+    }
+
+ /* ========================================================================
+    Description: Event handler for the "get" event for the Switch.On characteristic.
+
+    @param {object} [accessory] - accessory being querried.
+
+    @param {function} [callback] - Function callback for homebridge.
+
+    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
+    ======================================================================== */
+    _handleOnGet(accessory, callback) {
+        // Validate arguments
+        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
+            throw new TypeError(`Accessory must be a PlatformAccessory`);
+        }
+
+        this._log.debug(`Switch '${accessory.displayName}' Get Request.`);
+
+        let status = null;
+        let result = undefined;
+        try {
+            result = this._getAccessorySwitchState(accessory);
+        }
+        catch (err) {
+            this._log.debug(`  Unexpected error encountered: ${err.message}`);
+            result = false;
+            status = new Error(`Accessory ${accessory.displayName} is not ressponding.`);
+        }
+
+        // Invoke the callback function with our result.
+        callback(status, result);
+    }
+
+ /* ========================================================================
+    Description: Event handler for the "set" event for the Switch.On characteristic.
+
+    @param {object} [accessory] - accessory being querried.
+    @param {bool} [value]           - new/rewuested state of the switch
+    @param {function} [callback] - Function callback for homebridge.
+
+    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
+    ======================================================================== */
+    _handleOnSet(accessory, value, callback) {
+        // Validate arguments
+        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
+            throw new TypeError(`Accessory must be a PlatformAccessory`);
+        }
+
+        this._log.debug(`Switch '${accessory.displayName}' Set Request. New state:${value}`);
+
+        let status = null;
+        try {
+
+            // The processing of the request to set a switch is context (accessory) specific.
+            if (accessory === this._switchRefresh) {
+                const currentValue = this._getAccessorySwitchState(accessory);
+
+                // The user is not allowed to turn the switch off.
+                // It will auto reset when the current check is complete.
+                if ( (!value) && (currentValue))
+                {
+                    // Attempting to turn the switch from on to off.
+                    // Not permitted.
+                    this._log.debug(`Unable to turn the '${accessory.displayName}' switch off.`);
+                    status = new Error(`Unable to turn the '${accessory.displayName}' switch off.`);
+
+                    // Decouple setting the switch back on.
+                    setImmediate((accy, resetVal) => {
+                        const serviceSwitch = accy.getService(MANUAL_REFRESH_SWITCH_NAME);
+                        if (serviceSwitch !== undefined) {
+                            this._log.debug(`Switch '${accy.displayName}' Restoring state ${resetVal}`);
+                            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, resetVal);
+                        }
+                     }, accessory, currentValue);
+                }
+                else {
+                    // The change is permitted.
+                    // If the switch was turned on, then intiate a volume refresh.
+                    if (value) {
+                        this._volumeInterrogator.Start();
+                    }
+                }
             }
         }
+        catch (err) {
+            this._log.debug(`  Unexpected error encountered: ${err.message}`);
+
+            status = new Error(`Accessory ${accessory.displayName} is not ressponding.`);
+        }
+
+        callback(status);
+    }
+
+ /* ========================================================================
+    Description: Get the value of the Service.Switch.On characteristic value
+
+    @param {object} [accessory] - accessory being querried.
+
+    @return - the value of the On characteristic (true or false)
+
+    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
+    @throws {Error}     - Thrown when the switch service or On characteristic cannot
+                          be found on the accessory.
+    ======================================================================== */
+    _getAccessorySwitchState(accessory) {
+        // Validate arguments
+        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
+            throw new TypeError(`Accessory must be a PlatformAccessory`);
+        }
+
+        let result = false;
+        const serviceSwitch = accessory.getService(_hap.Service.Switch);
+        if (serviceSwitch !== undefined) {
+            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
+            if (charOn !== undefined) {
+                result = charOn.value;
+            }
+            else {
+                throw new Error(`The Switch service of accessory ${accessory.displayName} does not have an On charactristic.`);
+            }
+        }
+        else {
+            throw new Error(`Accessory ${accessory.displayName} does not have a Switch service.`);
+        }
+
+        return result;
     }
 }
