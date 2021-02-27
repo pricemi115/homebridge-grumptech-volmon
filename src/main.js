@@ -31,6 +31,7 @@ import { config_info as CONFIG_INFO } from '../package.json';
  * of the api object, which can be acquired for example in the initializer function. This reference can be stored
  * and used to access all exported variables and classes from HAP-NodeJS.
  */
+/*
 import {
     API,
     APIEvent,
@@ -44,6 +45,7 @@ import {
     PlatformAccessoryEvent,
     PlatformConfig,
   } from "homebridge";
+*/
 
 // Internal dependencies
 import { VolumeInterrogator as _VolumeInterrogator } from './volumeInterrogator.js';
@@ -76,6 +78,15 @@ export default (homebridgeAPI) => {
 
     // Accessory must be created from PlatformAccessory Constructor
     _PlatformAccessory  = homebridgeAPI.platformAccessory;
+    if (!_PlatformAccessory.hasOwnProperty('PlatformAccessoryEvent')) {
+        // Append the PlatformAccessoryEvent.IDENTITY enum to the platform accessory reference.
+        // This allows us to not need to import anything from 'homebridge'.
+        const platformAccessoryEvent = {
+            IDENTIFY: "identify",
+        }
+
+        _PlatformAccessory.PlatformAccessoryEvent = platformAccessoryEvent;
+    }
 
     // Cache the reference to hap-nodejs
     _hap                = homebridgeAPI.hap;
