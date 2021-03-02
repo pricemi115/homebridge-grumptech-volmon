@@ -1,7 +1,7 @@
 {
   "name": "homebridge-grumptech-volmon",
   "displayName": "Homebridge Volume Monitor",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "description": "Free Space monitor for mounted volumes.",
   "main": "dist/homebridge-grumptech-volmon.js",
   "files": [
@@ -10,7 +10,8 @@
     "config.schema.json",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "assets/"
   ],
   "config_info": {
     "remarks": [

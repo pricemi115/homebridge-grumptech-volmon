@@ -3,6 +3,11 @@ Change history for _homebridge-grumptech-volmon_
 
 ---
 ---
+## [1.0.0] - 2021-03-01
+### What's new
+- [ISSUE #2](https://github.com/pricemi115/homebridge-grumptech-volmon/issues/2)<br/>
+  Updated documentation for release.
+---
 ## [0.0.8] (Beta 4) - 2021-02-27
 ### What's new
 - [ISSUE #3](https://github.com/pricemi115/homebridge-grumptech-volmon/issues/3)<br/>
