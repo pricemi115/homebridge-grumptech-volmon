@@ -12,11 +12,11 @@ To install the plugin manually:
 ### _homebridge-config-ui-x_
 This plugin is best experienced when running as a module installed and managed by the [_homebridge-config-ui-x_](https://www.npmjs.com/package/homebridge-config-ui-x) plugin. When running under homebridge-config-ui-x, visiting the plugin settings will allow you to change the polling interval and the low space alarm threshold, as shown below.<br/>
 <img src="./assets/config-ui-x_settings.png"
-     alt="Home.app view of a volume with lots of remaining storage."
+     alt="Configuration Settings UI"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="40%">
 <img src="./assets/config-ui-x_configjson.png"
-     alt="Home.app view of a volume with lots of remaining storage."
+     alt="Configuration Settings JSON"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="31.5%">
 
@@ -28,11 +28,11 @@ This plugin is best experienced when running as a module installed and managed b
 
 Additionally, especially if this system will be running other homebridge modules, it is strongly encouraged to run this plugin as an isolated child bridge. This setting page can be found by clicking on the _wrench_ icon on the plugin and then selecting _Bridge Settings_. With the child bridge enabled, revisiting the setting page after homebridge is rebooted will show a QR code for pairing to the child bridge. The username (mac address) and port are randomly generaged by homebridge-config-ui-x.<br/>
 <img src="./assets/config-ui-x_bridgesettings_disabled.png"
-     alt="Home.app view of a volume with lots of remaining storage."
+     alt="Bridge Settings Disabled Postreboot"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="51.5%">
 <img src="./assets/config-ui-x_bridgesettings_enabled.postreboot.png"
-     alt="Home.app view of a volume with lots of remaining storage."
+     alt="Bridge Settings Disabled Postreboot"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="30%">
 
@@ -42,11 +42,11 @@ If you would rather manually configure and run the plugin, you will find a sampl
 When the plugin-starts, it will clear out the _battery service_ accessories detected from a prior run. It will then scan the system and create a _battery service_ accessory for each visibe (_located in `/Volumes`_) volume. The _battery level_ got each accessory will be set to the percentage of storage space remaining on the volume. If the amount of remaining storage is below the _alert threahold_ the accessory will show the _low battery_ status.<br/>
 When viewing the details of an accessory, the accessory information section will display the _Volume UUID_ (if known) under the _Serial Number_ field and the _volume format_ under the _Model_ field. The plug-in version will show under the _Firmware_ field.<br/>
 <img src="./assets/home_app_ios_volume.png"
-     alt="Home.app view of a volume with lots of remaining storage."
+     alt="Home app ios volume"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="15.2%">
 <img src="./assets/home_app_ios_volume_with_alert.png"
-     alt="Home.app view of a volume with limited remaining storage."
+     alt="Home app ios volume with alert"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="15%">
 
