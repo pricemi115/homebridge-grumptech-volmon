@@ -81,4 +81,4 @@ Many thanks to all the folks contributing to [Homebridge](https://homebridge.io)
 
 ## License
 
-Refer to [LICENSE.md](./LICENSE.md) for information regarding licensincg of this source code.
+Refer to [LICENSE.md](./LICENSE.md) for information regarding licensing of this source code.
