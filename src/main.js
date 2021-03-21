@@ -172,7 +172,7 @@ class VolumeInterrogatorPlatform {
         // Is there an indication that the system is either exiting or needs to
         // be cleaned up?
         if ((options.exit) || (options.cleanup)) {
-            // Cleanup the garage controller system.
+            // Cleanup the volume interrogator.
             if (this._volumeInterrogator != undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
                 await this._volumeInterrogator.Stop();
