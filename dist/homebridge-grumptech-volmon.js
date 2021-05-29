@@ -485,11 +485,11 @@ function unwrapListeners(arr) {
    ========================================================================== */
 
 // External dependencies and imports.
-const _debug    = require('debug')('spawn_helper');
+const _debug$2    = require('debug')('spawn_helper');
 const { spawn } = require('child_process');
 
 // Bind debug to console.log
-_debug.log = console.log.bind(console);
+_debug$2.log = console.log.bind(console);
 
 /* ==========================================================================
    Class:              SpawnHelper
@@ -746,7 +746,7 @@ class SpawnHelper extends EventEmitter {
     ======================================================================== */
     _process_message(message, sendHandle) {
         // TODO: Not sure if I need this.
-        _debug(`Child Process for ${this.Command}: '${message}'`);
+        _debug$2(`Child Process for ${this.Command}: '${message}'`);
     }
 
  /* ========================================================================
@@ -756,7 +756,7 @@ class SpawnHelper extends EventEmitter {
     ======================================================================== */
     _process_error(error) {
         // Log the error info.
-        _debug(`Child Process for ${this.Command}: error_num:${errror.number} error_name:${error.name} error_msg:${error.message}`);
+        _debug$2(`Child Process for ${this.Command}: error_num:${errror.number} error_name:${error.name} error_msg:${error.message}`);
 
         // Ensure that the error is recorded.
         this._error_encountered = true;
@@ -770,7 +770,7 @@ class SpawnHelper extends EventEmitter {
     ======================================================================== */
     _process_close(code, signal) {
         // Log the close info.
-        _debug(`Child Process for ${this.Command}: exit_code:${code} by signal:'${signal}'`);
+        _debug$2(`Child Process for ${this.Command}: exit_code:${code} by signal:'${signal}'`);
 
         // Indicate that we are done.
         this._pending = false;
@@ -1699,7 +1699,7 @@ class VolumeInterrogator extends EventEmitter {
    Copyright:          Jan 2021
    ========================================================================== */
 
-const _debug$2 = require('debug')('homebridge');
+const _debug = require('debug')('homebridge');
 
 // Configuration constants.
 const PLUGIN_NAME   = config_info.plugin;
@@ -1725,7 +1725,7 @@ let _hap                = undefined;
    Return:      None
    ======================================================================== */
 var main = (homebridgeAPI) => {
-    _debug$2(`homebridge API version: v${homebridgeAPI.version}`);
+    _debug(`homebridge API version: v${homebridgeAPI.version}`);
 
     // Accessory must be created from PlatformAccessory Constructor
     _PlatformAccessory  = homebridgeAPI.platformAccessory;
@@ -1743,7 +1743,7 @@ var main = (homebridgeAPI) => {
     _hap                = homebridgeAPI.hap;
 
     // Register the paltform.
-    _debug$2(`Registering platform: ${PLATFORM_NAME}`);
+    _debug(`Registering platform: ${PLATFORM_NAME}`);
     homebridgeAPI.registerPlatform(PLATFORM_NAME, VolumeInterrogatorPlatform);
 };
 
@@ -1822,13 +1822,15 @@ class VolumeInterrogatorPlatform {
         // Is there an indication that the system is either exiting or needs to
         // be cleaned up?
         if ((options.exit) || (options.cleanup)) {
-            // Cleanup the garage controller system.
+            // Cleanup the volume interrogator.
             if (this._volumeInterrogator != undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
                 await this._volumeInterrogator.Stop();
                 this._volumeInterrogator = undefined;
             }
         }
+        // Lastly eliminate myself.
+        delete this;
     }
 
  /* ========================================================================
@@ -2088,7 +2090,7 @@ class VolumeInterrogatorPlatform {
             const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
             // Register for the "get" event notification.
             charOn.on('get', this._handleOnGet.bind(this, accessory));
-            // Register for the "get" event notification.
+            // Register for the "set" event notification.
             charOn.on('set', this._handleOnSet.bind(this, accessory));
         }
 
@@ -2248,7 +2250,7 @@ class VolumeInterrogatorPlatform {
         }
         if ((info === undefined) ||
             (!info.hasOwnProperty('model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
-            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.model instanceof Error))   ) {
+            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
             throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are eother strings or Error`);
         }
 
