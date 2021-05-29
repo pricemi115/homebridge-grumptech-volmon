@@ -440,7 +440,7 @@ class VolumeInterrogatorPlatform {
             const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
             // Register for the "get" event notification.
             charOn.on('get', this._handleOnGet.bind(this, accessory));
-            // Register for the "get" event notification.
+            // Register for the "set" event notification.
             charOn.on('set', this._handleOnSet.bind(this, accessory));
         }
 
@@ -600,7 +600,7 @@ class VolumeInterrogatorPlatform {
         }
         if ((info === undefined) ||
             (!info.hasOwnProperty('model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
-            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.model instanceof Error))   ) {
+            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
             throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are eother strings or Error`);
         }
 
