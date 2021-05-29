@@ -1,8 +1,14 @@
 # Homebridge Volume Monitor
 
 [Homebridge Volume Monitor](https://github.com/pricemi115/homebridge-grumptech-volmon), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that publishes the remaining storage of mounted volumes on macOS/OSX operating systems to Homekit. The remaining storage, computed as a percentage of the total, is presented as a _Battery Service_ accessory. A _low battery alert_ will be issued when the remaining storage falls below a specified threshold.
-## Installation
 
+## Change Log
+The change history can be viewed [here](./CHANGELOG.md)
+
+## Security Policy
+Please refer to our [security policy](./SECURITY.md) for information on which versions are receiving security updates and how to report security vulnerabilities.
+
+## Installation
 This plug-in is intended to be used with the [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x) homebridge management tool. If using _homebridge-config-ui-x_, simply search for _homebridge-grumptech-volmon_ for installation, plug-in management, and configuration.
 
 To install the plugin manually:
@@ -56,17 +62,9 @@ The plug-in also publishes a _Switch_ accessory with a default name of _Refresh_
 ## Restrictions
 This module operates by using shell commands to the `diskutil` program. Therefore, this module is only supported on the Apple OSX and macOS operating systems.
 
-## History
-
-Version | Release Date | Comments
-------: | :----------: | :-------
-0.0.5   | 2021-FEB-20 | Initial release to npm
-0.0.6   | 2021-FEB-23 | Big fix(es) and minor documentation updates.
-0.0.7   | 2021-FEB-23 | Repository cleanup
-0.0.8   | 2021-FEB-27 | Issue#3 and other changes/improvements.
-1.0.0   | 2021-MAR-01 | Release v1
 ## Known Issues and Planned Enhancements
 Refer to the bugs and enhancements listed [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues)
+
 ## Contributing
 
 1. Fork it!
