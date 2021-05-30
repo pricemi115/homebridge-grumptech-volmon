@@ -15,6 +15,7 @@ import EventEmitter from 'events';
 
 // Internal dependencies.
 import { SpawnHelper } from './spawnHelper.js';
+// eslint-disable-next-line no-unused-vars
 import { VOLUME_TYPES, VolumeData, CONVERSION_BASES } from './volumeData.js';
 
 // Bind debug to console.log
@@ -52,7 +53,7 @@ export class VolumeInterrogator extends EventEmitter {
     constructor(config) {
 
         let polling_period = DEFAULT_PERIOD_HR;
-        if ((config !== undefined) && (config.hasOwnProperty('period_hr'))) {
+        if ((config !== undefined) && (Object.prototype.hasOwnProperty.call(config, 'period_hr'))) {
             if ((typeof(config.period_hr)==='number') &&
                 (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
                 polling_period = config.period_hr;
@@ -239,7 +240,7 @@ export class VolumeInterrogator extends EventEmitter {
                 // Attempt to parse the data as a plist.
                 const config = _plist.parse(response.result.toString());
 
-                if (config.hasOwnProperty('AllDisksAndPartitions')) {
+                if (Object.prototype.hasOwnProperty.call(config, 'AllDisksAndPartitions')) {
                     let volumesPartitions = [];
                     let volumesAFPS       = [];
                     let volumesRoot       = [];
@@ -247,13 +248,13 @@ export class VolumeInterrogator extends EventEmitter {
 
                     // Iterate over the disks and partitoins and gather the HFS+ and AFPS entries.
                     for (const item of allDisksAndParts) {
-                        if (item.hasOwnProperty('Content')) {
-                            if ((item.hasOwnProperty('APFSPhysicalStores')) &&
-                                (item.hasOwnProperty('APFSVolumes'))) {
+                        if (Object.prototype.hasOwnProperty.call(item, 'Content')) {
+                            if ((Object.prototype.hasOwnProperty.call(item, 'APFSPhysicalStores')) &&
+                                (Object.prototype.hasOwnProperty.call(item, 'APFSVolumes'))) {
                                 // Append to the AFPS list
                                 volumesAFPS.push(item);
                             }
-                            else if ((item.hasOwnProperty('Partitions')) &&
+                            else if ((Object.prototype.hasOwnProperty.call(item, 'Partitions')) &&
                                      (item.Partitions.length > 0)) {
                                 // Append to the Partitions list
                                 volumesPartitions.push(item);
@@ -261,7 +262,7 @@ export class VolumeInterrogator extends EventEmitter {
                             else {
                                 // This volume is at the root of AllDisksAndPartitions and has no child volume items.
                                 // Validate that we can access the disk identifier.
-                                if ((item.hasOwnProperty('DeviceIdentifier') &&
+                                if ((Object.prototype.hasOwnProperty.call(item, 'DeviceIdentifier') &&
                                     (typeof(item.DeviceIdentifier) === 'string'))) {
                                         // Record the identifier.
                                         volumesRoot.push(item.DeviceIdentifier);
@@ -328,7 +329,7 @@ export class VolumeInterrogator extends EventEmitter {
 
                 // Get the device identifier for this volume and manage the pending
                 // items.
-                if ((config.hasOwnProperty('DeviceIdentifier')) && (typeof(config.DeviceIdentifier) === 'string') &&
+                if ((Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier')) && (typeof(config.DeviceIdentifier) === 'string') &&
                     (this._pendingVolumes.includes(config.DeviceIdentifier))) {
                     // First, remove this item from the pending list.
                     this._pendingVolumes = this._pendingVolumes.filter( (item) => {
@@ -336,24 +337,24 @@ export class VolumeInterrogator extends EventEmitter {
                     });
 
                     // Validate the config data.
-                    if ((config.hasOwnProperty('VolumeName') &&          (typeof(config.VolumeName)          === 'string'))       &&
-                        (config.hasOwnProperty('FilesystemType') &&      (typeof(config.FilesystemType)      === 'string'))       &&
-                        (config.hasOwnProperty('DeviceIdentifier') &&    (typeof(config.DeviceIdentifier)    === 'string'))       &&
-                        (config.hasOwnProperty('MountPoint') &&          (typeof(config.MountPoint)          === 'string'))       &&
-                        (config.hasOwnProperty('DeviceNode') &&          (typeof(config.DeviceNode)          === 'string'))       &&
+                    if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') &&          (typeof(config.VolumeName)          === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'FilesystemType') &&      (typeof(config.FilesystemType)      === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier') &&    (typeof(config.DeviceIdentifier)    === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'MountPoint') &&          (typeof(config.MountPoint)          === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'DeviceNode') &&          (typeof(config.DeviceNode)          === 'string'))       &&
                         /* UDF volumes have no Volume UUID */
-                        ( (config.hasOwnProperty('VolumeUUID') &&        (typeof(config.VolumeUUID)          === 'string'))    ||
-                          (!config.hasOwnProperty('VolumeUUID')) )                                                                &&
-                        (config.hasOwnProperty('Size') &&                (typeof(config.Size)                === 'number'))       &&
+                        ( ( Object.prototype.hasOwnProperty.call(config, 'VolumeUUID') &&        (typeof(config.VolumeUUID)          === 'string'))    ||
+                          (!Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) )                                                                &&
+                        (Object.prototype.hasOwnProperty.call(config, 'Size') &&                (typeof(config.Size)                === 'number'))       &&
                         // Free space is reported based on the file system type.
-                        ( ((config.hasOwnProperty('FreeSpace') &&         (typeof(config.FreeSpace)          === 'number')))   ||
-                           (config.hasOwnProperty('APFSContainerFree') && (typeof(config.APFSContainerFree)  === 'number')) ))      {
+                        ( ((Object.prototype.hasOwnProperty.call(config, 'FreeSpace') &&         (typeof(config.FreeSpace)          === 'number')))   ||
+                           (Object.prototype.hasOwnProperty.call(config, 'APFSContainerFree') && (typeof(config.APFSContainerFree)  === 'number')) ))      {
 
                             // Then, process the data provided.
                             // Free space is reported based on the file system type.
                             const freeSpace  = ((config.FilesystemType === VOLUME_TYPES.TYPE_APFS) ? config.APFSContainerFree : config.FreeSpace);
                             // For volumes that do not have a volume UUID, use the device node.
-                            const volumeUUID = ((config.hasOwnProperty('VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
+                            const volumeUUID = ((Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
                             const volData = new VolumeData({name:               config.VolumeName,
                                                             volume_type:        config.FilesystemType,
                                                             disk_id:            config.DeviceIdentifier,
@@ -384,7 +385,7 @@ export class VolumeInterrogator extends EventEmitter {
                     }
                     else {
                         // Ignore the inability to process this item if there is no valid volume name.
-                        if ((config.hasOwnProperty('VolumeName') && (typeof(config.VolumeName) === 'string') &&
+                        if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') && (typeof(config.VolumeName) === 'string') &&
                             (config.VolumeName.length > 0))) {
                             _debug_process(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
                             throw new TypeError('Missing or invalid response from diskutil.');
@@ -501,11 +502,11 @@ export class VolumeInterrogator extends EventEmitter {
         let diskIdentifiers = [];
 
         for (const disk of disks) {
-            if ((disk.hasOwnProperty('Partitions')) &&
+            if ((Object.prototype.hasOwnProperty.call(disk, 'Partitions')) &&
                 (disk.Partitions.length > 0)) {
                 for (const partition of disk.Partitions) {
                     // Validate that we can access the disk identifier.
-                    if ((partition.hasOwnProperty('DeviceIdentifier') &&
+                    if ((Object.prototype.hasOwnProperty.call(partition, 'DeviceIdentifier') &&
                         (typeof(partition.DeviceIdentifier) === 'string'))) {
                             // Record the identifier.
                             diskIdentifiers.push(partition.DeviceIdentifier);
@@ -541,12 +542,12 @@ export class VolumeInterrogator extends EventEmitter {
         let diskIdentifiers = [];
 
         for (const container of containers) {
-            if ((container.hasOwnProperty('APFSVolumes')) &&
+            if ((Object.prototype.hasOwnProperty.call(container, 'APFSVolumes')) &&
                 Array.isArray(container.APFSVolumes)) {
                 // The data of interest is stored in the APFS volumes entry.
                 for (const volume of container.APFSVolumes) {
                     // Validate that we can access the disk identifier.
-                    if ((volume.hasOwnProperty('DeviceIdentifier') &&
+                    if ((Object.prototype.hasOwnProperty.call(volume, 'DeviceIdentifier') &&
                         (typeof(volume.DeviceIdentifier) === 'string'))) {
                         // Record the identifier.
                         diskIdentifiers.push(volume.DeviceIdentifier);

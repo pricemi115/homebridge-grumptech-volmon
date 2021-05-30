@@ -6,6 +6,7 @@
 'use strict';
 
 const _debug = require('debug')('homebridge');
+// eslint-disable-next-line no-unused-vars
 import { version as PLUGIN_VER }      from '../package.json';
 import { config_info as CONFIG_INFO } from '../package.json';
 
@@ -79,7 +80,7 @@ export default (homebridgeAPI) => {
 
     // Accessory must be created from PlatformAccessory Constructor
     _PlatformAccessory  = homebridgeAPI.platformAccessory;
-    if (!_PlatformAccessory.hasOwnProperty('PlatformAccessoryEvent')) {
+    if (!Object.prototype.hasOwnProperty.call(_PlatformAccessory, 'PlatformAccessoryEvent')) {
         // Append the PlatformAccessoryEvent.IDENTITY enum to the platform accessory reference.
         // This allows us to not need to import anything from 'homebridge'.
         const platformAccessoryEvent = {
@@ -168,6 +169,7 @@ class VolumeInterrogatorPlatform {
     @param {object} [options]  - Typically containing a "cleanup" or "exit" member.
     @param {object} [err]      - The source of the event trigger.
     ======================================================================== */
+    // eslint-disable-next-line no-unused-vars
     async _destructor(options, err) {
         // Is there an indication that the system is either exiting or needs to
         // be cleaned up?
@@ -196,7 +198,7 @@ class VolumeInterrogatorPlatform {
         this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
 
         let theSettings = undefined;
-        if (this._config.hasOwnProperty('settings')) {
+        if (Object.prototype.hasOwnProperty.call(this._config, 'settings')) {
             // Get the system configuration,
             theSettings = this._config.settings;
         }
@@ -204,7 +206,7 @@ class VolumeInterrogatorPlatform {
         // Check for Settings
         if (theSettings != undefined) {
             // Polling Interval {Hours}
-            if ((theSettings.hasOwnProperty('polling_interval')) &&
+            if ((Object.prototype.hasOwnProperty.call(theSettings, 'polling_interval')) &&
                 (typeof(theSettings.polling_interval) === 'number')) {
                 if ((theSettings.polling_interval >= this._volumeInterrogator.MinimumPeriod) &&
                     (theSettings.polling_interval <= this._volumeInterrogator.MaximumPeriod)) {
@@ -219,7 +221,7 @@ class VolumeInterrogatorPlatform {
                 throw new TypeError(`Configuration item 'polling_interval' must be a number. {${typeof(theSettings.polling_interval)}}`);
             }
             // Low Space Alarm Threshold {Percent}
-            if ((theSettings.hasOwnProperty('alarm_threshold')) &&
+            if ((Object.prototype.hasOwnProperty.call(theSettings, 'alarm_threshold')) &&
                 (typeof(theSettings.alarm_threshold) === 'number')) {
                 if ((theSettings.alarm_threshold > MIN_LOW_SPACE_THRESHOLD) &&
                     (theSettings.alarm_threshold < MAX_LOW_SPACE_THRESHOLD)) {
@@ -306,7 +308,7 @@ class VolumeInterrogatorPlatform {
     _handleVolumeInterrogatorReady(data) {
         // Validate the parameters.
         if ((data === undefined) ||
-            (!data.hasOwnProperty('results'))) {
+            (!Object.prototype.hasOwnProperty.call(data, 'results'))) {
             throw new TypeError(`'data' needs to be an object with a 'results' field.`);
         }
         if (!Array.isArray(data.results)) {
@@ -599,8 +601,8 @@ class VolumeInterrogatorPlatform {
             throw new TypeError(`Accessory must be a PlatformAccessory`);
         }
         if ((info === undefined) ||
-            (!info.hasOwnProperty('model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
-            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
+            (!Object.prototype.hasOwnProperty.call(info, 'model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
+            (!Object.prototype.hasOwnProperty.call(info, 'serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
             throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are eother strings or Error`);
         }
 
