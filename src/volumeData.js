@@ -84,15 +84,15 @@ export class VolumeData {
             if (typeof(data) != 'object') {
                 throw new TypeError(`'data' must be an object`);
             }
-            if (data.hasOwnProperty('name') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'name') &&
                 (typeof(data.name) === 'string')) {
                 name = data.name;
             }
-            if (data.hasOwnProperty('disk_id') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'disk_id') &&
                 (typeof(data.disk_id) === 'string')) {
                 diskIdentifier = data.disk_id;
             }
-            if (data.hasOwnProperty('volume_type') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'volume_type') &&
                 (typeof(data.volume_type) === 'string')) {
                 if (Object.values(VOLUME_TYPES).includes(data.volume_type)) {
                     volumeType = data.volume_type;
@@ -101,11 +101,11 @@ export class VolumeData {
                     throw new RangeError(`Unrecognized volume type specified. (${data.volume_type})`);
                 }
             }
-            if (data.hasOwnProperty('mount_point') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'mount_point') &&
                 (typeof(data.mount_point) === 'string')) {
                 mountPoint = data.mount_point;
             }
-            if (data.hasOwnProperty('capacity_bytes') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'capacity_bytes') &&
                 (typeof(data.capacity_bytes) === 'number')) {
                 if (data.capacity_bytes > 0) {
                     capacityBytes = data.capacity_bytes;
@@ -114,15 +114,15 @@ export class VolumeData {
                     throw new RangeError(`Volume size must be a positive number. (${data.capacity_bytes})`);
                 }
             }
-            if (data.hasOwnProperty('device_node') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'device_node') &&
                 (typeof(data.device_node) === 'string')) {
                 deviceNode = data.device_node;
             }
-            if (data.hasOwnProperty('volume_uuid') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'volume_uuid') &&
                 (typeof(data.volume_uuid) === 'string')) {
                 volumeUUID = data.volume_uuid;
             }
-            if (data.hasOwnProperty('free_space_bytes') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'free_space_bytes') &&
                 (typeof(data.free_space_bytes) === 'number')) {
                 if (data.free_space_bytes >= 0) {
                     freeSpaceBytes = data.free_space_bytes;
@@ -131,7 +131,7 @@ export class VolumeData {
                     throw new RangeError(`Volume size must be greater than or equal to 0. (${data.free_space_bytes})`);
                 }
             }
-            if (data.hasOwnProperty('used_space_bytes') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'used_space_bytes') &&
                 (typeof(data.used_space_bytes) === 'number')) {
                 if (data.used_space_bytes >= 0) {
                     usedSpaceBytes = data.used_space_bytes;
@@ -140,7 +140,7 @@ export class VolumeData {
                     throw new RangeError(`Volume size must be greater than or equal to 0. (${data.used_space_bytes})`);
                 }
             }
-            if (data.hasOwnProperty('visible') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'visible') &&
                 (typeof(data.visible) === 'boolean')) {
                 visible = data.visible;
             }
