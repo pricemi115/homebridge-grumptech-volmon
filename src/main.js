@@ -57,10 +57,22 @@ const PLUGIN_NAME   = CONFIG_INFO.plugin;
 const PLATFORM_NAME = CONFIG_INFO.platform;
 
 // Internal Constants
+// History:
+// unspecified: Initial Release
+//          v2: Purge Offline and better UUID management.
+const ACCESSORY_VERSION = 2;
+
 const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
 const MIN_LOW_SPACE_THRESHOLD       = 0.0;
 const MAX_LOW_SPACE_THRESHOLD       = 100.0;
 const MANUAL_REFRESH_SWITCH_NAME    = 'Refresh';
+
+// Listing of fixed (dedicated) accessories.
+const FIXED_ACCESSORY_INFO = {
+    CONTROLS  : {uuid:`2CF5A6C7-8041-4805-8582-821B19589D60`, model:`Control Switches`, serial_num:`00000001`, service_list: { MANUAL_REFRESH:{type:_hap.Service.Switch, name:`Refresh`, uuid:`23CB97AC-6F0C-46B5-ACF6-78025632A11F`, udst:`ManualRefresh`},
+                                                                                                                               PURGE_OFFLINE: {type:_hap.Service.Switch, name:`Purge`,   uuid:`FEE232D5-8E25-4C1A-89AC-5476B778ADEF`, udst:`PurgeOffline` } }
+                }
+}
 
 // Accessory must be created from PlatformAccessory Constructor
 let _PlatformAccessory  = undefined;
@@ -131,6 +143,8 @@ class VolumeInterrogatorPlatform {
 
         // Reference to the "Refresh" accessory switch.
         this._switchRefresh = undefined;
+        // Reference to the "Purge Offline" accessory switch.
+        this._switchPurgeOffline = undefined;
 
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
@@ -241,36 +255,43 @@ class VolumeInterrogatorPlatform {
         // If accessories were restored, flush them away
         this._removeAccessories(false);
 
-        // Determine if the Manual Refresh accessory already exists.
-        for (const accessory of this._accessories.values()) {
-            const switchRefresh = accessory.getService(MANUAL_REFRESH_SWITCH_NAME);
-            if (switchRefresh !== undefined)
-            {
-                // We found the Manual Redresh Switch.
-                this._switchRefresh = accessory;
+        // Create and Configure the Accessory Controls if needed.
+        if (!this._accessories.has(FIXED_ACCESSORY_INFO.CONTROLS.uuid)) {
+            // Control Switches accessory never existed. Make one now.
+            const accessoryControls = new _PlatformAccessory(FIXED_ACCESSORY_INFO.CONTROLS.model, FIXED_ACCESSORY_INFO.CONTROLS.uuid);
+
+            // Add the identifier to the accessory's context. Used for remapping on depersistence.
+            accessoryControls.context.ID = FIXED_ACCESSORY_INFO.CONTROLS.uuid;
+            // Mark the version of the accessory. This is used for depersistence
+            accessoryControls.context.VERSION = ACCESSORY_VERSION;
+            // Create accessory persisted settings
+            accessoryControls.context.SETTINGS = {SwitchStates:{refresh:true, pruge:false}};
+
+            // Create & Configure the control services.
+            for (const service_item of FIXED_ACCESSORY_INFO.CONTROLS.service_list) {
+                const service = accessoryControls.addService(service_item.service_type, service_item.uuid, service_item.udst);
+                if (service !== undefined) {
+                    service.updateCharacteristic(_hap.Characteristic.Name, `${service_item.name})`);
+                }
             }
-        }
-        // Creste the Manual Refresh switch accessory if needed.
-        if (this._switchRefresh === undefined) {
-            // Manual Refresh switch never existed. Make one now.
-            // uuid must be generated from a unique but not changing data source, theName should not be used in the most cases. But works in this specific example.
-            const uuid = _hap.uuid.generate(MANUAL_REFRESH_SWITCH_NAME);
-            this._switchRefresh = new _PlatformAccessory(MANUAL_REFRESH_SWITCH_NAME, uuid);
-            // Create our services.
-            this._switchRefresh.addService(_hap.Service.Switch, MANUAL_REFRESH_SWITCH_NAME);
 
             // Update the accessory information.
-            this._updateAccessoryInfo(this._switchRefresh, {model:'refresh switch', serialnum:'00000001'});
+            this._updateAccessoryInfo(accessoryControls, {model:FIXED_ACCESSORY_INFO.CONTROLS.model, serialnum:FIXED_ACCESSORY_INFO.CONTROLS.serial_num});
+
+            // configure this accessory.
+            this._configureAccessory(accessoryControls);
 
             // register the manual refresh switch
-            this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this._switchRefresh]);
+            this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessoryControls]);
         }
-        // configure this accessory.
-        this._configureAccessory(this._switchRefresh);
-        // Set the wwitch to on while we wait for a response.
-        const serviceSwitch = this._switchRefresh.getService(MANUAL_REFRESH_SWITCH_NAME);
-        if (serviceSwitch !== undefined) {
-            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+
+        // Set the 'refresh' switch to on while we wait for a response.
+        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.uuid);
+        if (accessoryControls !== undefined) {
+            const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+            if (serviceRefreshSwitch !== undefined) {
+                serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+            }
         }
 
         // Start interrogation.
@@ -280,12 +301,18 @@ class VolumeInterrogatorPlatform {
  /* ========================================================================
     Description: Homebridge API invoked after restoring cached accessorues from disk.
 
+    @param {PlatformAccessory} [accessory] - Accessory to be configured.
+
     @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
     ======================================================================== */
     configureAccessory(accessory) {
+        // Validate the argument(s)
+        if ((accessory === undefined) ||
+            (!(accessory instanceof _PlatformAccessory))) {
+            throw new TypeError(`accessory must be a PlatformAccessory`);
+        }
 
-        // This application has no need for history of the Battery Service accessories..
-        // But we will record them anyway to remove them once the accessory loads.
+        // Is this accessory already registered?
         let found = false;
         for (const acc of this._accessories.values()) {
             if (acc === accessory) {
@@ -294,7 +321,21 @@ class VolumeInterrogatorPlatform {
             }
         }
         if (!found) {
-            this._accessories.set(accessory.displayName, accessory);
+            // Configure the accessory (also registers it.)
+            try
+            {
+                this._configureAccessory(accessory);
+            }
+            catch (error)
+            {
+                this._log(`Unable to configure accessory ${accessory.displayName}. Version:${accessory.context.VERSION}. Error:${error}`);
+                // We don't know where the exception happened. Ensure that the accessory is in the map.
+                const id = accessory.context.ID;
+                if (!this._accessories.has(id)){
+                    // Update our accessory listing
+                    this._accessories.set(id, accessory);
+                }
+            }
         }
     }
 
@@ -436,14 +477,38 @@ class VolumeInterrogatorPlatform {
             this._log("%s identified!", accessory.displayName);
         });
 
-        // Does this accessory have a Switch service?
-        const serviceSwitch = accessory.getService(_hap.Service.Switch);
-        if (serviceSwitch !== undefined) {
-            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
-            // Register for the "get" event notification.
-            charOn.on('get', this._handleOnGet.bind(this, accessory));
-            // Register for the "set" event notification.
-            charOn.on('set', this._handleOnSet.bind(this, accessory));
+        // Does this accessory have Switch service(s)?
+        for (const service of accessory.services) {
+
+            let switchState = true;
+            const serviceSwitch = accessory.getService(_hap.Service.Switch);
+            if ((serviceSwitch !== undefined) &&
+                (serviceSwitch instanceof _hap.Service.Switch)) {
+                // Set the switch to the stored setting (the default is on).
+                const theSettings = accessory.context.SETTINGS;
+                if ((theSettings !== undefined) &&
+                    (typeof(theSettings) === 'object') &&
+                    (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchState') &&
+                    (typeof(theSettings.SwitchState) === 'boolean'))) {
+                    // Modify the settings
+                    switchState = theSettings.SwitchState;
+                }
+                serviceSwitch.updateCharacteristic(_hap.Characteristic.On, switchState);
+
+                const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
+                // Register for the "get" event notification.
+                charOn.on('get', this._handleOnGet.bind(this, id));
+                // Register for the "set" event notification.
+                charOn.on('set', this._handleOnSet.bind(this, id));
+            }
+
+            if (service instanceof _hap.Service.Switch) {
+                const charOn = service.getCharacteristic(_hap.Characteristic.On);
+                // Register for the "get" event notification.
+                charOn.on('get', this._handleOnGet.bind(this, {accessory:accessory, switch:service}));
+                // Register for the "set" event notification.
+                charOn.on('set', this._handleOnSet.bind(this, {accessory:accessory, switch:service}));
+            }
         }
 
         // Is this accessory new to us?
