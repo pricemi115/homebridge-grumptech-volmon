@@ -265,7 +265,8 @@ class VolumeInterrogatorPlatform {
             // Mark the version of the accessory. This is used for depersistence
             accessoryControls.context.VERSION = ACCESSORY_VERSION;
             // Create accessory persisted settings
-            accessoryControls.context.SETTINGS = {SwitchStates:{refresh:true, pruge:false}};
+            accessoryControls.context.SETTINGS = {SwitchStates:[ {id:FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, state:true },
+                  {id:FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid,  state:false } ]};
 
             // Create & Configure the control services.
             for (const service_item of FIXED_ACCESSORY_INFO.CONTROLS.service_list) {
@@ -477,22 +478,35 @@ class VolumeInterrogatorPlatform {
             this._log("%s identified!", accessory.displayName);
         });
 
+        let theSwitchStates = undefined;
+        const theSettings = accessory.context.SETTINGS;
+        if ((theSettings !== undefined) &&
+            (typeof(theSettings) === 'object') &&
+            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates') &&
+            (Array.isArray(theSettings.SwitchStates))) {
+            theSwitchStates = theSettings.SwitchStates;
+        }
+
         // Does this accessory have Switch service(s)?
         for (const service of accessory.services) {
 
-            let switchState = true;
             const serviceSwitch = accessory.getService(_hap.Service.Switch);
             if ((serviceSwitch !== undefined) &&
                 (serviceSwitch instanceof _hap.Service.Switch)) {
+				// Get the persisted switch state.
+                let switchStateValue = true;
+				for (const switchStateConfig of theSwithStates) {
+					if ((typeof(switchStateConfig) === 'object') &&
+                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
+                        (typeof(switchStateConfig.id) === 'string') && 
+                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
+                        (typeof(switchStateConfig.state) === 'boolean') && 
+						(switchStateConfig.id === serviceSwitch.uuid)) {
+						switchStateValue = switchStateConfig.state;
+						break;
+					}
+				}
                 // Set the switch to the stored setting (the default is on).
-                const theSettings = accessory.context.SETTINGS;
-                if ((theSettings !== undefined) &&
-                    (typeof(theSettings) === 'object') &&
-                    (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchState') &&
-                    (typeof(theSettings.SwitchState) === 'boolean'))) {
-                    // Modify the settings
-                    switchState = theSettings.SwitchState;
-                }
                 serviceSwitch.updateCharacteristic(_hap.Characteristic.On, switchState);
 
                 const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
