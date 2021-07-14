@@ -249,9 +249,20 @@ class VolumeInterrogatorPlatform {
             }
         }
 
-        // We have no need to be aware of the past.
-        // If accessories were restored, flush them away
-        this._removeAccessories(false);
+        // Flush any accessories that are not from this version.
+        const accessoriesToRemove = [];
+        for (const accessory of this._accessories.values()) {
+            if (!Object.prototype.hasOwnProperty.call(accessory.context, 'VERSION') ||
+                (accessory.context.VERSION !== ACCESSORY_VERSION)) {
+                this._log(`Accessory ${accessory.displayName} has accessory version ${accessory.context.VERSION}. Version ${ACCESSORY_VERSION} is expected.`);
+                // This accessory needs to be replaced.
+                accessoriesToRemove.push(accessory);
+            }
+        }
+        // Perform the cleanup.
+        accessoriesToRemove.forEach(accessory => {
+            this._removeAccessory(accessory);
+        });
 
         // Create and Configure the Accessory Controls if needed.
         if (!this._accessories.has(FIXED_ACCESSORY_INFO.CONTROLS.model)) {
@@ -447,6 +458,9 @@ class VolumeInterrogatorPlatform {
         // Create our services.
         accessory.addService(_hap.Service.BatteryService, name);
 
+        // Mark the version of the accessory. This is used for depersistence
+        accessory.context.VERSION = ACCESSORY_VERSION;
+
         try {
             // Configura the accessory
             this._configureAccessory(accessory);
@@ -566,32 +580,6 @@ class VolumeInterrogatorPlatform {
         this._api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         /* remove the accessory from our mapping */
         this._accessories.delete(accessory.displayName);
-    }
-
- /* ========================================================================
-    Description: Removes all of the `Battery Service` platform accessories.
-
-    @param {bool} [removeAll] - Flag indicating if all accessories should be
-                                removed, or only accessories with a Battery Service.
-    ======================================================================== */
-    _removeAccessories(removeAll) {
-
-        this._log.debug(`Removing Accessories: removeAll:${removeAll}`);
-
-        // Make a list of accessories to be deleted.
-        let purgeList = [];
-        for (const accessory of this._accessories.values()) {
-            // Filter the accessories for the Battery Service accessories.
-            const batteryService = accessory.getService(_hap.Service.BatteryService);
-            if ((removeAll) ||
-                (batteryService !== undefined)) {
-                purgeList.push(accessory);
-            }
-        }
-        // Clean up
-        for (const accessory of purgeList) {
-            this._removeAccessory(accessory);
-        }
     }
 
  /* ========================================================================
