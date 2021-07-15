@@ -409,6 +409,32 @@ class VolumeInterrogatorPlatform {
         // Ensure the switch is turned back off.
         const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
         if (accessoryControls !== undefined) {
+            // Cleanup (if purge is enabled)
+            const servicePurge = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.udst);
+            if (servicePurge !== undefined) {
+                const purgeState = this._getAccessorySwitchState(servicePurge);
+                if (purgeState) {
+                    let purgeList = [];
+                    // Check for Volumes that are no longer Visible
+                    for (const volData of this._volumesData.values()) {
+                        if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
+                            purgeList.push(this._accessories.get(volData.Name));
+                        }
+                    }
+                    // Check for accessories whose volumes are unknown.
+                    const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
+                    for (const key of this._accessories.keys()) {
+                        if ((!this._volumesData.has(key)) &&
+                            (excludedAccessoryKeys.indexOf(key) === -1)) {
+                            purgeList.push(this._accessories.get(key));
+                        }
+                    }
+                    // Clean up.
+                    purgeList.forEach(accessory => {
+                        this._removeAccessory(accessory);
+                    });
+                }
+            }
             // Get the Manual Refresh service.
             const serviceManlRefresh = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
             if (serviceManlRefresh !== undefined) {
@@ -735,7 +761,7 @@ class VolumeInterrogatorPlatform {
         let status = null;
         let result = undefined;
         try {
-            result = this._getAccessorySwitchState(event_info);
+            result = this._getAccessorySwitchState(theService);
         }
         catch (err) {
             this._log.debug(`  Unexpected error encountered: ${err.message}`);
@@ -813,7 +839,7 @@ class VolumeInterrogatorPlatform {
             // The Manual Refresh switch has special logic.
             if ((id[0] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid) &&
                 (id[1] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst)) {
-                const currentValue = this._getAccessorySwitchState(event_info);
+                const currentValue = this._getAccessorySwitchState(theService);
 
                 // The user is not allowed to turn the switch off.
                 // It will auto reset when the current check is complete.
@@ -860,55 +886,30 @@ class VolumeInterrogatorPlatform {
  /* ========================================================================
     Description: Get the value of the Service.Switch.On characteristic value
 
-    @param {object} [event_info] - accessory and id of the switch service being querried.
-    @param {object} [event_info.accessory] - Platform Accessory
-    @param {string} [event_info.service_id]- UUID of the Switch service being querried.
+    @param {object} [switchService] - Switch Service
 
     @return - the value of the On characteristic (true or false)
 
-    @throws {TypeError} - Thrown when 'event_info' is not an object.
+    @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
     @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
     @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
     @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
     @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
     @throws {Error}     - Thrown when the On characteristic cannot be found on the service.
     ======================================================================== */
-    _getAccessorySwitchState(event_info) {
+    _getAccessorySwitchState(switchService) {
         // Validate arguments
-        if ((event_info === undefined) || (typeof(event_info) !== 'object') ||
-            (!Object.prototype.hasOwnProperty.call(event_info, 'accessory')) ||
-            (!Object.prototype.hasOwnProperty.call(event_info, 'service_id')))  {
-            throw new TypeError(`event_info must be an object with an 'accessory' and 'service_id' field.`);
-        }
-        if ((event_info.accessory === undefined) || !(event_info.accessory instanceof _PlatformAccessory)) {
-            throw new TypeError(`'event_info.accessory' must be a PlatformAccessory`);
-        }
-        if ((event_info.service_id === undefined) || (typeof(event_info.service_id) !== 'string') ||
-            (event_info.service_id.length <= 0)) {
-            throw new TypeError(`event_info.service_id' must be non-null string.`);
-        }
-        const id = event_info.service_id.split(`.`);
-        if (!Array.isArray(id) || (id.length !== 2)) {
-            throw new TypeError(`'event_info.service_id' does not appear to be valid. '${event_info.service_id}'`);
-        }
-
-        const theService = event_info.accessory.getServiceById(id[0], id[1]);
-        // Ensure that the Service Id belongs to the Accessory
-        if (theService === undefined) {
-            throw new RangeError(`'event_info.service_id' does not belong to event_info.accessory.`);
-        }
-        // Ensure that the Service Id belongs to the Accessory
-        if (!(theService instanceof _hap.Service.Switch)) {
-            throw new TypeError(`'event_info.service_id' must correspond to a switch service.`);
+        if ((switchService === undefined) || !(switchService instanceof _hap.Service.Switch)) {
+            throw new TypeError(`'switchService' must be a _hap.Service.Switch`);
         }
 
         let result = false;
-        const charOn = theService.getCharacteristic(_hap.Characteristic.On);
+        const charOn = switchService.getCharacteristic(_hap.Characteristic.On);
         if (charOn !== undefined) {
             result = charOn.value;
         }
         else {
-            throw new Error(`The ${theService.displayName} service of accessory ${event_info.accessory.displayName} does not have an On charactristic.`);
+            throw new Error(`The '${switchService.displayName}.${switchService.udst}' service  does not have an On charactristic.`);
         }
 
         return result;
