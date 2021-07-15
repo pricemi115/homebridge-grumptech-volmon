@@ -45,7 +45,7 @@ Additionally, especially if this system will be running other homebridge modules
 ### Manual Configuration
 If you would rather manually configure and run the plugin, you will find a sample _config.json_ file in the `./config` folder. It is left to the user to get the plugin up and running within homebridge. Refer to the section above for specifics on the configuration parameters.
 ## Usage
-When the plugin-starts, it will clear out the _battery service_ accessories detected from a prior run. It will then scan the system and create a _battery service_ accessory for each visibe (_located in `/Volumes`_) volume. The _battery level_ got each accessory will be set to the percentage of storage space remaining on the volume. If the amount of remaining storage is below the _alert threahold_ the accessory will show the _low battery_ status.<br/>
+When the plugin-starts, it will create a _battery service_ accessory for each visibe (_located in `/Volumes`_) volume. The _battery level_ for each accessory will be set to the percentage of storage space remaining on the volume. If the amount of remaining storage is below the _alert threahold_ the accessory will show the _low battery_ status.<br/>
 When viewing the details of an accessory, the accessory information section will display the _Volume UUID_ (if known) under the _Serial Number_ field and the _volume format_ under the _Model_ field. The plug-in version will show under the _Firmware_ field.<br/>
 <img src="./assets/home_app_ios_volume.png"
      alt="Home app ios volume"
@@ -56,9 +56,11 @@ When viewing the details of an accessory, the accessory information section will
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="15%">
 
-The volumes on the system will be rescanned peropdically according to the polling interval specified in the configuration settings. Any volumes that have been dismounted or are no longer in `/Volumes` will show the battery level and battery alert as _Not Reachable_. Homekit applications will render these _not reachable_ differently. For example, the Apple Home app will simply not display the Battery Level and Low Battery Status. Other applications like [Home+ 5](https://apps.apple.com/us/app/home-5/id995994352) app shows the accessories as _Error_.
+The volumes on the system will be rescanned peropdically according to the polling interval specified in the configuration settings.
 
-The plug-in also publishes a _Switch_ accessory with a default name of _Refresh_. Turning this switch to the on state, will iniitate a re-scan of the volumes on the system. The user is not permitted to turn the switch off. It will automatically turn off when the scan is complete. This allows the user to update the _battery service_ accessories without needing to wait for the polling interval to expire.
+The plug-in also publishes two _Switch_ accessories: _Refresh_ and _Purge_. These switches are located in an accessory named _Control Switches_.
+- _Refresh_: This switch, when turned on, is used to initiate a rescan of the volumes on the system. The user is not permitted to turn the switch off. It will automatically turn off when the scan is complete. This allows the user to update the _battery service_ accessories without needing to wait for the polling interval to expire.
+- _Purge_: When this switch is turned on, _battery service_ accessories that correspond to volumes that are no longer visible, for example ones that have been dismounted, will be removed (or purged). When this switch is off, any volumes that have been dismounted or are no longer visible in `/Volumes` will show the battery level and battery alert as _Not Reachable_. Homekit applications will render these _not reachable_ differently. For example, the Apple Home app will simply not display the Battery Level and Low Battery Status. Other applications like [Home+ 5](https://apps.apple.com/us/app/home-5/id995994352) app shows the accessories as _Error_.
 ## Restrictions
 This module operates by using shell commands to the `diskutil` program. Therefore, this module is only supported on the Apple OSX and macOS operating systems.
 
