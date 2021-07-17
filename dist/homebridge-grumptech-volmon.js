@@ -546,7 +546,7 @@ class SpawnHelper extends EventEmitter {
     get IsPending() {
         return ( this._pending );
     }
- 
+
  /* ========================================================================
     Description: Read-Only Property accessor to read the valid flag for this
                  item.
@@ -554,7 +554,7 @@ class SpawnHelper extends EventEmitter {
     @return {bool} - true if processing completed successfully.
     ======================================================================== */
     get IsValid() {
-        return ( (this._command !== undefined) && 
+        return ( (this._command !== undefined) &&
                  !this.IsPending && !this._error_encountered );
     }
 
@@ -562,7 +562,7 @@ class SpawnHelper extends EventEmitter {
     Description: Read-Only Property accessor to read the result data for this
                  item.
 
-    @return {<Buffer>} - Data collected from the spawn process. 
+    @return {<Buffer>} - Data collected from the spawn process.
                          Unreliable and/or undefined if processing was not successful.
     ======================================================================== */
     get Result() {
@@ -573,7 +573,7 @@ class SpawnHelper extends EventEmitter {
     Description: Read-Only Property accessor to read the error data for this
                  item.
 
-    @return {<Buffer>} - Error data collected from the spawn process. 
+    @return {<Buffer>} - Error data collected from the spawn process.
                          Unreliable and/or undefined if processing completed successfully.
     ======================================================================== */
     get Error() {
@@ -620,7 +620,7 @@ class SpawnHelper extends EventEmitter {
 
     @return {bool}  - true if child process is spawned
 
-    @throws {TypeError}  - arguments are not of the expected type. 
+    @throws {TypeError}  - arguments are not of the expected type.
     @throws {Error}      - Spawn invoked when an existing spawn is still pending.
     ======================================================================== */
     Spawn(request) {
@@ -635,7 +635,7 @@ class SpawnHelper extends EventEmitter {
             throw new TypeError('request must be an obkect');
         }
         // Validate 'required' command request.
-        if ( (!request.hasOwnProperty('command'))   ||
+        if ( (!Object.prototype.hasOwnProperty.call(request, 'command'))   ||
              (typeof(request.command) !== 'string') ||
              (request.command.length <= 0)            ) {
             throw new TypeError('request.command must be a non-zero length string.');
@@ -644,7 +644,7 @@ class SpawnHelper extends EventEmitter {
         this._command = request.command;
 
         // Validate 'optional' arguments request
-        if (request.hasOwnProperty('arguments')) {
+        if (Object.prototype.hasOwnProperty.call(request, 'arguments')) {
             if (!Array.isArray(request.arguments)) {
                 throw new TypeError('request.arguments must be an array of strings.');
             }
@@ -664,7 +664,7 @@ class SpawnHelper extends EventEmitter {
         }
 
         // Validate 'optional' options request
-        if (request.hasOwnProperty('options')) {
+        if (Object.prototype.hasOwnProperty.call(request, 'options')) {
             if (!Array.isArray(request.options)) {
                 throw new TypeError('request.options must be an array of strings.');
             }
@@ -698,7 +698,7 @@ class SpawnHelper extends EventEmitter {
         // Register for the message notification
         childProcess.on('message', this._CB_process_message);
         // Register for the error notification
-        childProcess.on('error', this._CB_process_error );        
+        childProcess.on('error', this._CB_process_error );
         // Register for the close notification
         childProcess.on('close', this._CB_process_close);
     }
@@ -744,6 +744,7 @@ class SpawnHelper extends EventEmitter {
     @param { <Object> } [message]      - A parsed JSON object or primitive value.
     @param { <Handle> } [sendHandle]   - Handle
     ======================================================================== */
+    // eslint-disable-next-line no-unused-vars
     _process_message(message, sendHandle) {
         // TODO: Not sure if I need this.
         _debug$2(`Child Process for ${this.Command}: '${message}'`);
@@ -756,7 +757,7 @@ class SpawnHelper extends EventEmitter {
     ======================================================================== */
     _process_error(error) {
         // Log the error info.
-        _debug$2(`Child Process for ${this.Command}: error_num:${errror.number} error_name:${error.name} error_msg:${error.message}`);
+        _debug$2(`Child Process for ${this.Command}: error_num:${error.number} error_name:${error.name} error_msg:${error.message}`);
 
         // Ensure that the error is recorded.
         this._error_encountered = true;
@@ -766,7 +767,7 @@ class SpawnHelper extends EventEmitter {
     Description:    Event handler for the Child Process Close Notification
 
     @param { <number> } [code]   - The exit code if the child exited on its own.
-    @param { <string> } [signal] - The signal by which the child process was terminated. 
+    @param { <string> } [signal] - The signal by which the child process was terminated.
     ======================================================================== */
     _process_close(code, signal) {
         // Log the close info.
@@ -779,7 +780,7 @@ class SpawnHelper extends EventEmitter {
         const isValid = this.IsValid;
         const response = {valid:isValid, result:(isValid ? this.Result : this.Error), source:this};
         this.emit('complete', response);
-    }   
+    }
 }
 
 /* ==========================================================================
@@ -867,15 +868,15 @@ class VolumeData {
             if (typeof(data) != 'object') {
                 throw new TypeError(`'data' must be an object`);
             }
-            if (data.hasOwnProperty('name') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'name') &&
                 (typeof(data.name) === 'string')) {
                 name = data.name;
             }
-            if (data.hasOwnProperty('disk_id') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'disk_id') &&
                 (typeof(data.disk_id) === 'string')) {
                 diskIdentifier = data.disk_id;
             }
-            if (data.hasOwnProperty('volume_type') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'volume_type') &&
                 (typeof(data.volume_type) === 'string')) {
                 if (Object.values(VOLUME_TYPES).includes(data.volume_type)) {
                     volumeType = data.volume_type;
@@ -884,11 +885,11 @@ class VolumeData {
                     throw new RangeError(`Unrecognized volume type specified. (${data.volume_type})`);
                 }
             }
-            if (data.hasOwnProperty('mount_point') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'mount_point') &&
                 (typeof(data.mount_point) === 'string')) {
                 mountPoint = data.mount_point;
             }
-            if (data.hasOwnProperty('capacity_bytes') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'capacity_bytes') &&
                 (typeof(data.capacity_bytes) === 'number')) {
                 if (data.capacity_bytes > 0) {
                     capacityBytes = data.capacity_bytes;
@@ -897,15 +898,15 @@ class VolumeData {
                     throw new RangeError(`Volume size must be a positive number. (${data.capacity_bytes})`);
                 }
             }
-            if (data.hasOwnProperty('device_node') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'device_node') &&
                 (typeof(data.device_node) === 'string')) {
                 deviceNode = data.device_node;
             }
-            if (data.hasOwnProperty('volume_uuid') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'volume_uuid') &&
                 (typeof(data.volume_uuid) === 'string')) {
                 volumeUUID = data.volume_uuid;
             }
-            if (data.hasOwnProperty('free_space_bytes') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'free_space_bytes') &&
                 (typeof(data.free_space_bytes) === 'number')) {
                 if (data.free_space_bytes >= 0) {
                     freeSpaceBytes = data.free_space_bytes;
@@ -914,7 +915,7 @@ class VolumeData {
                     throw new RangeError(`Volume size must be greater than or equal to 0. (${data.free_space_bytes})`);
                 }
             }
-            if (data.hasOwnProperty('used_space_bytes') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'used_space_bytes') &&
                 (typeof(data.used_space_bytes) === 'number')) {
                 if (data.used_space_bytes >= 0) {
                     usedSpaceBytes = data.used_space_bytes;
@@ -923,7 +924,7 @@ class VolumeData {
                     throw new RangeError(`Volume size must be greater than or equal to 0. (${data.used_space_bytes})`);
                 }
             }
-            if (data.hasOwnProperty('visible') &&
+            if (Object.prototype.hasOwnProperty.call(data, 'visible') &&
                 (typeof(data.visible) === 'boolean')) {
                 visible = data.visible;
             }
@@ -1155,7 +1156,7 @@ class VolumeInterrogator extends EventEmitter {
     constructor(config) {
 
         let polling_period = DEFAULT_PERIOD_HR;
-        if ((config !== undefined) && (config.hasOwnProperty('period_hr'))) {
+        if ((config !== undefined) && (Object.prototype.hasOwnProperty.call(config, 'period_hr'))) {
             if ((typeof(config.period_hr)==='number') &&
                 (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
                 polling_period = config.period_hr;
@@ -1342,7 +1343,7 @@ class VolumeInterrogator extends EventEmitter {
                 // Attempt to parse the data as a plist.
                 const config = _plist.parse(response.result.toString());
 
-                if (config.hasOwnProperty('AllDisksAndPartitions')) {
+                if (Object.prototype.hasOwnProperty.call(config, 'AllDisksAndPartitions')) {
                     let volumesPartitions = [];
                     let volumesAFPS       = [];
                     let volumesRoot       = [];
@@ -1350,13 +1351,13 @@ class VolumeInterrogator extends EventEmitter {
 
                     // Iterate over the disks and partitoins and gather the HFS+ and AFPS entries.
                     for (const item of allDisksAndParts) {
-                        if (item.hasOwnProperty('Content')) {
-                            if ((item.hasOwnProperty('APFSPhysicalStores')) &&
-                                (item.hasOwnProperty('APFSVolumes'))) {
+                        if (Object.prototype.hasOwnProperty.call(item, 'Content')) {
+                            if ((Object.prototype.hasOwnProperty.call(item, 'APFSPhysicalStores')) &&
+                                (Object.prototype.hasOwnProperty.call(item, 'APFSVolumes'))) {
                                 // Append to the AFPS list
                                 volumesAFPS.push(item);
                             }
-                            else if ((item.hasOwnProperty('Partitions')) &&
+                            else if ((Object.prototype.hasOwnProperty.call(item, 'Partitions')) &&
                                      (item.Partitions.length > 0)) {
                                 // Append to the Partitions list
                                 volumesPartitions.push(item);
@@ -1364,7 +1365,7 @@ class VolumeInterrogator extends EventEmitter {
                             else {
                                 // This volume is at the root of AllDisksAndPartitions and has no child volume items.
                                 // Validate that we can access the disk identifier.
-                                if ((item.hasOwnProperty('DeviceIdentifier') &&
+                                if ((Object.prototype.hasOwnProperty.call(item, 'DeviceIdentifier') &&
                                     (typeof(item.DeviceIdentifier) === 'string'))) {
                                         // Record the identifier.
                                         volumesRoot.push(item.DeviceIdentifier);
@@ -1431,7 +1432,7 @@ class VolumeInterrogator extends EventEmitter {
 
                 // Get the device identifier for this volume and manage the pending
                 // items.
-                if ((config.hasOwnProperty('DeviceIdentifier')) && (typeof(config.DeviceIdentifier) === 'string') &&
+                if ((Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier')) && (typeof(config.DeviceIdentifier) === 'string') &&
                     (this._pendingVolumes.includes(config.DeviceIdentifier))) {
                     // First, remove this item from the pending list.
                     this._pendingVolumes = this._pendingVolumes.filter( (item) => {
@@ -1439,24 +1440,24 @@ class VolumeInterrogator extends EventEmitter {
                     });
 
                     // Validate the config data.
-                    if ((config.hasOwnProperty('VolumeName') &&          (typeof(config.VolumeName)          === 'string'))       &&
-                        (config.hasOwnProperty('FilesystemType') &&      (typeof(config.FilesystemType)      === 'string'))       &&
-                        (config.hasOwnProperty('DeviceIdentifier') &&    (typeof(config.DeviceIdentifier)    === 'string'))       &&
-                        (config.hasOwnProperty('MountPoint') &&          (typeof(config.MountPoint)          === 'string'))       &&
-                        (config.hasOwnProperty('DeviceNode') &&          (typeof(config.DeviceNode)          === 'string'))       &&
+                    if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') &&          (typeof(config.VolumeName)          === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'FilesystemType') &&      (typeof(config.FilesystemType)      === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier') &&    (typeof(config.DeviceIdentifier)    === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'MountPoint') &&          (typeof(config.MountPoint)          === 'string'))       &&
+                        (Object.prototype.hasOwnProperty.call(config, 'DeviceNode') &&          (typeof(config.DeviceNode)          === 'string'))       &&
                         /* UDF volumes have no Volume UUID */
-                        ( (config.hasOwnProperty('VolumeUUID') &&        (typeof(config.VolumeUUID)          === 'string'))    ||
-                          (!config.hasOwnProperty('VolumeUUID')) )                                                                &&
-                        (config.hasOwnProperty('Size') &&                (typeof(config.Size)                === 'number'))       &&
+                        ( ( Object.prototype.hasOwnProperty.call(config, 'VolumeUUID') &&        (typeof(config.VolumeUUID)          === 'string'))    ||
+                          (!Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) )                                                                &&
+                        (Object.prototype.hasOwnProperty.call(config, 'Size') &&                (typeof(config.Size)                === 'number'))       &&
                         // Free space is reported based on the file system type.
-                        ( ((config.hasOwnProperty('FreeSpace') &&         (typeof(config.FreeSpace)          === 'number')))   ||
-                           (config.hasOwnProperty('APFSContainerFree') && (typeof(config.APFSContainerFree)  === 'number')) ))      {
+                        ( ((Object.prototype.hasOwnProperty.call(config, 'FreeSpace') &&         (typeof(config.FreeSpace)          === 'number')))   ||
+                           (Object.prototype.hasOwnProperty.call(config, 'APFSContainerFree') && (typeof(config.APFSContainerFree)  === 'number')) ))      {
 
                             // Then, process the data provided.
                             // Free space is reported based on the file system type.
                             const freeSpace  = ((config.FilesystemType === VOLUME_TYPES.TYPE_APFS) ? config.APFSContainerFree : config.FreeSpace);
                             // For volumes that do not have a volume UUID, use the device node.
-                            const volumeUUID = ((config.hasOwnProperty('VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
+                            const volumeUUID = ((Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
                             const volData = new VolumeData({name:               config.VolumeName,
                                                             volume_type:        config.FilesystemType,
                                                             disk_id:            config.DeviceIdentifier,
@@ -1487,7 +1488,7 @@ class VolumeInterrogator extends EventEmitter {
                     }
                     else {
                         // Ignore the inability to process this item if there is no valid volume name.
-                        if ((config.hasOwnProperty('VolumeName') && (typeof(config.VolumeName) === 'string') &&
+                        if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') && (typeof(config.VolumeName) === 'string') &&
                             (config.VolumeName.length > 0))) {
                             _debug_process(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
                             throw new TypeError('Missing or invalid response from diskutil.');
@@ -1604,11 +1605,11 @@ class VolumeInterrogator extends EventEmitter {
         let diskIdentifiers = [];
 
         for (const disk of disks) {
-            if ((disk.hasOwnProperty('Partitions')) &&
+            if ((Object.prototype.hasOwnProperty.call(disk, 'Partitions')) &&
                 (disk.Partitions.length > 0)) {
                 for (const partition of disk.Partitions) {
                     // Validate that we can access the disk identifier.
-                    if ((partition.hasOwnProperty('DeviceIdentifier') &&
+                    if ((Object.prototype.hasOwnProperty.call(partition, 'DeviceIdentifier') &&
                         (typeof(partition.DeviceIdentifier) === 'string'))) {
                             // Record the identifier.
                             diskIdentifiers.push(partition.DeviceIdentifier);
@@ -1644,12 +1645,12 @@ class VolumeInterrogator extends EventEmitter {
         let diskIdentifiers = [];
 
         for (const container of containers) {
-            if ((container.hasOwnProperty('APFSVolumes')) &&
+            if ((Object.prototype.hasOwnProperty.call(container, 'APFSVolumes')) &&
                 Array.isArray(container.APFSVolumes)) {
                 // The data of interest is stored in the APFS volumes entry.
                 for (const volume of container.APFSVolumes) {
                     // Validate that we can access the disk identifier.
-                    if ((volume.hasOwnProperty('DeviceIdentifier') &&
+                    if ((Object.prototype.hasOwnProperty.call(volume, 'DeviceIdentifier') &&
                         (typeof(volume.DeviceIdentifier) === 'string'))) {
                         // Record the identifier.
                         diskIdentifiers.push(volume.DeviceIdentifier);
@@ -1706,10 +1707,25 @@ const PLUGIN_NAME   = config_info.plugin;
 const PLATFORM_NAME = config_info.platform;
 
 // Internal Constants
+// History:
+// unspecified: Initial Release
+//          v2: Purge Offline and better UUID management.
+const ACCESSORY_VERSION = 2;
+
 const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
 const MIN_LOW_SPACE_THRESHOLD       = 0.0;
 const MAX_LOW_SPACE_THRESHOLD       = 100.0;
-const MANUAL_REFRESH_SWITCH_NAME    = 'Refresh';
+
+const FIXED_ACCESSORY_SERVICE_TYPES = {
+    Switch : 0
+};
+
+// Listing of fixed (dedicated) accessories.
+const FIXED_ACCESSORY_INFO = {
+    CONTROLS  : {uuid:`2CF5A6C7-8041-4805-8582-821B19589D60`, model:`Control Switches`, serial_num:`00000001`, service_list: { MANUAL_REFRESH:{type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Refresh`, uuid:`23CB97AC-6F0C-46B5-ACF6-78025632A11F`, udst:`ManualRefresh`},
+                                                                                                                               PURGE_OFFLINE: {type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Purge`,   uuid:`FEE232D5-8E25-4C1A-89AC-5476B778ADEF`, udst:`PurgeOffline` } }
+                }
+};
 
 // Accessory must be created from PlatformAccessory Constructor
 let _PlatformAccessory  = undefined;
@@ -1729,7 +1745,7 @@ var main = (homebridgeAPI) => {
 
     // Accessory must be created from PlatformAccessory Constructor
     _PlatformAccessory  = homebridgeAPI.platformAccessory;
-    if (!_PlatformAccessory.hasOwnProperty('PlatformAccessoryEvent')) {
+    if (!Object.prototype.hasOwnProperty.call(_PlatformAccessory, 'PlatformAccessoryEvent')) {
         // Append the PlatformAccessoryEvent.IDENTITY enum to the platform accessory reference.
         // This allows us to not need to import anything from 'homebridge'.
         const platformAccessoryEvent = {
@@ -1778,9 +1794,6 @@ class VolumeInterrogatorPlatform {
         // Underlying engine
         this._volumeInterrogator = new VolumeInterrogator();
 
-        // Reference to the "Refresh" accessory switch.
-        this._switchRefresh = undefined;
-
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
         this._bindDestructorNormal          = this._destructor.bind(this, {cleanup:true});
@@ -1818,6 +1831,7 @@ class VolumeInterrogatorPlatform {
     @param {object} [options]  - Typically containing a "cleanup" or "exit" member.
     @param {object} [err]      - The source of the event trigger.
     ======================================================================== */
+    // eslint-disable-next-line no-unused-vars
     async _destructor(options, err) {
         // Is there an indication that the system is either exiting or needs to
         // be cleaned up?
@@ -1846,7 +1860,7 @@ class VolumeInterrogatorPlatform {
         this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
 
         let theSettings = undefined;
-        if (this._config.hasOwnProperty('settings')) {
+        if (Object.prototype.hasOwnProperty.call(this._config, 'settings')) {
             // Get the system configuration,
             theSettings = this._config.settings;
         }
@@ -1854,7 +1868,7 @@ class VolumeInterrogatorPlatform {
         // Check for Settings
         if (theSettings != undefined) {
             // Polling Interval {Hours}
-            if ((theSettings.hasOwnProperty('polling_interval')) &&
+            if ((Object.prototype.hasOwnProperty.call(theSettings, 'polling_interval')) &&
                 (typeof(theSettings.polling_interval) === 'number')) {
                 if ((theSettings.polling_interval >= this._volumeInterrogator.MinimumPeriod) &&
                     (theSettings.polling_interval <= this._volumeInterrogator.MaximumPeriod)) {
@@ -1869,7 +1883,7 @@ class VolumeInterrogatorPlatform {
                 throw new TypeError(`Configuration item 'polling_interval' must be a number. {${typeof(theSettings.polling_interval)}}`);
             }
             // Low Space Alarm Threshold {Percent}
-            if ((theSettings.hasOwnProperty('alarm_threshold')) &&
+            if ((Object.prototype.hasOwnProperty.call(theSettings, 'alarm_threshold')) &&
                 (typeof(theSettings.alarm_threshold) === 'number')) {
                 if ((theSettings.alarm_threshold > MIN_LOW_SPACE_THRESHOLD) &&
                     (theSettings.alarm_threshold < MAX_LOW_SPACE_THRESHOLD)) {
@@ -1885,40 +1899,60 @@ class VolumeInterrogatorPlatform {
             }
         }
 
-        // We have no need to be aware of the past.
-        // If accessories were restored, flush them away
-        this._removeAccessories(false);
-
-        // Determine if the Manual Refresh accessory already exists.
+        // Flush any accessories that are not from this version.
+        const accessoriesToRemove = [];
         for (const accessory of this._accessories.values()) {
-            const switchRefresh = accessory.getService(MANUAL_REFRESH_SWITCH_NAME);
-            if (switchRefresh !== undefined)
-            {
-                // We found the Manual Redresh Switch.
-                this._switchRefresh = accessory;
+            if (!Object.prototype.hasOwnProperty.call(accessory.context, 'VERSION') ||
+                (accessory.context.VERSION !== ACCESSORY_VERSION)) {
+                this._log(`Accessory ${accessory.displayName} has accessory version ${accessory.context.VERSION}. Version ${ACCESSORY_VERSION} is expected.`);
+                // This accessory needs to be replaced.
+                accessoriesToRemove.push(accessory);
             }
         }
-        // Creste the Manual Refresh switch accessory if needed.
-        if (this._switchRefresh === undefined) {
-            // Manual Refresh switch never existed. Make one now.
-            // uuid must be generated from a unique but not changing data source, theName should not be used in the most cases. But works in this specific example.
-            const uuid = _hap.uuid.generate(MANUAL_REFRESH_SWITCH_NAME);
-            this._switchRefresh = new _PlatformAccessory(MANUAL_REFRESH_SWITCH_NAME, uuid);
-            // Create our services.
-            this._switchRefresh.addService(_hap.Service.Switch, MANUAL_REFRESH_SWITCH_NAME);
+        // Perform the cleanup.
+        accessoriesToRemove.forEach(accessory => {
+            this._removeAccessory(accessory);
+        });
+
+        // Create and Configure the Accessory Controls if needed.
+        if (!this._accessories.has(FIXED_ACCESSORY_INFO.CONTROLS.model)) {
+            // Control Switches accessory never existed. Make one now.
+            const accessoryControls = new _PlatformAccessory(FIXED_ACCESSORY_INFO.CONTROLS.model, FIXED_ACCESSORY_INFO.CONTROLS.uuid);
+
+            // Add the identifier to the accessory's context. Used for remapping on depersistence.
+            accessoryControls.context.ID = FIXED_ACCESSORY_INFO.CONTROLS.model;
+            // Mark the version of the accessory. This is used for depersistence
+            accessoryControls.context.VERSION = ACCESSORY_VERSION;
+            // Create accessory persisted settings
+            accessoryControls.context.SETTINGS = {SwitchStates:[ {id:FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, state:true },
+                  {id:FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid,  state:false } ]};
+
+            // Create & Configure the control services.
+            for (const service_item of Object.values(FIXED_ACCESSORY_INFO.CONTROLS.service_list)) {
+                const serviceType = this._getAccessoryServiceType(service_item.type);
+                const service = accessoryControls.addService(serviceType, service_item.uuid, service_item.udst);
+                if (service !== undefined) {
+                    service.updateCharacteristic(_hap.Characteristic.Name, `${service_item.name}`);
+                }
+            }
 
             // Update the accessory information.
-            this._updateAccessoryInfo(this._switchRefresh, {model:'refresh switch', serialnum:'00000001'});
+            this._updateAccessoryInfo(accessoryControls, {model:FIXED_ACCESSORY_INFO.CONTROLS.model, serialnum:FIXED_ACCESSORY_INFO.CONTROLS.serial_num});
+
+            // configure this accessory.
+            this._configureAccessory(accessoryControls);
 
             // register the manual refresh switch
-            this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this._switchRefresh]);
+            this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessoryControls]);
         }
-        // configure this accessory.
-        this._configureAccessory(this._switchRefresh);
-        // Set the wwitch to on while we wait for a response.
-        const serviceSwitch = this._switchRefresh.getService(MANUAL_REFRESH_SWITCH_NAME);
-        if (serviceSwitch !== undefined) {
-            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+
+        // Set the 'refresh' switch to on while we wait for a response.
+        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.uuid);
+        if (accessoryControls !== undefined) {
+            const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+            if (serviceRefreshSwitch !== undefined) {
+                serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+            }
         }
 
         // Start interrogation.
@@ -1928,12 +1962,18 @@ class VolumeInterrogatorPlatform {
  /* ========================================================================
     Description: Homebridge API invoked after restoring cached accessorues from disk.
 
+    @param {PlatformAccessory} [accessory] - Accessory to be configured.
+
     @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
     ======================================================================== */
     configureAccessory(accessory) {
+        // Validate the argument(s)
+        if ((accessory === undefined) ||
+            (!(accessory instanceof _PlatformAccessory))) {
+            throw new TypeError(`accessory must be a PlatformAccessory`);
+        }
 
-        // This application has no need for history of the Battery Service accessories..
-        // But we will record them anyway to remove them once the accessory loads.
+        // Is this accessory already registered?
         let found = false;
         for (const acc of this._accessories.values()) {
             if (acc === accessory) {
@@ -1942,7 +1982,21 @@ class VolumeInterrogatorPlatform {
             }
         }
         if (!found) {
-            this._accessories.set(accessory.displayName, accessory);
+            // Configure the accessory (also registers it.)
+            try
+            {
+                this._configureAccessory(accessory);
+            }
+            catch (error)
+            {
+                this._log(`Unable to configure accessory ${accessory.displayName}. Version:${accessory.context.VERSION}. Error:${error}`);
+                // We don't know where the exception happened. Ensure that the accessory is in the map.
+                const id = accessory.context.ID;
+                if (!this._accessories.has(id)){
+                    // Update our accessory listing
+                    this._accessories.set(id, accessory);
+                }
+            }
         }
     }
 
@@ -1956,7 +2010,7 @@ class VolumeInterrogatorPlatform {
     _handleVolumeInterrogatorReady(data) {
         // Validate the parameters.
         if ((data === undefined) ||
-            (!data.hasOwnProperty('results'))) {
+            (!Object.prototype.hasOwnProperty.call(data, 'results'))) {
             throw new TypeError(`'data' needs to be an object with a 'results' field.`);
         }
         if (!Array.isArray(data.results)) {
@@ -1999,14 +2053,43 @@ class VolumeInterrogatorPlatform {
             }
             catch(error) {
                 this._log.debug(`Error when managing accessory: ${volData.Name}`);
-                console.log(error);
             }
         }
 
         // Ensure the switch is turned back off.
-        const serviceSwitch = this._switchRefresh.getService(MANUAL_REFRESH_SWITCH_NAME);
-        if (serviceSwitch !== undefined) {
-            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, false);
+        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
+        if (accessoryControls !== undefined) {
+            // Cleanup (if purge is enabled)
+            const servicePurge = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.udst);
+            if (servicePurge !== undefined) {
+                const purgeState = this._getAccessorySwitchState(servicePurge);
+                if (purgeState) {
+                    let purgeList = [];
+                    // Check for Volumes that are no longer Visible
+                    for (const volData of this._volumesData.values()) {
+                        if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
+                            purgeList.push(this._accessories.get(volData.Name));
+                        }
+                    }
+                    // Check for accessories whose volumes are unknown.
+                    const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
+                    for (const key of this._accessories.keys()) {
+                        if ((!this._volumesData.has(key)) &&
+                            (excludedAccessoryKeys.indexOf(key) === -1)) {
+                            purgeList.push(this._accessories.get(key));
+                        }
+                    }
+                    // Clean up.
+                    purgeList.forEach(accessory => {
+                        this._removeAccessory(accessory);
+                    });
+                }
+            }
+            // Get the Manual Refresh service.
+            const serviceManlRefresh = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+            if (serviceManlRefresh !== undefined) {
+                serviceManlRefresh.updateCharacteristic(_hap.Characteristic.On, false);
+            }
         }
 
         // With the accessories that remain, force an update.
@@ -2051,13 +2134,15 @@ class VolumeInterrogatorPlatform {
         // Create our services.
         accessory.addService(_hap.Service.BatteryService, name);
 
+        // Mark the version of the accessory. This is used for depersistence
+        accessory.context.VERSION = ACCESSORY_VERSION;
+
         try {
             // Configura the accessory
             this._configureAccessory(accessory);
         }
         catch (error) {
             this._log.debug(`Error when configuring accessory.`);
-            console.log(error);
         }
 
         this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -2084,14 +2169,43 @@ class VolumeInterrogatorPlatform {
             this._log("%s identified!", accessory.displayName);
         });
 
-        // Does this accessory have a Switch service?
-        const serviceSwitch = accessory.getService(_hap.Service.Switch);
-        if (serviceSwitch !== undefined) {
-            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
-            // Register for the "get" event notification.
-            charOn.on('get', this._handleOnGet.bind(this, accessory));
-            // Register for the "set" event notification.
-            charOn.on('set', this._handleOnSet.bind(this, accessory));
+        let theSwitchStates = undefined;
+        const theSettings = accessory.context.SETTINGS;
+        if ((theSettings !== undefined) &&
+            (typeof(theSettings) === 'object') &&
+            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates')) &&
+            (Array.isArray(theSettings.SwitchStates))) {
+            theSwitchStates = theSettings.SwitchStates;
+        }
+
+        // Does this accessory have Switch service(s)?
+        for (const service of accessory.services) {
+
+            if (service instanceof _hap.Service.Switch) {
+                // Get the persisted switch state.
+                let switchStateValue = true;
+                for (const switchStateConfig of theSwitchStates) {
+                    if ((typeof(switchStateConfig) === 'object') &&
+                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
+                        (typeof(switchStateConfig.id) === 'string') &&
+                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
+                        (typeof(switchStateConfig.state) === 'boolean') &&
+                        (switchStateConfig.id === service.displayName)) {
+                        switchStateValue = switchStateConfig.state;
+                        break;
+                    }
+                }
+                // Set the switch to the stored setting (the default is on).
+                service.updateCharacteristic(_hap.Characteristic.On, switchStateValue);
+
+                const charOn = service.getCharacteristic(_hap.Characteristic.On);
+                // Build the identification id
+                const id = `${service.displayName}.${service.subtype}`;
+                // Register for the "get" event notification.
+                charOn.on('get', this._handleOnGet.bind(this, {accessory:accessory, service_id:id}));
+                // Register for the "set" event notification.
+                charOn.on('set', this._handleOnSet.bind(this, {accessory:accessory, service_id:id}));
+            }
         }
 
         // Is this accessory new to us?
@@ -2123,46 +2237,25 @@ class VolumeInterrogatorPlatform {
 
         // Event Handler cleanup.
         accessory.removeAllListeners(_PlatformAccessory.PlatformAccessoryEvent.IDENTIFY);
-        // Does this accessory have a Switch service?
-        const serviceSwitch = accessory.getService(_hap.Service.Switch);
-        if (serviceSwitch !== undefined) {
-            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
-            // Register for the "get" event notification.
-            charOn.off('get', this._handleOnGet.bind(this, accessory));
-            // Register for the "get" event notification.
-            charOn.off('set', this._handleOnSet.bind(this, accessory));
+        // Iterate through all the services on the accessory
+        for (const service of accessory.services) {
+            // Is this service a Switch?
+            if (service instanceof _hap.Service.Switch) {
+                // Get the On characteristic.
+                const charOn = service.getCharacteristic(_hap.Characteristic.On);
+                // Build the identification id
+                const id = `${service.displayName}.${service.subtype}`;
+                // Register for the "get" event notification.
+                charOn.off('get', this._handleOnGet.bind(this, {accessory:accessory, service_id:id}));
+                // Register for the "get" event notification.
+                charOn.off('set', this._handleOnSet.bind(this, {accessory:accessory, service_id:id}));
+            }
         }
 
         /* Unregister the accessory */
         this._api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         /* remove the accessory from our mapping */
         this._accessories.delete(accessory.displayName);
-    }
-
- /* ========================================================================
-    Description: Removes all of the `Battery Service` platform accessories.
-
-    @param {bool} [removeAll] - Flag indicating if all accessories should be
-                                removed, or only accessories with a Battery Service.
-    ======================================================================== */
-    _removeAccessories(removeAll) {
-
-        this._log.debug(`Removing Accessories: removeAll:${removeAll}`);
-
-        // Make a list of accessories to be deleted.
-        let purgeList = [];
-        for (const accessory of this._accessories.values()) {
-            // Filter the accessories for the Battery Service accessories.
-            const batteryService = accessory.getService(_hap.Service.BatteryService);
-            if ((removeAll) ||
-                (batteryService !== undefined)) {
-                purgeList.push(accessory);
-            }
-        }
-        // Clean up
-        for (const accessory of purgeList) {
-            this._removeAccessory(accessory);
-        }
     }
 
  /* ========================================================================
@@ -2249,8 +2342,8 @@ class VolumeInterrogatorPlatform {
             throw new TypeError(`Accessory must be a PlatformAccessory`);
         }
         if ((info === undefined) ||
-            (!info.hasOwnProperty('model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
-            (!info.hasOwnProperty('serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
+            (!Object.prototype.hasOwnProperty.call(info, 'model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
+            (!Object.prototype.hasOwnProperty.call(info, 'serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
             throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are eother strings or Error`);
         }
 
@@ -2272,29 +2365,58 @@ class VolumeInterrogatorPlatform {
  /* ========================================================================
     Description: Event handler for the "get" event for the Switch.On characteristic.
 
-    @param {object} [accessory] - accessory being querried.
+    @param {object} [event_info] - accessory and id of the switch service being querried.
+    @param {object} [event_info.accessory] - Platform Accessory
+    @param {string} [event_info.service_id]- UUID of the Switch service being qeurried.
 
     @param {function} [callback] - Function callback for homebridge.
 
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
+    @throws {TypeError} - Thrown when 'event_info' is not an object.
+    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
     ======================================================================== */
-    _handleOnGet(accessory, callback) {
+    _handleOnGet(event_info, callback) {
         // Validate arguments
-        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
-            throw new TypeError(`Accessory must be a PlatformAccessory`);
+        if ((event_info === undefined) || (typeof(event_info) !== 'object') ||
+            (!Object.prototype.hasOwnProperty.call(event_info, 'accessory')) ||
+            (!Object.prototype.hasOwnProperty.call(event_info, 'service_id')))  {
+            throw new TypeError(`event_info must be an object with an 'accessory' and 'service_id' field.`);
+        }
+        if ((event_info.accessory === undefined) || !(event_info.accessory instanceof _PlatformAccessory)) {
+            throw new TypeError(`'event_info.accessory' must be a PlatformAccessory`);
+        }
+        if ((event_info.service_id === undefined) || (typeof(event_info.service_id) !== 'string') ||
+            (event_info.service_id.length <= 0)) {
+            throw new TypeError(`event_info.service_id' must be non-null string.`);
+        }
+        const id = event_info.service_id.split(`.`);
+        if (!Array.isArray(id) || (id.length !== 2)) {
+            throw new TypeError(`'event_info.service_id' does not appear to be valid. '${event_info.service_id}'`);
         }
 
-        this._log.debug(`Switch '${accessory.displayName}' Get Request.`);
+        const theService = event_info.accessory.getServiceById(id[0], id[1]);
+        // Ensure that the Service Id belongs to the Accessory
+        if (theService === undefined) {
+            throw new RangeError(`'event_info.service_id' does not belong to event_info.accessory.`);
+        }
+        // Ensure that the Service Id belongs to the Accessory
+        if (!(theService instanceof _hap.Service.Switch)) {
+            throw new TypeError(`'event_info.service_id' must correspond to a switch service.`);
+        }
+
+        this._log.debug(`Switch '${event_info.accessory.displayName}-${theService.displayName}.${theService.subtype}' Get Request.`);
 
         let status = null;
         let result = undefined;
         try {
-            result = this._getAccessorySwitchState(accessory);
+            result = this._getAccessorySwitchState(theService);
         }
         catch (err) {
             this._log.debug(`  Unexpected error encountered: ${err.message}`);
             result = false;
-            status = new Error(`Accessory ${accessory.displayName} is not ressponding.`);
+            status = new Error(`Accessory ${event_info.accessory.displayName} is not ressponding.`);
         }
 
         // Invoke the callback function with our result.
@@ -2304,44 +2426,89 @@ class VolumeInterrogatorPlatform {
  /* ========================================================================
     Description: Event handler for the "set" event for the Switch.On characteristic.
 
-    @param {object} [accessory] - accessory being querried.
-    @param {bool} [value]           - new/rewuested state of the switch
+    @param {object} [event_info] - accessory and id of the switch service being set.
+    @param {object} [event_info.accessory] - Platform Accessory
+    @param {string} [event_info.service_id]- UUID of the Switch service being set.
+    @param {bool} [value]        - new/rewuested state of the switch
     @param {function} [callback] - Function callback for homebridge.
 
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
+    @throws {TypeError} - Thrown when 'event_info' is not an object.
+    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
     ======================================================================== */
-    _handleOnSet(accessory, value, callback) {
+    _handleOnSet(event_info, value, callback) {
         // Validate arguments
-        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
-            throw new TypeError(`Accessory must be a PlatformAccessory`);
+        if ((event_info === undefined) || (typeof(event_info) !== 'object') ||
+            (!Object.prototype.hasOwnProperty.call(event_info, 'accessory')) ||
+            (!Object.prototype.hasOwnProperty.call(event_info, 'service_id')))  {
+            throw new TypeError(`event_info must be an object with an 'accessory' and 'service_id' field.`);
+        }
+        if ((event_info.accessory === undefined) || !(event_info.accessory instanceof _PlatformAccessory)) {
+            throw new TypeError(`'event_info.accessory' must be a PlatformAccessory`);
+        }
+        if ((event_info.service_id === undefined) || (typeof(event_info.service_id) !== 'string') ||
+            (event_info.service_id.length <= 0)) {
+            throw new TypeError(`'event_info.service_id' must be non-null string.`);
+        }
+        const id = event_info.service_id.split(`.`);
+        if (!Array.isArray(id) || (id.length !== 2)) {
+            throw new TypeError(`'event_info.service_id' does not appear to be valid. '${event_info.service_id}'`);
         }
 
-        this._log.debug(`Switch '${accessory.displayName}' Set Request. New state:${value}`);
+        const theService = event_info.accessory.getServiceById(id[0], id[1]);
+        // Ensure that the Service Id belongs to the Accessory
+        if (theService === undefined) {
+            throw new RangeError(`'event_info.service_id' does not belong to event_info.accessory.`);
+        }
+        // Ensure that the Service Id belongs to the Accessory
+        if (!(theService instanceof _hap.Service.Switch)) {
+            throw new TypeError(`'event_info.service_id' must correspond to a switch service.`);
+        }
+
+        this._log.debug(`Switch '${event_info.accessory.displayName}-${theService.displayName}.${theService.subtype}' Set Request. New state:${value}`);
+
+        let theSwitchState = undefined;
+        const theSettings = event_info.accessory.context.SETTINGS;
+        if ((theSettings !== undefined) &&
+            (typeof(theSettings) === 'object') &&
+            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates')) &&
+            (Array.isArray(theSettings.SwitchStates))) {
+            for (const candidateSwitchState of theSettings.SwitchStates) {
+                if (candidateSwitchState.id === theService.displayName) {
+                    theSwitchState = candidateSwitchState;
+                }
+            }
+        }
 
         let status = null;
+        let finalValue = value;
         try {
-
-            // The processing of the request to set a switch is context (accessory) specific.
-            if (accessory === this._switchRefresh) {
-                const currentValue = this._getAccessorySwitchState(accessory);
+            // The processing of the request to set a switch is context (switch) specific.
+            // The Manual Refresh switch has special logic.
+            if ((id[0] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid) &&
+                (id[1] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst)) {
+                const currentValue = this._getAccessorySwitchState(theService);
 
                 // The user is not allowed to turn the switch off.
                 // It will auto reset when the current check is complete.
-                if ( (!value) && (currentValue))
+                if ((!value) && (currentValue))
                 {
                     // Attempting to turn the switch from on to off.
                     // Not permitted.
-                    this._log.debug(`Unable to turn the '${accessory.displayName}' switch off.`);
-                    status = new Error(`Unable to turn the '${accessory.displayName}' switch off.`);
+                    this._log.debug(`Unable to turn the '${event_info.accessory.displayName}' switch off.`);
+                    status = new Error(`Unable to turn the '${event_info.accessory.displayName}' switch off.`);
 
                     // Decouple setting the switch back on.
-                    setImmediate((accy, resetVal) => {
-                        const serviceSwitch = accy.getService(MANUAL_REFRESH_SWITCH_NAME);
-                        if (serviceSwitch !== undefined) {
-                            this._log.debug(`Switch '${accy.displayName}' Restoring state ${resetVal}`);
-                            serviceSwitch.updateCharacteristic(_hap.Characteristic.On, resetVal);
+                    setImmediate((evtInfo, resetVal) => {
+                        if (theService !== undefined) {
+                            this._log.debug(`Switch '${theService.displayName}' Restoring state ${resetVal}`);
+                            theService.updateCharacteristic(_hap.Characteristic.On, resetVal);
                         }
-                     }, accessory, currentValue);
+                     }, event_info, currentValue);
+
+                     finalValue = currentValue;
                 }
                 else {
                     // The change is permitted.
@@ -2355,7 +2522,12 @@ class VolumeInterrogatorPlatform {
         catch (err) {
             this._log.debug(`  Unexpected error encountered: ${err.message}`);
 
-            status = new Error(`Accessory ${accessory.displayName} is not ressponding.`);
+            status = new Error(`Accessory ${event_info.accessory.displayName} is not ressponding.`);
+        }
+
+        // Persist the value set.
+        if (theSwitchState !== undefined) {
+            theSwitchState.state = finalValue;
         }
 
         callback(status);
@@ -2364,36 +2536,69 @@ class VolumeInterrogatorPlatform {
  /* ========================================================================
     Description: Get the value of the Service.Switch.On characteristic value
 
-    @param {object} [accessory] - accessory being querried.
+    @param {object} [switchService] - Switch Service
 
     @return - the value of the On characteristic (true or false)
 
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
-    @throws {Error}     - Thrown when the switch service or On characteristic cannot
-                          be found on the accessory.
+    @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
+    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+    @throws {Error}     - Thrown when the On characteristic cannot be found on the service.
     ======================================================================== */
-    _getAccessorySwitchState(accessory) {
+    _getAccessorySwitchState(switchService) {
         // Validate arguments
-        if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
-            throw new TypeError(`Accessory must be a PlatformAccessory`);
+        if ((switchService === undefined) || !(switchService instanceof _hap.Service.Switch)) {
+            throw new TypeError(`'switchService' must be a _hap.Service.Switch`);
         }
 
         let result = false;
-        const serviceSwitch = accessory.getService(_hap.Service.Switch);
-        if (serviceSwitch !== undefined) {
-            const charOn = serviceSwitch.getCharacteristic(_hap.Characteristic.On);
-            if (charOn !== undefined) {
-                result = charOn.value;
-            }
-            else {
-                throw new Error(`The Switch service of accessory ${accessory.displayName} does not have an On charactristic.`);
-            }
+        const charOn = switchService.getCharacteristic(_hap.Characteristic.On);
+        if (charOn !== undefined) {
+            result = charOn.value;
         }
         else {
-            throw new Error(`Accessory ${accessory.displayName} does not have a Switch service.`);
+            throw new Error(`The '${switchService.displayName}.${switchService.udst}' service  does not have an On charactristic.`);
         }
 
         return result;
+    }
+
+ /* ========================================================================
+    Description: Helper to specify the HAP Service Type from the FIXED_ACCESSORY_SERICE_TYPES enumeration.
+
+    @param {enum:FIXED_ACCESSORY_SERVICE_TYPES} [service_type] - Type of the service to get.
+
+    @return - the HAP Service type.
+
+    @throws {TypeError} - Thrown if 'service_type' is not a FIXED_ACCESSORY_SERVICE_TYPES value.
+    ======================================================================== */
+    _getAccessoryServiceType(service_type) {
+        // Validate arguments
+        if ((service_type === undefined) || (typeof(service_type) !== 'number') ||
+            (Object.values(FIXED_ACCESSORY_SERVICE_TYPES).indexOf(service_type) < 0)) {
+            throw new TypeError(`service_type not a member of FIXED_ACCESSORY_SERVICE_TYPES. ${service_type}`);
+        }
+
+        let rtnVal = undefined;
+
+        switch (service_type) {
+            case FIXED_ACCESSORY_SERVICE_TYPES.Switch:
+            {
+                rtnVal = _hap.Service.Switch;
+            }
+            break;
+
+            default:
+            {
+                // Not handled. Should never happen !!
+                throw new Error(`This cannot happen !! service_type=${service_type}`);
+            }
+
+        }
+
+        return rtnVal;
     }
 }
 
