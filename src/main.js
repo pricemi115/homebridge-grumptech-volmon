@@ -145,10 +145,11 @@ class VolumeInterrogatorPlatform {
         this._volumeInterrogator = new _VolumeInterrogator();
 
         /* Bind Handlers */
-        this._bindDoInitialization          = this._doInitialization.bind(this);
-        this._bindDestructorNormal          = this._destructor.bind(this, {cleanup:true});
-        this._bindDestructorAbnormal        = this._destructor.bind(this, {exit:true});
-        this._CB_VolumeIterrrogatorReady    = this._handleVolumeInterrogatorReady.bind(this);
+        this._bindDoInitialization                  = this._doInitialization.bind(this);
+        this._bindDestructorNormal                  = this._destructor.bind(this, {cleanup:true});
+        this._bindDestructorAbnormal                = this._destructor.bind(this, {exit:true});
+        this._CB_VolumeIterrrogatorAutomaticRefresh = this._handleVolumeInterrogatorAutomaticRefresh.bind(this);
+        this._CB_VolumeIterrrogatorReady            = this._handleVolumeInterrogatorReady.bind(this);
 
         /* Log our creation */
         this._log(`Creating VolumeInterrogatorPlatform`);
@@ -172,6 +173,7 @@ class VolumeInterrogatorPlatform {
 
         // Register for Volume Interrogator events.
         this._volumeInterrogator.on('ready', this._CB_VolumeIterrrogatorReady);
+        this._volumeInterrogator.on('auto_refresh', this._CB_VolumeIterrrogatorAutomaticRefresh)
 
     }
 
@@ -189,7 +191,7 @@ class VolumeInterrogatorPlatform {
             // Cleanup the volume interrogator.
             if (this._volumeInterrogator != undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
-                await this._volumeInterrogator.Stop();
+                await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
             }
         }
@@ -297,13 +299,7 @@ class VolumeInterrogatorPlatform {
         }
 
         // Set the 'refresh' switch to on while we wait for a response.
-        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.uuid);
-        if (accessoryControls !== undefined) {
-            const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
-            if (serviceRefreshSwitch !== undefined) {
-                serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
-            }
-        }
+        this._handleVolumeInterrogatorAutomaticRefresh();
 
         // Start interrogation.
         this._volumeInterrogator.Start();
@@ -347,6 +343,28 @@ class VolumeInterrogatorPlatform {
                     this._accessories.set(id, accessory);
                 }
             }
+        }
+    }
+
+ /* ========================================================================
+    Description: Event handler for the Volume Interrogator Automatic Refresh event.
+    ======================================================================== */
+    _handleVolumeInterrogatorAutomaticRefresh() {
+        this._log.debug(`Automatic Refresh initiated.`);
+        // If an automatic refresh has been initiated, set the Refresh swithc On.
+        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
+        if (accessoryControls !== undefined) {
+            const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+            if (serviceRefreshSwitch !== undefined) {
+                this._log.debug(`Setting Refresh switch On.`);
+                serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+            }
+            else {
+                this._log.debug(`Unable to find Manual Refresh service.`);
+            }
+        }
+        else {
+            this._log.debug(`Unable to find CONTROLS accessory`);
         }
     }
 
