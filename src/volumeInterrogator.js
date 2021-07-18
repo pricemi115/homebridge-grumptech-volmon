@@ -11,7 +11,8 @@
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 const _plist            = require('plist');
-import EventEmitter from 'events';
+import EventEmitter        from 'events';
+import * as modFileSystem  from 'fs';
 
 // Internal dependencies.
 import { SpawnHelper } from './spawnHelper.js';
@@ -28,6 +29,7 @@ const MIN_PERIOD_HR         = (5.0 / 60.0);     // Once every 5 minutes.
 const MAX_PERIOD_HR         = (31.0 * 24.0);    // Once per month.
 const CONVERT_HR_TO_MS      = (60.0 * 60.0 * 1000.0);
 const INVALID_TIMEOUT_ID    = -1;
+const RETRY_TIMEOUT_MS      = 100 /* milliseconds */;
 
 /* ==========================================================================
    Class:              VolumeInterrogator
@@ -37,6 +39,9 @@ const INVALID_TIMEOUT_ID    = -1;
    @event 'ready' => function({object})
    @event_param {<VolumeData>}  [results]  - Array of volume data results.
    Event emmitted when the (periodic) interrogation is completes.
+
+   @event 'auto_refresh' => function({object})
+   Event emmitted when an automatic refresh/rescan is initiated.
    ========================================================================== */
 export class VolumeInterrogator extends EventEmitter {
  /* ========================================================================
@@ -83,9 +88,27 @@ export class VolumeInterrogator extends EventEmitter {
         this._CB_process_diskUtil_list_complete             = this._on_process_diskutil_list_complete.bind(this);
         this._CB_process_diskUtil_info_complete             = this._on_process_diskutil_info_complete.bind(this);
         this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
+        this._CB__VolumeWatcherChange                       = this._handleVolumeWatcherChangeDetected.bind(this);
+
+        // Create a watcher on the `/Volumes` folder to initiate a re-scan
+        // when changes are detected.
+        this._volWatcher = modFileSystem.watch(`/Volumes`, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
 
         // Set the polling period
         this.Period = polling_period;
+    }
+
+ /* ========================================================================
+    Description:    Destuctor
+    ======================================================================== */
+    Terminate() {
+        this.Stop();
+
+        // Cleanup the volume watcher
+        if (this._volWatcher !== undefined) {
+            this._volWatcher.close();
+            this._volWatcher = undefined;
+        }
     }
 
  /* ========================================================================
@@ -117,9 +140,7 @@ export class VolumeInterrogator extends EventEmitter {
         this._period_hr = period_hr;
 
         // Manage the timeout
-        if (this._timeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._timeoutID);
-        }
+        this.Stop();
     }
 
  /* ========================================================================
@@ -140,6 +161,15 @@ export class VolumeInterrogator extends EventEmitter {
         return MAX_PERIOD_HR;
     }
 
+  /* ========================================================================
+    Description: Read Property accessor for indicating if the checking of volume data is active
+
+    @return {boolean} - true if active.
+    ======================================================================== */
+    get Active() {
+        return (this._timeoutID !== INVALID_TIMEOUT_ID);
+    }
+
  /* ========================================================================
     Description: Start/Restart the interrogation process.
     ======================================================================== */
@@ -158,6 +188,7 @@ export class VolumeInterrogator extends EventEmitter {
     Stop() {
         if (this._timeoutID !== INVALID_TIMEOUT_ID) {
             clearTimeout(this._timeoutID);
+            this._timeoutID = INVALID_TIMEOUT_ID;
         }
     }
 
@@ -168,6 +199,9 @@ export class VolumeInterrogator extends EventEmitter {
     @remarks: Called periodically by a timeout timer.
     ======================================================================== */
     _on_initiateCheck() {
+        // Is there a current volume check underway?
+        const isPriorCheckInProgress = this._checkInProgress;
+
         if (!this._checkInProgress) {
             // Mark that the check is in progress.
             this._checkInProgress = true;
@@ -175,6 +209,7 @@ export class VolumeInterrogator extends EventEmitter {
             // Clear the previously known volune data.
             this._theVisibleVolumeNames = [];
             this._theVolumes            = [];
+            this._pendingVolumes        = [];
 
             // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
             const ls_Volumes = new SpawnHelper();
@@ -182,8 +217,10 @@ export class VolumeInterrogator extends EventEmitter {
             ls_Volumes.Spawn({ command:'ls', arguments:['/Volumes'] });
         }
 
-        // Compute the number of milliseconds for the timeout
-        const theDelay = this._period_hr * CONVERT_HR_TO_MS;
+        // Compute the number of milliseconds for the timeout.
+        // Note: If there was a check in progress when we got here, try again in a little bit,
+        //       do not wait for the full timeout.
+        const theDelay = ( isPriorCheckInProgress ? RETRY_TIMEOUT_MS : (this._period_hr * CONVERT_HR_TO_MS) );
         // Queue another check
         this._timeoutID = setTimeout(this._CB__initiateCheck, theDelay);
     }
@@ -303,6 +340,10 @@ export class VolumeInterrogator extends EventEmitter {
                 this._checkInProgress = false;
                 _debug_process(`Error processing 'diskutil list'. Err:${error}`);
             }
+        }
+        else {
+            this._checkInProgress = false;
+            _debug_process(`Error processing 'diskutil list'. - Response Invalid.`);
         }
     }
 
@@ -587,6 +628,24 @@ export class VolumeInterrogator extends EventEmitter {
                 _debug_process(`\tUsed:       ${VolumeData.ConvertFromBytesToGB(volume.UsedSpace).toFixed(4)} GB`);
                 _debug_process(`\t% Used:     ${((volume.UsedSpace/volume.Size)*100.0).toFixed(2)}%`);
             }
+        }
+    }
+
+ /* ========================================================================
+    Description:  Event handler for file system change detections.
+                  Called when the contents of `/Volumes' changes.
+
+    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
+    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
+    ======================================================================== */
+    _handleVolumeWatcherChangeDetected(eventType, fileName) {
+        _debug_process(`Volume Watcher Change Detected: type:${eventType} name:${fileName}`);
+        // Initiate a re-scan, if active.
+        if (this.Active) {
+            this.Start();
+
+            // Alert interested clients that the re-scan was initiated.
+            this.emit('auto_refresh');
         }
     }
 }
