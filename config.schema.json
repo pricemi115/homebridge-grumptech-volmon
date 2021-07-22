@@ -19,11 +19,84 @@
                         "required": true
                     },
                     "alarm_threshold": {
-                        "title": "Low Space Alarm Threshold",
-                        "description": "The threshold for indicating an alert when remaining space gets low. Expressed as a percentage.",
+                        "title": "Low Space Alarm Threshold (Default)",
+                        "description": "The default threshold for indicating an alert when remaining space gets low. Expressed as a percentage.",
                         "type": "number",
-                        "default": "15",
+                        "default": 15,
+                        "minimum": 1,
+                        "maximum": 99,
                         "required": true
+                    },
+                    "enable_volume_customizations": {
+                        "title": "Enable Volume customizations",
+                        "description": "Allow volume customizations.",
+                        "type": "boolean",
+                        "default": false,
+                        "required": true
+                    },
+                    "volume_customizations": {
+                        "title": "Volume Customizations",
+                        "description": "Customizations for specified volumes.",
+                        "type": "array",
+                        "required": true,
+                        "condition": {
+                            "functionBody": "return (model.settings.enable_volume_customizations);"
+                        },
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "volume_id_method": {
+                                    "title": "Volume Identification Method",
+                                    "desctiption": "Method for identifying the volume.",
+                                    "type": "string",
+                                    "default": "name",
+                                    "oneOf": [
+                                        { "title": "Name", "enum": ["name"] },
+                                        { "title": "Serial Number", "enum": ["serial_num"] }
+                                    ],
+                                    "required": true
+                                },
+                                "volume_name": {
+                                    "title": "Volume Name",
+                                    "description": "Name of the volume",
+                                    "type": "string",
+                                    "default": "<Specify volume name>",
+                                    "required": false,
+                                    "condition": {
+                                        "functionBody": "return (model.settings.volume_customizations[arrayIndices] && model.settings.volume_customizations[arrayIndices].volume_id_method === 'name');"
+                                    }
+                                },
+                                "volume_serial_num": {
+                                    "title": "Volume Serial Number",
+                                    "description": "Serial number of the volume",
+                                    "type": "string",
+                                    "default": "<Specify volume serial number>",
+                                    "required": false,
+                                    "condition": {
+                                        "functionBody": "return (model.settings.volume_customizations[arrayIndices] && model.settings.volume_customizations[arrayIndices].volume_id_method === 'serial_num');"
+                                    }
+                                },
+                                "volume_low_space_alarm_active": {
+                                    "title": "Low Space Alarm",
+                                    "description": "State of the Low Space Alarm for the volume.",
+                                    "type": "boolean",
+                                    "default": true,
+                                    "required": true
+                                },
+                                "volume_alarm_threshold": {
+                                    "title": "Low Space Alarm Threshold",
+                                    "description": "The threshold for indicating an alert when remaining space gets low. Expressed as a percentage.",
+                                    "type": "number",
+                                    "default": 15,
+                                    "minimum": 1,
+                                    "maximum": 99,
+                                    "required": false,
+                                    "condition": {
+                                        "functionBody": "return (model.settings.volume_customizations[arrayIndices] && model.settings.volume_customizations[arrayIndices].volume_low_space_alarm_active);"
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

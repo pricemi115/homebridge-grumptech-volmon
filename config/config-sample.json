@@ -13,8 +13,25 @@
       "platform" : "GrumpTechVolumeMonitorPlatform",
       "name" : "homebridge-grumptech-volmon",
       "settings": {
-        "polling_interval": 1,
-        "alarm_threshold": 15
+        "volume_customizations": [
+          {
+              "volume_id_method": "name",
+              "volume_name": "Temp",
+              "volume_serial_num": "<Specify volume serial number>",
+              "volume_low_space_alarm_active": false,
+              "volume_alarm_threshold": 15
+          },
+          {
+              "volume_id_method": "serial_num",
+              "volume_name": "<Specify volume name>",
+              "volume_serial_num": "024C91F0-B126-4C25-8497-379114498178",
+              "volume_low_space_alarm_active": true,
+              "volume_alarm_threshold": 30
+          }
+      ],
+      "polling_interval": 1,
+      "alarm_threshold": 15,
+      "enable_volume_customizations": true
       }
     }
   ]
