@@ -145,11 +145,11 @@ class VolumeInterrogatorPlatform {
         this._volumeInterrogator = new _VolumeInterrogator();
 
         /* Bind Handlers */
-        this._bindDoInitialization                  = this._doInitialization.bind(this);
-        this._bindDestructorNormal                  = this._destructor.bind(this, {cleanup:true});
-        this._bindDestructorAbnormal                = this._destructor.bind(this, {exit:true});
-        this._CB_VolumeIterrrogatorAutomaticRefresh = this._handleVolumeInterrogatorAutomaticRefresh.bind(this);
-        this._CB_VolumeIterrrogatorReady            = this._handleVolumeInterrogatorReady.bind(this);
+        this._bindDoInitialization          = this._doInitialization.bind(this);
+        this._bindDestructorNormal          = this._destructor.bind(this, {cleanup:true});
+        this._bindDestructorAbnormal        = this._destructor.bind(this, {exit:true});
+        this._CB_VolumeIterrrogatorScanning = this._handleVolumeInterrogatorScanning.bind(this);
+        this._CB_VolumeIterrrogatorReady    = this._handleVolumeInterrogatorReady.bind(this);
 
         /* Log our creation */
         this._log(`Creating VolumeInterrogatorPlatform`);
@@ -172,9 +172,8 @@ class VolumeInterrogatorPlatform {
         process.on('uncaughtException', this._bindDestructorAbnormal);
 
         // Register for Volume Interrogator events.
-        this._volumeInterrogator.on('ready', this._CB_VolumeIterrrogatorReady);
-        this._volumeInterrogator.on('auto_refresh', this._CB_VolumeIterrrogatorAutomaticRefresh)
-
+        this._volumeInterrogator.on('scanning', this._CB_VolumeIterrrogatorScanning);
+        this._volumeInterrogator.on('ready',    this._CB_VolumeIterrrogatorReady);
     }
 
  /* ========================================================================
@@ -298,9 +297,6 @@ class VolumeInterrogatorPlatform {
             this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessoryControls]);
         }
 
-        // Set the 'refresh' switch to on while we wait for a response.
-        this._handleVolumeInterrogatorAutomaticRefresh();
-
         // Start interrogation.
         this._volumeInterrogator.Start();
     }
@@ -347,128 +343,140 @@ class VolumeInterrogatorPlatform {
     }
 
  /* ========================================================================
-    Description: Event handler for the Volume Interrogator Automatic Refresh event.
+    Description: Event handler for the Volume Interrogator 'scanning' event.
     ======================================================================== */
-    _handleVolumeInterrogatorAutomaticRefresh() {
-        this._log.debug(`Automatic Refresh initiated.`);
-        // If an automatic refresh has been initiated, set the Refresh swithc On.
-        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
-        if (accessoryControls !== undefined) {
-            const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
-            if (serviceRefreshSwitch !== undefined) {
-                this._log.debug(`Setting Refresh switch On.`);
-                serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+    _handleVolumeInterrogatorScanning() {
+        // Decouple from the event.
+        setImmediate(() => {
+            this._log.debug(`Scanning initiated.`);
+            // If a scanning event has been initiated, Ensure that the the Refresh switch is On.
+            const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
+            if (accessoryControls !== undefined) {
+                const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+                if (serviceRefreshSwitch !== undefined) {
+                    if (!this._getAccessorySwitchState(serviceRefreshSwitch)) {
+                        this._log.debug(`Setting Refresh switch On.`);
+                        serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+                    }
+                    else {
+                        this._log.debug(`Refresh switch is already On.`);
+                    }
+                }
+                else {
+                    this._log.debug(`Unable to find Manual Refresh service.`);
+                }
             }
             else {
-                this._log.debug(`Unable to find Manual Refresh service.`);
+                this._log.debug(`Unable to find CONTROLS accessory`);
             }
-        }
-        else {
-            this._log.debug(`Unable to find CONTROLS accessory`);
-        }
+        });
     }
 
  /* ========================================================================
-    Description: Event handler for the Volume Interrogator Ready event.
+    Description: Event handler for the Volume Interrogator 'ready' event.
 
-    @param {object} [data] - object containing a 'results' item which is an array of volume data results.
+    @param {object} [theData] - object containing a 'results' item which is an array of volume data results.
 
     @throws {TypeError} - Thrown when 'results' is not an Array of VolumeData objects.
     ======================================================================== */
-    _handleVolumeInterrogatorReady(data) {
-        // Validate the parameters.
-        if ((data === undefined) ||
-            (!Object.prototype.hasOwnProperty.call(data, 'results'))) {
-            throw new TypeError(`'data' needs to be an object with a 'results' field.`);
-        }
-        if (!Array.isArray(data.results)) {
-            throw new TypeError(`'data.results' needs to be an array of VolumeData objects.`);
-        }
-        for (const result of data.results) {
-            if ( !(result instanceof VolumeData) ) {
-                throw new TypeError(`'results' needs to be an array of VolumeData objects.`);
+    _handleVolumeInterrogatorReady(theData) {
+        // Decouple from the event.
+        setImmediate((data) => {
+            // Validate the parameters.
+            if ((data === undefined) ||
+                (!Object.prototype.hasOwnProperty.call(data, 'results'))) {
+                throw new TypeError(`'data' needs to be an object with a 'results' field.`);
             }
-        }
-
-        for (const result of data.results) {
-            if (result.IsMounted) {
-                this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
+            if (!Array.isArray(data.results)) {
+                throw new TypeError(`'data.results' needs to be an array of VolumeData objects.`);
             }
-
-            // Update the map of volume data.
-            this._volumesData.set(result.Name, result);
-        }
-
-        // Loop through the visible volumes and publish/update them.
-        for (const volData of this._volumesData.values()) {
-            try {
-                // Do we know this volume already?
-                const volIsKnown = this._accessories.has(volData.Name);
-
-                // Is this volume visible & new to us?
-                if ((volData.IsVisible) &&
-                    (!volIsKnown)) {
-                    // Does not exist. Add it
-                    this._addBatteryServiceAccessory(volData.Name);
-                }
-
-                // Update the accessory if we know if this volume already
-                // (i.e. it is currently or was previously visible to us).
-                const theAccessory = this._accessories.get(volData.Name);
-                if (theAccessory !== undefined) {
-                    this._updateBatteryServiceAccessory(theAccessory);
+            for (const result of data.results) {
+                if ( !(result instanceof VolumeData) ) {
+                    throw new TypeError(`'results' needs to be an array of VolumeData objects.`);
                 }
             }
-            catch(error) {
-                this._log.debug(`Error when managing accessory: ${volData.Name}`);
-            }
-        }
 
-        // Ensure the switch is turned back off.
-        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
-        if (accessoryControls !== undefined) {
-            // Cleanup (if purge is enabled)
-            const servicePurge = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.udst);
-            if (servicePurge !== undefined) {
-                const purgeState = this._getAccessorySwitchState(servicePurge);
-                if (purgeState) {
-                    let purgeList = [];
-                    // Check for Volumes that are no longer Visible
-                    for (const volData of this._volumesData.values()) {
-                        if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
-                            purgeList.push(this._accessories.get(volData.Name));
-                        }
+            for (const result of data.results) {
+                if (result.IsMounted) {
+                    this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
+                }
+
+                // Update the map of volume data.
+                this._volumesData.set(result.Name, result);
+            }
+
+            // Loop through the visible volumes and publish/update them.
+            for (const volData of this._volumesData.values()) {
+                try {
+                    // Do we know this volume already?
+                    const volIsKnown = this._accessories.has(volData.Name);
+
+                    // Is this volume visible & new to us?
+                    if ((volData.IsVisible) &&
+                        (!volIsKnown)) {
+                        // Does not exist. Add it
+                        this._addBatteryServiceAccessory(volData.Name);
                     }
-                    // Check for accessories whose volumes are unknown.
-                    const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
-                    for (const key of this._accessories.keys()) {
-                        if ((!this._volumesData.has(key)) &&
-                            (excludedAccessoryKeys.indexOf(key) === -1)) {
-                            purgeList.push(this._accessories.get(key));
-                        }
+
+                    // Update the accessory if we know if this volume already
+                    // (i.e. it is currently or was previously visible to us).
+                    const theAccessory = this._accessories.get(volData.Name);
+                    if (theAccessory !== undefined) {
+                        this._updateBatteryServiceAccessory(theAccessory);
                     }
-                    // Clean up.
-                    purgeList.forEach(accessory => {
-                        this._removeAccessory(accessory);
-                    });
+                }
+                catch(error) {
+                    this._log.debug(`Error when managing accessory: ${volData.Name}`);
                 }
             }
-            // Get the Manual Refresh service.
-            const serviceManlRefresh = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
-            if (serviceManlRefresh !== undefined) {
-                serviceManlRefresh.updateCharacteristic(_hap.Characteristic.On, false);
-            }
-        }
 
-        // With the accessories that remain, force an update.
-        let accessoryList = [];
-        for (const accessory of this._accessories.values()) {
-            accessoryList.push(accessory);
-        }
-        // Update, if needed.
-        if (accessoryList.length > 0) {
-            this._api.updatePlatformAccessories(accessoryList);
-        }
+            const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
+            if (accessoryControls !== undefined) {
+                // Cleanup (if purge is enabled)
+                const servicePurge = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.udst);
+                if (servicePurge !== undefined) {
+                    const purgeState = this._getAccessorySwitchState(servicePurge);
+                    if (purgeState) {
+                        let purgeList = [];
+                        // Check for Volumes that are no longer Visible
+                        for (const volData of this._volumesData.values()) {
+                            if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
+                                purgeList.push(this._accessories.get(volData.Name));
+                            }
+                        }
+                        // Check for accessories whose volumes are unknown.
+                        const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
+                        for (const key of this._accessories.keys()) {
+                            if ((!this._volumesData.has(key)) &&
+                                (excludedAccessoryKeys.indexOf(key) === -1)) {
+                                purgeList.push(this._accessories.get(key));
+                            }
+                        }
+                        // Clean up.
+                        purgeList.forEach(accessory => {
+                            this._removeAccessory(accessory);
+                        });
+                    }
+                }
+                // Get the Manual Refresh service.
+                const serviceManlRefresh = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+                if ((serviceManlRefresh !== undefined) &&
+                    (this._getAccessorySwitchState(serviceManlRefresh))) {
+                    // Ensure the switch is turned back off.
+                    serviceManlRefresh.updateCharacteristic(_hap.Characteristic.On, false);
+                }
+            }
+
+            // With the accessories that remain, force an update.
+            let accessoryList = [];
+            for (const accessory of this._accessories.values()) {
+                accessoryList.push(accessory);
+            }
+            // Update, if needed.
+            if (accessoryList.length > 0) {
+                this._api.updatePlatformAccessories(accessoryList);
+            }
+        }, theData);
     }
 
  /* ========================================================================
