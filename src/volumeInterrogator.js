@@ -29,7 +29,7 @@ const MIN_PERIOD_HR         = (5.0 / 60.0);     // Once every 5 minutes.
 const MAX_PERIOD_HR         = (31.0 * 24.0);    // Once per month.
 const CONVERT_HR_TO_MS      = (60.0 * 60.0 * 1000.0);
 const INVALID_TIMEOUT_ID    = -1;
-const RETRY_TIMEOUT_MS      = 100 /* milliseconds */;
+const RETRY_TIMEOUT_MS      = 250 /* milliseconds */;
 
 /* ==========================================================================
    Class:              VolumeInterrogator
@@ -40,8 +40,8 @@ const RETRY_TIMEOUT_MS      = 100 /* milliseconds */;
    @event_param {<VolumeData>}  [results]  - Array of volume data results.
    Event emmitted when the (periodic) interrogation is completes.
 
-   @event 'auto_refresh' => function({object})
-   Event emmitted when an automatic refresh/rescan is initiated.
+   @event 'scanning' => function({object})
+   Event emmitted when a refresh/rescan is initiated.
    ========================================================================== */
 export class VolumeInterrogator extends EventEmitter {
  /* ========================================================================
@@ -202,7 +202,13 @@ export class VolumeInterrogator extends EventEmitter {
         // Is there a current volume check underway?
         const isPriorCheckInProgress = this._checkInProgress;
 
+        _debug_process(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
+
         if (!this._checkInProgress) {
+
+            // Alert interested clients that the scan was initiated.
+            this.emit('scanning');
+
             // Mark that the check is in progress.
             this._checkInProgress = true;
 
@@ -252,6 +258,9 @@ export class VolumeInterrogator extends EventEmitter {
             diskutil_list.Spawn({ command:'diskutil', arguments:['list', '-plist'] });
         }
         else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process(`Error processing 'ls /Volumes'. Err:${response.result}`);
             throw new Error(`Unexpected response: type:${typeof(response.result)}`);
         }
     }
@@ -428,6 +437,8 @@ export class VolumeInterrogator extends EventEmitter {
                         // Ignore the inability to process this item if there is no valid volume name.
                         if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') && (typeof(config.VolumeName) === 'string') &&
                             (config.VolumeName.length > 0))) {
+                            // Clear the check in progress.
+                            this._checkInProgress = false;
                             _debug_process(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
                             throw new TypeError('Missing or invalid response from diskutil.');
                         }
@@ -437,12 +448,21 @@ export class VolumeInterrogator extends EventEmitter {
                     this._updateCheckInProgress();
                 }
                 else {
+                    // Clear the check in progress.
+                    this._checkInProgress = false;
                     throw new Error(`Unexpected call to _on_process_diskutil_info_complete. config:${config}`);
                 }
             }
             catch (error) {
+                // Clear the check in progress.
+                this._checkInProgress = false;
                 _debug_process(`Error processing 'diskutil info'. Err:${error}`);
             }
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process(`Error processing 'diskutil info -plist'. Err:${response.result}`);
         }
     }
 
@@ -493,6 +513,9 @@ export class VolumeInterrogator extends EventEmitter {
                         return match;
                     });
                     if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedItem === undefined)) {
+                        // Clear the check in progress.
+                        this._checkInProgress = false;
+                        _debug_process(`Unable to identify unique volumeData item.`);
                         throw new Error(`Unable to identify unique volumeData item.`);
                     }
 
@@ -516,10 +539,16 @@ export class VolumeInterrogator extends EventEmitter {
                     this._updateCheckInProgress();
                 }
                 else {
+                    // Clear the check in progress.
+                    this._checkInProgress = false;
+                    _debug_process(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
                     throw new Error(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
                 }
             }
             else {
+                // Clear the check in progress.
+                this._checkInProgress = false;
+                _debug_process(`Unable to paese 'du' results`);
                 throw Error(`Unable to paese 'du' results`);
             }
         }
@@ -553,11 +582,13 @@ export class VolumeInterrogator extends EventEmitter {
                             diskIdentifiers.push(partition.DeviceIdentifier);
                     }
                     else {
+                        _debug_process(`_partitionDiskIdentifiers(): partition is not as expected. Missing or Invalid Disk Identifier.`);
                         throw new TypeError(`partition is not as expected. Missing or Invalid Disk Identifier.`);
                     }
                 }
             }
             else {
+                _debug_process(`_partitionDiskIdentifiers(): drive is not as expected. No partitions.`);
                 throw new TypeError(`drive is not as expected. No partitions.`);
             }
         }
@@ -594,11 +625,13 @@ export class VolumeInterrogator extends EventEmitter {
                         diskIdentifiers.push(volume.DeviceIdentifier);
                     }
                     else {
+                        _debug_process(`_apfsDiskIdentifiers(): volume is not as expected. Missing or Invalid Disk Identifier.`);
                         throw new TypeError(`volume is not as expected. Missing or Invalid Disk Identifier.`);
                     }
                 }
             }
             else {
+                _debug_process(`_apfsDiskIdentifiers(): volume is not as expected. (AFPS)`);
                 throw new TypeError(`volume is not as expected. (AFPS)`);
             }
         }
@@ -612,6 +645,7 @@ export class VolumeInterrogator extends EventEmitter {
     _updateCheckInProgress() {
         const wasCheckInProgress = this._checkInProgress;
         this._checkInProgress = (this._pendingVolumes.length !== 0);
+        _debug_process(`_updateCheckInProgress(): Pending Volume Count - ${this._pendingVolumes.length}`);
         if (wasCheckInProgress && !this._checkInProgress) {
 
             // Fire Ready event
@@ -639,13 +673,13 @@ export class VolumeInterrogator extends EventEmitter {
     @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
     ======================================================================== */
     _handleVolumeWatcherChangeDetected(eventType, fileName) {
-        _debug_process(`Volume Watcher Change Detected: type:${eventType} name:${fileName}`);
-        // Initiate a re-scan, if active.
-        if (this.Active) {
-            this.Start();
-
-            // Alert interested clients that the re-scan was initiated.
-            this.emit('auto_refresh');
-        }
+        // Decouple the automatic refresh.
+        setImmediate((eType, fName) => {
+            _debug_process(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
+            // Initiate a re-scan, if active (even if there is a scan already in progress.)
+            if (this.Active) {
+                this.Start();
+            }
+        }, eventType, fileName);
     }
 }
