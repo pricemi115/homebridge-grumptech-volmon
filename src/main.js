@@ -62,20 +62,16 @@ const PLATFORM_NAME = CONFIG_INFO.platform;
 //          v2: Purge Offline and better UUID management.
 const ACCESSORY_VERSION = 2;
 
-const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
-const MIN_LOW_SPACE_THRESHOLD       = 0.0;
-const MAX_LOW_SPACE_THRESHOLD       = 100.0;
-
 const FIXED_ACCESSORY_SERVICE_TYPES = {
     Switch : 0
-}
+};
 
 // Listing of fixed (dedicated) accessories.
 const FIXED_ACCESSORY_INFO = {
     CONTROLS  : {uuid:`2CF5A6C7-8041-4805-8582-821B19589D60`, model:`Control Switches`, serial_num:`00000001`, service_list: { MANUAL_REFRESH:{type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Refresh`, uuid:`23CB97AC-6F0C-46B5-ACF6-78025632A11F`, udst:`ManualRefresh`},
                                                                                                                                PURGE_OFFLINE: {type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Purge`,   uuid:`FEE232D5-8E25-4C1A-89AC-5476B778ADEF`, udst:`PurgeOffline` } }
                 }
-}
+};
 
 // Accessory must be created from PlatformAccessory Constructor
 let _PlatformAccessory  = undefined;
@@ -139,10 +135,53 @@ class VolumeInterrogatorPlatform {
 
         /* My local data */
         this._name = this._config['name'];
-        this._alarmThreshold = DEFAULT_LOW_SPACE_THRESHOLD;
+
+        let theSettings = undefined;
+        let viConfig = {};
+        if (Object.prototype.hasOwnProperty.call(this._config, 'settings')) {
+            // Get the system configuration,
+            theSettings = this._config.settings;
+        }
+        if (theSettings != undefined) {
+            // Polling Interval {Hours}
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'polling_interval')) {
+                if (typeof(theSettings.polling_interval) === 'number') {
+                    // Copy the period (in hours)
+                    viConfig.period_hr = theSettings.polling_interval;
+                }
+                else {
+                    throw new TypeError(`Configuration item 'polling_interval' must be a number. {${typeof(theSettings.polling_interval)}}`);
+                }
+            }
+            // Default Low Space Alarm Threshold {Percent}
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'alarm_threshold')) {
+                if (typeof(theSettings.alarm_threshold) === 'number') {
+                    // Set the period (in hours)
+                    viConfig.default_alarm_threshold = theSettings.alarm_threshold;
+                }
+                else {
+                    throw new TypeError(`Configuration item 'alarm_threshold' must be a number. {${typeof(theSettings.alarm_threshold)}}`);
+                }
+            }
+            // Enable Volume Customizations
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'enable_volume_customizations')) {
+                if (typeof(theSettings.enable_volume_customizations) === 'boolean') {
+                    // Are the volume customizations enabled?
+                    if (theSettings.enable_volume_customizations) {
+                        if ((Object.prototype.hasOwnProperty.call(theSettings, 'volume_customizations')) &&
+                            (Array.isArray(theSettings.volume_customizations))) {
+                            viConfig.volume_customizations = theSettings.volume_customizations;
+                        }
+                    }
+                }
+                else {
+                    throw new TypeError(`Configuration item 'enable_volume_customizations' must be a boolean. {${typeof(theSettings.enable_volume_customizations)}}`);
+                }
+            }
+        }
 
         // Underlying engine
-        this._volumeInterrogator = new _VolumeInterrogator();
+        this._volumeInterrogator = new _VolumeInterrogator(viConfig);
 
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
@@ -232,21 +271,6 @@ class VolumeInterrogatorPlatform {
             }
             else {
                 throw new TypeError(`Configuration item 'polling_interval' must be a number. {${typeof(theSettings.polling_interval)}}`);
-            }
-            // Low Space Alarm Threshold {Percent}
-            if ((Object.prototype.hasOwnProperty.call(theSettings, 'alarm_threshold')) &&
-                (typeof(theSettings.alarm_threshold) === 'number')) {
-                if ((theSettings.alarm_threshold > MIN_LOW_SPACE_THRESHOLD) &&
-                    (theSettings.alarm_threshold < MAX_LOW_SPACE_THRESHOLD)) {
-                    // Set the period (in hours)
-                    this._alarmThreshold = theSettings.alarm_threshold;
-                }
-                else {
-                    throw new RangeError(`Configuration item 'alarm_threshold' must be between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}. {${theSettings.alarm_threshold}}`);
-                }
-            }
-            else {
-                throw new TypeError(`Configuration item 'alarm_threshold' must be a number. {${typeof(theSettings.alarm_threshold)}}`);
             }
         }
 
@@ -668,9 +692,9 @@ class VolumeInterrogatorPlatform {
             if (volData.IsVisible) {
 
                  // Compute the fraction of space remaining.
-                percentFree = ((volData.FreeSpace/volData.Size)*100.0).toFixed(0);
+                percentFree = volData.PercentFree.toFixed(0);
                 // Determine if the remaining space threshold has been exceeded.
-                lowAlert = (percentFree < this._alarmThreshold);
+                lowAlert = volData.LowSpaceAlert;
 
                 // The charging state is always 'Not Chargable'.
                 chargeState = _hap.Characteristic.ChargingState.NOT_CHARGEABLE;

@@ -24,12 +24,21 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const DEFAULT_PERIOD_HR     = 6.0;
-const MIN_PERIOD_HR         = (5.0 / 60.0);     // Once every 5 minutes.
-const MAX_PERIOD_HR         = (31.0 * 24.0);    // Once per month.
-const CONVERT_HR_TO_MS      = (60.0 * 60.0 * 1000.0);
-const INVALID_TIMEOUT_ID    = -1;
-const RETRY_TIMEOUT_MS      = 250 /* milliseconds */;
+const DEFAULT_PERIOD_HR             = 6.0;
+const MIN_PERIOD_HR                 = (5.0 / 60.0);     // Once every 5 minutes.
+const MAX_PERIOD_HR                 = (31.0 * 24.0);    // Once per month.
+const CONVERT_HR_TO_MS              = (60.0 * 60.0 * 1000.0);
+const INVALID_TIMEOUT_ID            = -1;
+const RETRY_TIMEOUT_MS              = 250 /* milliseconds */;
+const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
+const MIN_LOW_SPACE_THRESHOLD       = 0.0;
+const MAX_LOW_SPACE_THRESHOLD       = 100.0;
+
+// Volume Identification Methods
+const VOLUME_IDENTIFICATION_METHODS = {
+    Name: 'name',
+    SerialNumber: 'serial_num'
+};
 
 /* ==========================================================================
    Class:              VolumeInterrogator
@@ -47,8 +56,10 @@ export class VolumeInterrogator extends EventEmitter {
  /* ========================================================================
     Description:    Constructor
 
-    @param {object} [config] - The settings to use for creating the object.
-    @param {number} [config.period_hr] - The time (in hours) for periodically interrogating the system.
+    @param {object}     [config]                         - The settings to use for creating the object.
+    @param {number}     [config.period_hr]               - The time (in hours) for periodically interrogating the system.
+    @param {number}     [config.default_alarm_threshold] - The default low space threshold, in percent.
+    @param { [object] } [config.volume_customizations]   - Array of objects for per-volume customizations.
 
     @return {object}  - Instance of the SpawnHelper class.
 
@@ -57,17 +68,51 @@ export class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     constructor(config) {
 
-        let polling_period = DEFAULT_PERIOD_HR;
-        if ((config !== undefined) && (Object.prototype.hasOwnProperty.call(config, 'period_hr'))) {
-            if ((typeof(config.period_hr)==='number') &&
-                (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
-                polling_period = config.period_hr;
+        let polling_period          = DEFAULT_PERIOD_HR;
+        let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
+        let volumeCustomizations    = [];
+        if (config !== undefined) {
+            // Polling Period (hours)
+            if (Object.prototype.hasOwnProperty.call(config, 'period_hr')) {
+                if ((typeof(config.period_hr)==='number') &&
+                    (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
+                    polling_period = config.period_hr;
+                }
+                else if (typeof(config.period_hr)!=='number') {
+                    throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+                }
+                else {
+                    throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+                }
             }
-            else if (typeof(config.period_hr)!=='number') {
-                throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+            // Default Alarm Threshold (percent)
+            if (Object.prototype.hasOwnProperty.call(config, 'default_alarm_threshold')) {
+                if ((typeof(config.period_hr)==='number') &&
+                    (config.default_alarm_threshold >= MIN_LOW_SPACE_THRESHOLD) && (config.default_alarm_threshold <= MAX_LOW_SPACE_THRESHOLD)) {
+                        defaultAlarmThreshold = config.default_alarm_threshold;
+                }
+                else if (typeof(config.period_hr)!=='number') {
+                    throw new TypeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
+                }
+                else {
+                    throw new RangeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
+                }
             }
-            else {
-                throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+            // Enable Volume Customizations
+            if (Object.prototype.hasOwnProperty.call(config, 'volume_customizations')) {
+                if (Array.isArray(config.volume_customizations)) {
+                    for (const item of config.volume_customizations) {
+                        if (VolumeInterrogator._validateVolumeCustomization(item)) {
+                            volumeCustomizations.push(item);
+                        }
+                        else {
+                            throw new TypeError(`'config.volume_customizations' otam is not valid.`);
+                        }
+                    }
+                }
+                else {
+                    throw new TypeError(`'config.volume_customizations' must be an array.`);
+                }
             }
         }
 
@@ -81,6 +126,8 @@ export class VolumeInterrogator extends EventEmitter {
         this._pendingVolumes                = [];
         this._theVolumes                    = [];
         this._theVisibleVolumeNames         = [];
+        this._defaultAlarmThreshold         = defaultAlarmThreshold;
+        this._volumeCustomizations          = volumeCustomizations;
 
         // Callbacks bound to this object.
         this._CB__initiateCheck                             = this._on_initiateCheck.bind(this);
@@ -405,6 +452,8 @@ export class VolumeInterrogator extends EventEmitter {
                             const freeSpace  = ((config.FilesystemType === VOLUME_TYPES.TYPE_APFS) ? config.APFSContainerFree : config.FreeSpace);
                             // For volumes that do not have a volume UUID, use the device node.
                             const volumeUUID = ((Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
+                            // Determine if the low space alert threshold has been exceeded.
+                            const lowSpaceAlert = this._determineLowSpaceAlert(config.VolumeName, volumeUUID, ((freeSpace/config.Size)*100.0));
                             const volData = new VolumeData({name:               config.VolumeName,
                                                             volume_type:        config.FilesystemType,
                                                             disk_id:            config.DeviceIdentifier,
@@ -413,7 +462,8 @@ export class VolumeInterrogator extends EventEmitter {
                                                             device_node:        config.DeviceNode,
                                                             volume_uuid:        volumeUUID,
                                                             free_space_bytes:   freeSpace,
-                                                            visible:            this._theVisibleVolumeNames.includes(config.VolumeName)
+                                                            visible:            this._theVisibleVolumeNames.includes(config.VolumeName),
+                                                            low_space_alert:    lowSpaceAlert
                             });
                             this._theVolumes.push(volData);
 
@@ -512,7 +562,7 @@ export class VolumeInterrogator extends EventEmitter {
                         }
                         return match;
                     });
-                    if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedItem === undefined)) {
+                    if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedIndex < this._theVolumes.length)) {
                         // Clear the check in progress.
                         this._checkInProgress = false;
                         _debug_process(`Unable to identify unique volumeData item.`);
@@ -529,6 +579,7 @@ export class VolumeInterrogator extends EventEmitter {
                                                     volume_uuid:        matchedItem[0].VolumeUUID,
                                                     free_space_bytes:   matchedItem[0].FreeSpace,
                                                     visible:            matchedItem[0].IsVisible,
+                                                    low_space_alert:    matchedItem[0].LowSpaceAlert,
                                                     used_space_bytes:   used_bytes
                     });
 
@@ -681,5 +732,117 @@ export class VolumeInterrogator extends EventEmitter {
                 this.Start();
             }
         }, eventType, fileName);
+    }
+
+ /* ========================================================================
+    Description:  Helper to compute the alert for a specific volume.
+
+    @param { string } [volumeName]          - Name of the volume
+    @param { string } [volumeUUID]          - Unique Identifier (serial number) of the volume
+    @param { number}  [volumePercentFree]   - Percentage of free space (0...100)
+
+    @throws {TypeError} - thrown for invalid arguments
+    @throws {RangeError} - thrown when 'volumePercentFree' is outside the range of 0...100
+    ======================================================================== */
+    _determineLowSpaceAlert(volumeName, volumeUUID, volumePercentFree) {
+        // Validate arguments
+        if ((volumeName === undefined) || (typeof(volumeName) !== 'string') || (volumeName.length <= 0)) {
+            throw new TypeError(`'volumeName' must be a non-zero length string`);
+        }
+        if ((volumeUUID === undefined) || (typeof(volumeUUID) !== 'string') || (volumeUUID.length <= 0)) {
+            throw new TypeError(`'volumeUUID' must be a non-zero length string`);
+        }
+        if ((volumePercentFree === undefined) || (typeof(volumePercentFree) !== 'number')) {
+            throw new TypeError(`'volumePercentFree' must be a number`);
+        }
+        else if ((volumePercentFree < MIN_LOW_SPACE_THRESHOLD) || (volumePercentFree > MAX_LOW_SPACE_THRESHOLD)) {
+            throw new RangeError(`'volumePercentFree' must be in the range of ${MIN_LOW_SPACE_THRESHOLD}...${MAX_LOW_SPACE_THRESHOLD}. ${volumePercentFree}`);
+        }
+
+        // Determine the default alert state.
+        let alert = (volumePercentFree < this._defaultAlarmThreshold);
+
+        // Does this volume have a customization?
+        const volCustomizations = this._volumeCustomizations.filter((item) => {
+            const match = ( ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
+                             (item.volume_name.toLowerCase() === volumeName.toLowerCase())) ||
+                            ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
+                             (item.volume_serial_num.toLowerCase() === volumeUUID.toLowerCase())) );
+            return match;
+        });
+        if ((volCustomizations !== undefined) && (volCustomizations.length > 0)) {
+            // There is at least one customization.
+
+            // Filter for the matching customizations that indicate an alert.
+            const trippedAlerts = volCustomizations.filter((item) => {
+                const alertTripped = ((item.volume_low_space_alarm_active) &&
+                                      (volumePercentFree < item.volume_alarm_threshold));
+
+                return alertTripped;
+            });
+
+            // If any alerts were set, then indicate that.
+            alert = (trippedAlerts.length > 0);
+        }
+
+        return alert;
+    }
+
+ /* ========================================================================
+    Description:  Helper to evaluate the validity of the custom configuration settings.
+
+    @param { object }   [custom_config]                        - Custom per-volume configuration settings.
+    @param { string }   [config.volume_id_method]              - The method for identifying the volume.
+    @param { string }   [config.volume_name]                   - The name of the volume. (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
+    @param { string }   [config.volume_serial_num]             - The serial number of the volume. (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
+    @param { boolean }  [config.volume_low_space_alarm_active] - The flag indicating if the low space alarm is active or not.
+    @param { number }   [config.volume_alarm_threshold]        - The  low space threshold, in percent. (required when `config.volume_low_space_alarm_active === true`)
+
+    @return {boolean} - `true` if the configuration is valid. `false` otherwise.
+    ======================================================================== */
+    static _validateVolumeCustomization(custom_config) {
+        // Initial sanoty check.
+        let valid = (custom_config !== undefined);
+
+        if (valid) {
+            // Volume Id Method
+            if ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_id_method')) ||
+                (typeof(custom_config.volume_id_method) !=='string')                       ||
+                (Object.values(VOLUME_IDENTIFICATION_METHODS).indexOf(custom_config.volume_id_method) < 0)) {
+                    valid = false;
+            }
+            // Volume Name
+            if (valid &&
+                (custom_config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
+                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_name')) ||
+                 (typeof(custom_config.volume_name) !=='string')                       ||
+                 (custom_config.volume_name.length <= 0))) {
+                valid = false;
+            }
+            // Volume Serial Number
+            if (valid &&
+                (custom_config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
+                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_serial_num')) ||
+                 (typeof(custom_config.volume_serial_num) !=='string')                       ||
+                 (custom_config.volume_serial_num.length <= 0))) {
+                valid = false;
+            }
+            // Low Space Alarm Active
+            if ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_low_space_alarm_active')) ||
+                (typeof(custom_config.volume_low_space_alarm_active) !=='boolean')) {
+                valid = false;
+            }
+            // Low Space Alarm Threshold
+            if (valid &&
+                custom_config.volume_low_space_alarm_active &&
+                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_alarm_threshold')) ||
+                 (typeof(custom_config.volume_alarm_threshold) !=='number')                       ||
+                 (custom_config.volume_alarm_threshold <= MIN_LOW_SPACE_THRESHOLD)                ||
+                 (custom_config.volume_alarm_threshold >= MAX_LOW_SPACE_THRESHOLD))) {
+                valid = false;
+            }
+        }
+
+        return valid;
     }
 }

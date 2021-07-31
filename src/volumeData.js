@@ -59,6 +59,8 @@ export class VolumeData {
     @param {number} [data.used_space_bytes]           - Actively used space (in bytes) of the volume.
     @param {boolean} [data.visible]                   - Flag indicating that the volume is visible to the user.
                                                         (Shown in /Volumes)
+    @param {boolean} [data.low_space_alert]           - Flag indicating that the low space alert threshold has
+                                                        been exceeded.
 
     @return {object}  - Instance of the SpawnHelper class.
 
@@ -78,6 +80,7 @@ export class VolumeData {
         let freeSpaceBytes = 0;
         let usedSpaceBytes = undefined;
         let visible = false;
+        let lowSpaceAlert = false;
 
         // Update values from data passed in.
         if (data !== undefined) {
@@ -144,6 +147,10 @@ export class VolumeData {
                 (typeof(data.visible) === 'boolean')) {
                 visible = data.visible;
             }
+            if (Object.prototype.hasOwnProperty.call(data, 'low_space_alert') &&
+                (typeof(data.low_space_alert) === 'boolean')) {
+                lowSpaceAlert = data.low_space_alert;
+            }
         }
 
         // Initialize data members.
@@ -156,6 +163,7 @@ export class VolumeData {
         this._volume_uuid       = volumeUUID;
         this._free_space_bytes  = freeSpaceBytes;
         this._visible           = visible;
+        this._low_space_alert   = lowSpaceAlert;
         if (usedSpaceBytes === undefined) {
             // Compute the used space as the difference between the capacity and free space.
             this._used_space_bytes  = (capacityBytes - freeSpaceBytes);
@@ -270,6 +278,25 @@ export class VolumeData {
     ======================================================================== */
     get IsVisible() {
         return ( this._visible );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor indicating if the low space alert
+                 threshold has been exceeded.
+
+    @return {bool} - true if the low space threshold has been exceeded.
+    ======================================================================== */
+    get LowSpaceAlert() {
+        return ( this._low_space_alert );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor indicating the percentage of free space.
+
+    @return {number} - percentage of space remaining (0...100)
+    ======================================================================== */
+    get PercentFree() {
+        return ( (this.FreeSpace/this.Size)*100.0 );
     }
 
  /* ========================================================================

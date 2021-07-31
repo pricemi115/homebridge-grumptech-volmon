@@ -28,7 +28,7 @@
                         "required": true
                     },
                     "enable_volume_customizations": {
-                        "title": "Enable Volume customizations",
+                        "title": "Enable Volume Customizations",
                         "description": "Allow volume customizations.",
                         "type": "boolean",
                         "default": false,
