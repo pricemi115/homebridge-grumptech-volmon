@@ -16,20 +16,26 @@ To install the plugin manually:
 
 ## Configuration
 ### _homebridge-config-ui-x_
-This plugin is best experienced when running as a module installed and managed by the [_homebridge-config-ui-x_](https://www.npmjs.com/package/homebridge-config-ui-x) plugin. When running under homebridge-config-ui-x, visiting the plugin settings will allow you to change the polling interval and the low space alarm threshold, as shown below.<br/>
+This plugin is best experienced when running as a module installed and managed by the [_homebridge-config-ui-x_](https://www.npmjs.com/package/homebridge-config-ui-x) plugin. When running under homebridge-config-ui-x, visiting the plugin settings will allow you to change the polling interval,  the default low space alarm threshold, as well as per-volume exceptions/customizations. The per-volume customizations also allow for the low space alarm to be diaabled. This is useful, for example, when the volume is read-only, or not important enough to warrant having an alarm.<br/>
 <img src="./assets/config-ui-x_settings.png"
      alt="Configuration Settings UI"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
-     width="40%">
+     width="30%">
 <img src="./assets/config-ui-x_configjson.png"
      alt="Configuration Settings JSON"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="31.5%">
 
-| Setting | Description | Units | Default | Minimum | Maximum |
-| :------:| :------:| :------:| :------:| :------:| :------: |
-| Polling Interval | The time between automatic scans of the system | hours | 1 | 0.083334 | 744 |
-| Low Space Alarm Threshold | Percent of remaining space that will trigger a _low battery_ alert | percent | 15 | 1 | 99 |
+| Setting | Description | Field Name | Parameter Type | Data Type | Units | Default | Minimum or Allowed Values | Maximum | Comments |
+| :------: | :------: | :------: | :------: | :------: |:------: | :------: | :------: | :------: | :------: |
+| Polling Interval | The time between automatic scans of the system | polling_interval | Common | Number | Hours | 1 | 0.083334 | 744 | |
+| Low Space Alarm Threshold (Default) | Percent of remaining space that will trigger a _low battery_ alert (default) | alarm_threshold | Common | Number | Percent | 15 | 1 | 99 | |
+| Enable Volume Customizations | Allow customixations for speficic volumes | enable_volume_customizations | Common | Boolean | N/A | Off | Off | On | |
+| Volume Identification Method | Method for identifying the volume | volume_customizations:items:volume_id_method | Per-Customization | String | N/A | name | name, serial_num | | |
+| Volume Name | Name of the volume | volume_customizations:items:volume_name | Per-Customization | String | N/A | | | | Required if the volume method is 'name' |
+| Volume Serial Number | Serial number of the volume | volume_customizations:items:volume_serial_num | Per-Customization | String | N/A | | | | Required if the volume method is 'serial_num'. Serial number is shown in the HomeKit device information section. |
+| Low Space Alarm | Enable the low space alarm | volume_customizations:items:volume_low_space_alarm_active | Per-Customization | Boolean | N/A | On | Off | On | Takes prescedence over the default threshold. |
+| Low Space Alarm Threshold | Percent of remaining space that will trigger a _low battery_ alert | volume_customizations:items:volume_alarm_threshold | Per-Customization | Number | Percent | 15 | 1 | 99 | Takes prescedence over the default threshold. Required if the 'Low Space Alarm' is enabled for this customization. |
 <br/>
 
 Additionally, especially if this system will be running other homebridge modules, it is strongly encouraged to run this plugin as an isolated child bridge. This setting page can be found by clicking on the _wrench_ icon on the plugin and then selecting _Bridge Settings_. With the child bridge enabled, revisiting the setting page after homebridge is rebooted will show a QR code for pairing to the child bridge. The username (mac address) and port are randomly generaged by homebridge-config-ui-x.<br/>
