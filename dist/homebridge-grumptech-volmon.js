@@ -2,6 +2,30 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+var modFileSystem = require('fs');
+
+function _interopNamespace(e) {
+  if (e && e.__esModule) return e;
+  var n = Object.create(null);
+  if (e) {
+    Object.keys(e).forEach(function (k) {
+      if (k !== 'default') {
+        var d = Object.getOwnPropertyDescriptor(e, k);
+        Object.defineProperty(n, k, d.get ? d : {
+          enumerable: true,
+          get: function () {
+            return e[k];
+          }
+        });
+      }
+    });
+  }
+  n['default'] = e;
+  return Object.freeze(n);
+}
+
+var modFileSystem__namespace = /*#__PURE__*/_interopNamespace(modFileSystem);
+
 var config_info = {
 	remarks: [
 		"The 'plugin' and 'platform' names MUST match the names called out in the 'platforms' section of the active config.json file.",
@@ -843,6 +867,8 @@ class VolumeData {
     @param {number} [data.used_space_bytes]           - Actively used space (in bytes) of the volume.
     @param {boolean} [data.visible]                   - Flag indicating that the volume is visible to the user.
                                                         (Shown in /Volumes)
+    @param {boolean} [data.low_space_alert]           - Flag indicating that the low space alert threshold has
+                                                        been exceeded.
 
     @return {object}  - Instance of the SpawnHelper class.
 
@@ -862,6 +888,7 @@ class VolumeData {
         let freeSpaceBytes = 0;
         let usedSpaceBytes = undefined;
         let visible = false;
+        let lowSpaceAlert = false;
 
         // Update values from data passed in.
         if (data !== undefined) {
@@ -928,6 +955,10 @@ class VolumeData {
                 (typeof(data.visible) === 'boolean')) {
                 visible = data.visible;
             }
+            if (Object.prototype.hasOwnProperty.call(data, 'low_space_alert') &&
+                (typeof(data.low_space_alert) === 'boolean')) {
+                lowSpaceAlert = data.low_space_alert;
+            }
         }
 
         // Initialize data members.
@@ -940,6 +971,7 @@ class VolumeData {
         this._volume_uuid       = volumeUUID;
         this._free_space_bytes  = freeSpaceBytes;
         this._visible           = visible;
+        this._low_space_alert   = lowSpaceAlert;
         if (usedSpaceBytes === undefined) {
             // Compute the used space as the difference between the capacity and free space.
             this._used_space_bytes  = (capacityBytes - freeSpaceBytes);
@@ -1057,6 +1089,25 @@ class VolumeData {
     }
 
  /* ========================================================================
+    Description: Read-Only Property accessor indicating if the low space alert
+                 threshold has been exceeded.
+
+    @return {bool} - true if the low space threshold has been exceeded.
+    ======================================================================== */
+    get LowSpaceAlert() {
+        return ( this._low_space_alert );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor indicating the percentage of free space.
+
+    @return {number} - percentage of space remaining (0...100)
+    ======================================================================== */
+    get PercentFree() {
+        return ( (this.FreeSpace/this.Size)*100.0 );
+    }
+
+ /* ========================================================================
     Description:    Helper to convert from bytes to GB
 
     @param {number}                     [bytes] - Size in bytes to be converted
@@ -1126,11 +1177,21 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const DEFAULT_PERIOD_HR     = 6.0;
-const MIN_PERIOD_HR         = (5.0 / 60.0);     // Once every 5 minutes.
-const MAX_PERIOD_HR         = (31.0 * 24.0);    // Once per month.
-const CONVERT_HR_TO_MS      = (60.0 * 60.0 * 1000.0);
-const INVALID_TIMEOUT_ID    = -1;
+const DEFAULT_PERIOD_HR             = 6.0;
+const MIN_PERIOD_HR                 = (5.0 / 60.0);     // Once every 5 minutes.
+const MAX_PERIOD_HR                 = (31.0 * 24.0);    // Once per month.
+const CONVERT_HR_TO_MS              = (60.0 * 60.0 * 1000.0);
+const INVALID_TIMEOUT_ID            = -1;
+const RETRY_TIMEOUT_MS              = 250 /* milliseconds */;
+const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
+const MIN_LOW_SPACE_THRESHOLD       = 0.0;
+const MAX_LOW_SPACE_THRESHOLD       = 100.0;
+
+// Volume Identification Methods
+const VOLUME_IDENTIFICATION_METHODS = {
+    Name: 'name',
+    SerialNumber: 'serial_num'
+};
 
 /* ==========================================================================
    Class:              VolumeInterrogator
@@ -1140,13 +1201,18 @@ const INVALID_TIMEOUT_ID    = -1;
    @event 'ready' => function({object})
    @event_param {<VolumeData>}  [results]  - Array of volume data results.
    Event emmitted when the (periodic) interrogation is completes.
+
+   @event 'scanning' => function({object})
+   Event emmitted when a refresh/rescan is initiated.
    ========================================================================== */
 class VolumeInterrogator extends EventEmitter {
  /* ========================================================================
     Description:    Constructor
 
-    @param {object} [config] - The settings to use for creating the object.
-    @param {number} [config.period_hr] - The time (in hours) for periodically interrogating the system.
+    @param {object}     [config]                         - The settings to use for creating the object.
+    @param {number}     [config.period_hr]               - The time (in hours) for periodically interrogating the system.
+    @param {number}     [config.default_alarm_threshold] - The default low space threshold, in percent.
+    @param { [object] } [config.volume_customizations]   - Array of objects for per-volume customizations.
 
     @return {object}  - Instance of the SpawnHelper class.
 
@@ -1155,17 +1221,51 @@ class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     constructor(config) {
 
-        let polling_period = DEFAULT_PERIOD_HR;
-        if ((config !== undefined) && (Object.prototype.hasOwnProperty.call(config, 'period_hr'))) {
-            if ((typeof(config.period_hr)==='number') &&
-                (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
-                polling_period = config.period_hr;
+        let polling_period          = DEFAULT_PERIOD_HR;
+        let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
+        let volumeCustomizations    = [];
+        if (config !== undefined) {
+            // Polling Period (hours)
+            if (Object.prototype.hasOwnProperty.call(config, 'period_hr')) {
+                if ((typeof(config.period_hr)==='number') &&
+                    (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
+                    polling_period = config.period_hr;
+                }
+                else if (typeof(config.period_hr)!=='number') {
+                    throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+                }
+                else {
+                    throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+                }
             }
-            else if (typeof(config.period_hr)!=='number') {
-                throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+            // Default Alarm Threshold (percent)
+            if (Object.prototype.hasOwnProperty.call(config, 'default_alarm_threshold')) {
+                if ((typeof(config.period_hr)==='number') &&
+                    (config.default_alarm_threshold >= MIN_LOW_SPACE_THRESHOLD) && (config.default_alarm_threshold <= MAX_LOW_SPACE_THRESHOLD)) {
+                        defaultAlarmThreshold = config.default_alarm_threshold;
+                }
+                else if (typeof(config.period_hr)!=='number') {
+                    throw new TypeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
+                }
+                else {
+                    throw new RangeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
+                }
             }
-            else {
-                throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+            // Enable Volume Customizations
+            if (Object.prototype.hasOwnProperty.call(config, 'volume_customizations')) {
+                if (Array.isArray(config.volume_customizations)) {
+                    for (const item of config.volume_customizations) {
+                        if (VolumeInterrogator._validateVolumeCustomization(item)) {
+                            volumeCustomizations.push(item);
+                        }
+                        else {
+                            throw new TypeError(`'config.volume_customizations' otam is not valid.`);
+                        }
+                    }
+                }
+                else {
+                    throw new TypeError(`'config.volume_customizations' must be an array.`);
+                }
             }
         }
 
@@ -1179,6 +1279,8 @@ class VolumeInterrogator extends EventEmitter {
         this._pendingVolumes                = [];
         this._theVolumes                    = [];
         this._theVisibleVolumeNames         = [];
+        this._defaultAlarmThreshold         = defaultAlarmThreshold;
+        this._volumeCustomizations          = volumeCustomizations;
 
         // Callbacks bound to this object.
         this._CB__initiateCheck                             = this._on_initiateCheck.bind(this);
@@ -1186,9 +1288,27 @@ class VolumeInterrogator extends EventEmitter {
         this._CB_process_diskUtil_list_complete             = this._on_process_diskutil_list_complete.bind(this);
         this._CB_process_diskUtil_info_complete             = this._on_process_diskutil_info_complete.bind(this);
         this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
+        this._CB__VolumeWatcherChange                       = this._handleVolumeWatcherChangeDetected.bind(this);
+
+        // Create a watcher on the `/Volumes` folder to initiate a re-scan
+        // when changes are detected.
+        this._volWatcher = modFileSystem__namespace.watch(`/Volumes`, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
 
         // Set the polling period
         this.Period = polling_period;
+    }
+
+ /* ========================================================================
+    Description:    Destuctor
+    ======================================================================== */
+    Terminate() {
+        this.Stop();
+
+        // Cleanup the volume watcher
+        if (this._volWatcher !== undefined) {
+            this._volWatcher.close();
+            this._volWatcher = undefined;
+        }
     }
 
  /* ========================================================================
@@ -1220,9 +1340,7 @@ class VolumeInterrogator extends EventEmitter {
         this._period_hr = period_hr;
 
         // Manage the timeout
-        if (this._timeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._timeoutID);
-        }
+        this.Stop();
     }
 
  /* ========================================================================
@@ -1243,6 +1361,15 @@ class VolumeInterrogator extends EventEmitter {
         return MAX_PERIOD_HR;
     }
 
+  /* ========================================================================
+    Description: Read Property accessor for indicating if the checking of volume data is active
+
+    @return {boolean} - true if active.
+    ======================================================================== */
+    get Active() {
+        return (this._timeoutID !== INVALID_TIMEOUT_ID);
+    }
+
  /* ========================================================================
     Description: Start/Restart the interrogation process.
     ======================================================================== */
@@ -1261,6 +1388,7 @@ class VolumeInterrogator extends EventEmitter {
     Stop() {
         if (this._timeoutID !== INVALID_TIMEOUT_ID) {
             clearTimeout(this._timeoutID);
+            this._timeoutID = INVALID_TIMEOUT_ID;
         }
     }
 
@@ -1271,13 +1399,23 @@ class VolumeInterrogator extends EventEmitter {
     @remarks: Called periodically by a timeout timer.
     ======================================================================== */
     _on_initiateCheck() {
+        // Is there a current volume check underway?
+        const isPriorCheckInProgress = this._checkInProgress;
+
+        _debug_process(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
+
         if (!this._checkInProgress) {
+
+            // Alert interested clients that the scan was initiated.
+            this.emit('scanning');
+
             // Mark that the check is in progress.
             this._checkInProgress = true;
 
             // Clear the previously known volune data.
             this._theVisibleVolumeNames = [];
             this._theVolumes            = [];
+            this._pendingVolumes        = [];
 
             // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
             const ls_Volumes = new SpawnHelper();
@@ -1285,8 +1423,10 @@ class VolumeInterrogator extends EventEmitter {
             ls_Volumes.Spawn({ command:'ls', arguments:['/Volumes'] });
         }
 
-        // Compute the number of milliseconds for the timeout
-        const theDelay = this._period_hr * CONVERT_HR_TO_MS;
+        // Compute the number of milliseconds for the timeout.
+        // Note: If there was a check in progress when we got here, try again in a little bit,
+        //       do not wait for the full timeout.
+        const theDelay = ( isPriorCheckInProgress ? RETRY_TIMEOUT_MS : (this._period_hr * CONVERT_HR_TO_MS) );
         // Queue another check
         this._timeoutID = setTimeout(this._CB__initiateCheck, theDelay);
     }
@@ -1318,6 +1458,9 @@ class VolumeInterrogator extends EventEmitter {
             diskutil_list.Spawn({ command:'diskutil', arguments:['list', '-plist'] });
         }
         else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process(`Error processing 'ls /Volumes'. Err:${response.result}`);
             throw new Error(`Unexpected response: type:${typeof(response.result)}`);
         }
     }
@@ -1407,6 +1550,10 @@ class VolumeInterrogator extends EventEmitter {
                 _debug_process(`Error processing 'diskutil list'. Err:${error}`);
             }
         }
+        else {
+            this._checkInProgress = false;
+            _debug_process(`Error processing 'diskutil list'. - Response Invalid.`);
+        }
     }
 
  /* ========================================================================
@@ -1458,6 +1605,8 @@ class VolumeInterrogator extends EventEmitter {
                             const freeSpace  = ((config.FilesystemType === VOLUME_TYPES.TYPE_APFS) ? config.APFSContainerFree : config.FreeSpace);
                             // For volumes that do not have a volume UUID, use the device node.
                             const volumeUUID = ((Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
+                            // Determine if the low space alert threshold has been exceeded.
+                            const lowSpaceAlert = this._determineLowSpaceAlert(config.VolumeName, volumeUUID, ((freeSpace/config.Size)*100.0));
                             const volData = new VolumeData({name:               config.VolumeName,
                                                             volume_type:        config.FilesystemType,
                                                             disk_id:            config.DeviceIdentifier,
@@ -1466,7 +1615,8 @@ class VolumeInterrogator extends EventEmitter {
                                                             device_node:        config.DeviceNode,
                                                             volume_uuid:        volumeUUID,
                                                             free_space_bytes:   freeSpace,
-                                                            visible:            this._theVisibleVolumeNames.includes(config.VolumeName)
+                                                            visible:            this._theVisibleVolumeNames.includes(config.VolumeName),
+                                                            low_space_alert:    lowSpaceAlert
                             });
                             this._theVolumes.push(volData);
 
@@ -1490,6 +1640,8 @@ class VolumeInterrogator extends EventEmitter {
                         // Ignore the inability to process this item if there is no valid volume name.
                         if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') && (typeof(config.VolumeName) === 'string') &&
                             (config.VolumeName.length > 0))) {
+                            // Clear the check in progress.
+                            this._checkInProgress = false;
                             _debug_process(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
                             throw new TypeError('Missing or invalid response from diskutil.');
                         }
@@ -1499,12 +1651,21 @@ class VolumeInterrogator extends EventEmitter {
                     this._updateCheckInProgress();
                 }
                 else {
+                    // Clear the check in progress.
+                    this._checkInProgress = false;
                     throw new Error(`Unexpected call to _on_process_diskutil_info_complete. config:${config}`);
                 }
             }
             catch (error) {
+                // Clear the check in progress.
+                this._checkInProgress = false;
                 _debug_process(`Error processing 'diskutil info'. Err:${error}`);
             }
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process(`Error processing 'diskutil info -plist'. Err:${response.result}`);
         }
     }
 
@@ -1554,7 +1715,10 @@ class VolumeInterrogator extends EventEmitter {
                         }
                         return match;
                     });
-                    if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedItem === undefined)) {
+                    if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedIndex < this._theVolumes.length)) {
+                        // Clear the check in progress.
+                        this._checkInProgress = false;
+                        _debug_process(`Unable to identify unique volumeData item.`);
                         throw new Error(`Unable to identify unique volumeData item.`);
                     }
 
@@ -1568,6 +1732,7 @@ class VolumeInterrogator extends EventEmitter {
                                                     volume_uuid:        matchedItem[0].VolumeUUID,
                                                     free_space_bytes:   matchedItem[0].FreeSpace,
                                                     visible:            matchedItem[0].IsVisible,
+                                                    low_space_alert:    matchedItem[0].LowSpaceAlert,
                                                     used_space_bytes:   used_bytes
                     });
 
@@ -1578,10 +1743,16 @@ class VolumeInterrogator extends EventEmitter {
                     this._updateCheckInProgress();
                 }
                 else {
+                    // Clear the check in progress.
+                    this._checkInProgress = false;
+                    _debug_process(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
                     throw new Error(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
                 }
             }
             else {
+                // Clear the check in progress.
+                this._checkInProgress = false;
+                _debug_process(`Unable to paese 'du' results`);
                 throw Error(`Unable to paese 'du' results`);
             }
         }
@@ -1615,11 +1786,13 @@ class VolumeInterrogator extends EventEmitter {
                             diskIdentifiers.push(partition.DeviceIdentifier);
                     }
                     else {
+                        _debug_process(`_partitionDiskIdentifiers(): partition is not as expected. Missing or Invalid Disk Identifier.`);
                         throw new TypeError(`partition is not as expected. Missing or Invalid Disk Identifier.`);
                     }
                 }
             }
             else {
+                _debug_process(`_partitionDiskIdentifiers(): drive is not as expected. No partitions.`);
                 throw new TypeError(`drive is not as expected. No partitions.`);
             }
         }
@@ -1656,11 +1829,13 @@ class VolumeInterrogator extends EventEmitter {
                         diskIdentifiers.push(volume.DeviceIdentifier);
                     }
                     else {
+                        _debug_process(`_apfsDiskIdentifiers(): volume is not as expected. Missing or Invalid Disk Identifier.`);
                         throw new TypeError(`volume is not as expected. Missing or Invalid Disk Identifier.`);
                     }
                 }
             }
             else {
+                _debug_process(`_apfsDiskIdentifiers(): volume is not as expected. (AFPS)`);
                 throw new TypeError(`volume is not as expected. (AFPS)`);
             }
         }
@@ -1674,6 +1849,7 @@ class VolumeInterrogator extends EventEmitter {
     _updateCheckInProgress() {
         const wasCheckInProgress = this._checkInProgress;
         this._checkInProgress = (this._pendingVolumes.length !== 0);
+        _debug_process(`_updateCheckInProgress(): Pending Volume Count - ${this._pendingVolumes.length}`);
         if (wasCheckInProgress && !this._checkInProgress) {
 
             // Fire Ready event
@@ -1691,6 +1867,136 @@ class VolumeInterrogator extends EventEmitter {
                 _debug_process(`\t% Used:     ${((volume.UsedSpace/volume.Size)*100.0).toFixed(2)}%`);
             }
         }
+    }
+
+ /* ========================================================================
+    Description:  Event handler for file system change detections.
+                  Called when the contents of `/Volumes' changes.
+
+    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
+    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
+    ======================================================================== */
+    _handleVolumeWatcherChangeDetected(eventType, fileName) {
+        // Decouple the automatic refresh.
+        setImmediate((eType, fName) => {
+            _debug_process(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
+            // Initiate a re-scan, if active (even if there is a scan already in progress.)
+            if (this.Active) {
+                this.Start();
+            }
+        }, eventType, fileName);
+    }
+
+ /* ========================================================================
+    Description:  Helper to compute the alert for a specific volume.
+
+    @param { string } [volumeName]          - Name of the volume
+    @param { string } [volumeUUID]          - Unique Identifier (serial number) of the volume
+    @param { number}  [volumePercentFree]   - Percentage of free space (0...100)
+
+    @throws {TypeError} - thrown for invalid arguments
+    @throws {RangeError} - thrown when 'volumePercentFree' is outside the range of 0...100
+    ======================================================================== */
+    _determineLowSpaceAlert(volumeName, volumeUUID, volumePercentFree) {
+        // Validate arguments
+        if ((volumeName === undefined) || (typeof(volumeName) !== 'string') || (volumeName.length <= 0)) {
+            throw new TypeError(`'volumeName' must be a non-zero length string`);
+        }
+        if ((volumeUUID === undefined) || (typeof(volumeUUID) !== 'string') || (volumeUUID.length <= 0)) {
+            throw new TypeError(`'volumeUUID' must be a non-zero length string`);
+        }
+        if ((volumePercentFree === undefined) || (typeof(volumePercentFree) !== 'number')) {
+            throw new TypeError(`'volumePercentFree' must be a number`);
+        }
+        else if ((volumePercentFree < MIN_LOW_SPACE_THRESHOLD) || (volumePercentFree > MAX_LOW_SPACE_THRESHOLD)) {
+            throw new RangeError(`'volumePercentFree' must be in the range of ${MIN_LOW_SPACE_THRESHOLD}...${MAX_LOW_SPACE_THRESHOLD}. ${volumePercentFree}`);
+        }
+
+        // Determine the default alert state.
+        let alert = (volumePercentFree < this._defaultAlarmThreshold);
+
+        // Does this volume have a customization?
+        const volCustomizations = this._volumeCustomizations.filter((item) => {
+            const match = ( ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
+                             (item.volume_name.toLowerCase() === volumeName.toLowerCase())) ||
+                            ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
+                             (item.volume_serial_num.toLowerCase() === volumeUUID.toLowerCase())) );
+            return match;
+        });
+        if ((volCustomizations !== undefined) && (volCustomizations.length > 0)) {
+            // There is at least one customization.
+
+            // Filter for the matching customizations that indicate an alert.
+            const trippedAlerts = volCustomizations.filter((item) => {
+                const alertTripped = ((item.volume_low_space_alarm_active) &&
+                                      (volumePercentFree < item.volume_alarm_threshold));
+
+                return alertTripped;
+            });
+
+            // If any alerts were set, then indicate that.
+            alert = (trippedAlerts.length > 0);
+        }
+
+        return alert;
+    }
+
+ /* ========================================================================
+    Description:  Helper to evaluate the validity of the custom configuration settings.
+
+    @param { object }   [custom_config]                        - Custom per-volume configuration settings.
+    @param { string }   [config.volume_id_method]              - The method for identifying the volume.
+    @param { string }   [config.volume_name]                   - The name of the volume. (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
+    @param { string }   [config.volume_serial_num]             - The serial number of the volume. (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
+    @param { boolean }  [config.volume_low_space_alarm_active] - The flag indicating if the low space alarm is active or not.
+    @param { number }   [config.volume_alarm_threshold]        - The  low space threshold, in percent. (required when `config.volume_low_space_alarm_active === true`)
+
+    @return {boolean} - `true` if the configuration is valid. `false` otherwise.
+    ======================================================================== */
+    static _validateVolumeCustomization(custom_config) {
+        // Initial sanoty check.
+        let valid = (custom_config !== undefined);
+
+        if (valid) {
+            // Volume Id Method
+            if ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_id_method')) ||
+                (typeof(custom_config.volume_id_method) !=='string')                       ||
+                (Object.values(VOLUME_IDENTIFICATION_METHODS).indexOf(custom_config.volume_id_method) < 0)) {
+                    valid = false;
+            }
+            // Volume Name
+            if (valid &&
+                (custom_config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
+                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_name')) ||
+                 (typeof(custom_config.volume_name) !=='string')                       ||
+                 (custom_config.volume_name.length <= 0))) {
+                valid = false;
+            }
+            // Volume Serial Number
+            if (valid &&
+                (custom_config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
+                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_serial_num')) ||
+                 (typeof(custom_config.volume_serial_num) !=='string')                       ||
+                 (custom_config.volume_serial_num.length <= 0))) {
+                valid = false;
+            }
+            // Low Space Alarm Active
+            if ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_low_space_alarm_active')) ||
+                (typeof(custom_config.volume_low_space_alarm_active) !=='boolean')) {
+                valid = false;
+            }
+            // Low Space Alarm Threshold
+            if (valid &&
+                custom_config.volume_low_space_alarm_active &&
+                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_alarm_threshold')) ||
+                 (typeof(custom_config.volume_alarm_threshold) !=='number')                       ||
+                 (custom_config.volume_alarm_threshold <= MIN_LOW_SPACE_THRESHOLD)                ||
+                 (custom_config.volume_alarm_threshold >= MAX_LOW_SPACE_THRESHOLD))) {
+                valid = false;
+            }
+        }
+
+        return valid;
     }
 }
 
@@ -1711,10 +2017,6 @@ const PLATFORM_NAME = config_info.platform;
 // unspecified: Initial Release
 //          v2: Purge Offline and better UUID management.
 const ACCESSORY_VERSION = 2;
-
-const DEFAULT_LOW_SPACE_THRESHOLD   = 15.0;
-const MIN_LOW_SPACE_THRESHOLD       = 0.0;
-const MAX_LOW_SPACE_THRESHOLD       = 100.0;
 
 const FIXED_ACCESSORY_SERVICE_TYPES = {
     Switch : 0
@@ -1789,15 +2091,59 @@ class VolumeInterrogatorPlatform {
 
         /* My local data */
         this._name = this._config['name'];
-        this._alarmThreshold = DEFAULT_LOW_SPACE_THRESHOLD;
+
+        let theSettings = undefined;
+        let viConfig = {};
+        if (Object.prototype.hasOwnProperty.call(this._config, 'settings')) {
+            // Get the system configuration,
+            theSettings = this._config.settings;
+        }
+        if (theSettings != undefined) {
+            // Polling Interval {Hours}
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'polling_interval')) {
+                if (typeof(theSettings.polling_interval) === 'number') {
+                    // Copy the period (in hours)
+                    viConfig.period_hr = theSettings.polling_interval;
+                }
+                else {
+                    throw new TypeError(`Configuration item 'polling_interval' must be a number. {${typeof(theSettings.polling_interval)}}`);
+                }
+            }
+            // Default Low Space Alarm Threshold {Percent}
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'alarm_threshold')) {
+                if (typeof(theSettings.alarm_threshold) === 'number') {
+                    // Set the period (in hours)
+                    viConfig.default_alarm_threshold = theSettings.alarm_threshold;
+                }
+                else {
+                    throw new TypeError(`Configuration item 'alarm_threshold' must be a number. {${typeof(theSettings.alarm_threshold)}}`);
+                }
+            }
+            // Enable Volume Customizations
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'enable_volume_customizations')) {
+                if (typeof(theSettings.enable_volume_customizations) === 'boolean') {
+                    // Are the volume customizations enabled?
+                    if (theSettings.enable_volume_customizations) {
+                        if ((Object.prototype.hasOwnProperty.call(theSettings, 'volume_customizations')) &&
+                            (Array.isArray(theSettings.volume_customizations))) {
+                            viConfig.volume_customizations = theSettings.volume_customizations;
+                        }
+                    }
+                }
+                else {
+                    throw new TypeError(`Configuration item 'enable_volume_customizations' must be a boolean. {${typeof(theSettings.enable_volume_customizations)}}`);
+                }
+            }
+        }
 
         // Underlying engine
-        this._volumeInterrogator = new VolumeInterrogator();
+        this._volumeInterrogator = new VolumeInterrogator(viConfig);
 
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
         this._bindDestructorNormal          = this._destructor.bind(this, {cleanup:true});
         this._bindDestructorAbnormal        = this._destructor.bind(this, {exit:true});
+        this._CB_VolumeIterrrogatorScanning = this._handleVolumeInterrogatorScanning.bind(this);
         this._CB_VolumeIterrrogatorReady    = this._handleVolumeInterrogatorReady.bind(this);
 
         /* Log our creation */
@@ -1821,8 +2167,8 @@ class VolumeInterrogatorPlatform {
         process.on('uncaughtException', this._bindDestructorAbnormal);
 
         // Register for Volume Interrogator events.
-        this._volumeInterrogator.on('ready', this._CB_VolumeIterrrogatorReady);
-
+        this._volumeInterrogator.on('scanning', this._CB_VolumeIterrrogatorScanning);
+        this._volumeInterrogator.on('ready',    this._CB_VolumeIterrrogatorReady);
     }
 
  /* ========================================================================
@@ -1839,7 +2185,7 @@ class VolumeInterrogatorPlatform {
             // Cleanup the volume interrogator.
             if (this._volumeInterrogator != undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
-                await this._volumeInterrogator.Stop();
+                await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
             }
         }
@@ -1881,21 +2227,6 @@ class VolumeInterrogatorPlatform {
             }
             else {
                 throw new TypeError(`Configuration item 'polling_interval' must be a number. {${typeof(theSettings.polling_interval)}}`);
-            }
-            // Low Space Alarm Threshold {Percent}
-            if ((Object.prototype.hasOwnProperty.call(theSettings, 'alarm_threshold')) &&
-                (typeof(theSettings.alarm_threshold) === 'number')) {
-                if ((theSettings.alarm_threshold > MIN_LOW_SPACE_THRESHOLD) &&
-                    (theSettings.alarm_threshold < MAX_LOW_SPACE_THRESHOLD)) {
-                    // Set the period (in hours)
-                    this._alarmThreshold = theSettings.alarm_threshold;
-                }
-                else {
-                    throw new RangeError(`Configuration item 'alarm_threshold' must be between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}. {${theSettings.alarm_threshold}}`);
-                }
-            }
-            else {
-                throw new TypeError(`Configuration item 'alarm_threshold' must be a number. {${typeof(theSettings.alarm_threshold)}}`);
             }
         }
 
@@ -1946,15 +2277,6 @@ class VolumeInterrogatorPlatform {
             this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessoryControls]);
         }
 
-        // Set the 'refresh' switch to on while we wait for a response.
-        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.uuid);
-        if (accessoryControls !== undefined) {
-            const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
-            if (serviceRefreshSwitch !== undefined) {
-                serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
-            }
-        }
-
         // Start interrogation.
         this._volumeInterrogator.Start();
     }
@@ -1990,117 +2312,146 @@ class VolumeInterrogatorPlatform {
             catch (error)
             {
                 this._log(`Unable to configure accessory ${accessory.displayName}. Version:${accessory.context.VERSION}. Error:${error}`);
-                // We don't know where the exception happened. Ensure that the accessory is in the map.
-                const id = accessory.context.ID;
-                if (!this._accessories.has(id)){
-                    // Update our accessory listing
-                    this._accessories.set(id, accessory);
-                }
+                this._accessories.set(accessory.displayName, accessory);
             }
         }
     }
 
  /* ========================================================================
-    Description: Event handler for the Volume Interrogator Ready event.
+    Description: Event handler for the Volume Interrogator 'scanning' event.
+    ======================================================================== */
+    _handleVolumeInterrogatorScanning() {
+        // Decouple from the event.
+        setImmediate(() => {
+            this._log.debug(`Scanning initiated.`);
+            // If a scanning event has been initiated, Ensure that the the Refresh switch is On.
+            const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
+            if (accessoryControls !== undefined) {
+                const serviceRefreshSwitch = accessoryControls.getService(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+                if (serviceRefreshSwitch !== undefined) {
+                    if (!this._getAccessorySwitchState(serviceRefreshSwitch)) {
+                        this._log.debug(`Setting Refresh switch On.`);
+                        serviceRefreshSwitch.updateCharacteristic(_hap.Characteristic.On, true);
+                    }
+                    else {
+                        this._log.debug(`Refresh switch is already On.`);
+                    }
+                }
+                else {
+                    this._log.debug(`Unable to find Manual Refresh service.`);
+                }
+            }
+            else {
+                this._log.debug(`Unable to find CONTROLS accessory`);
+            }
+        });
+    }
 
-    @param {object} [data] - object containing a 'results' item which is an array of volume data results.
+ /* ========================================================================
+    Description: Event handler for the Volume Interrogator 'ready' event.
+
+    @param {object} [theData] - object containing a 'results' item which is an array of volume data results.
 
     @throws {TypeError} - Thrown when 'results' is not an Array of VolumeData objects.
     ======================================================================== */
-    _handleVolumeInterrogatorReady(data) {
-        // Validate the parameters.
-        if ((data === undefined) ||
-            (!Object.prototype.hasOwnProperty.call(data, 'results'))) {
-            throw new TypeError(`'data' needs to be an object with a 'results' field.`);
-        }
-        if (!Array.isArray(data.results)) {
-            throw new TypeError(`'data.results' needs to be an array of VolumeData objects.`);
-        }
-        for (const result of data.results) {
-            if ( !(result instanceof VolumeData) ) {
-                throw new TypeError(`'results' needs to be an array of VolumeData objects.`);
+    _handleVolumeInterrogatorReady(theData) {
+        // Decouple from the event.
+        setImmediate((data) => {
+            // Validate the parameters.
+            if ((data === undefined) ||
+                (!Object.prototype.hasOwnProperty.call(data, 'results'))) {
+                throw new TypeError(`'data' needs to be an object with a 'results' field.`);
             }
-        }
-
-        for (const result of data.results) {
-            if (result.IsMounted) {
-                this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
+            if (!Array.isArray(data.results)) {
+                throw new TypeError(`'data.results' needs to be an array of VolumeData objects.`);
             }
-
-            // Update the map of volume data.
-            this._volumesData.set(result.Name, result);
-        }
-
-        // Loop through the visible volumes and publish/update them.
-        for (const volData of this._volumesData.values()) {
-            try {
-                // Do we know this volume already?
-                const volIsKnown = this._accessories.has(volData.Name);
-
-                // Is this volume visible & new to us?
-                if ((volData.IsVisible) &&
-                    (!volIsKnown)) {
-                    // Does not exist. Add it
-                    this._addBatteryServiceAccessory(volData.Name);
-                }
-
-                // Update the accessory if we know if this volume already
-                // (i.e. it is currently or was previously visible to us).
-                const theAccessory = this._accessories.get(volData.Name);
-                if (theAccessory !== undefined) {
-                    this._updateBatteryServiceAccessory(theAccessory);
+            for (const result of data.results) {
+                if ( !(result instanceof VolumeData) ) {
+                    throw new TypeError(`'results' needs to be an array of VolumeData objects.`);
                 }
             }
-            catch(error) {
-                this._log.debug(`Error when managing accessory: ${volData.Name}`);
-            }
-        }
 
-        // Ensure the switch is turned back off.
-        const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
-        if (accessoryControls !== undefined) {
-            // Cleanup (if purge is enabled)
-            const servicePurge = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.udst);
-            if (servicePurge !== undefined) {
-                const purgeState = this._getAccessorySwitchState(servicePurge);
-                if (purgeState) {
-                    let purgeList = [];
-                    // Check for Volumes that are no longer Visible
-                    for (const volData of this._volumesData.values()) {
-                        if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
-                            purgeList.push(this._accessories.get(volData.Name));
-                        }
+            for (const result of data.results) {
+                if (result.IsMounted) {
+                    this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
+                }
+
+                // Update the map of volume data.
+                this._volumesData.set(result.Name, result);
+            }
+
+            // Loop through the visible volumes and publish/update them.
+            for (const volData of this._volumesData.values()) {
+                try {
+                    // Do we know this volume already?
+                    const volIsKnown = this._accessories.has(volData.Name);
+
+                    // Is this volume visible & new to us?
+                    if ((volData.IsVisible) &&
+                        (!volIsKnown)) {
+                        // Does not exist. Add it
+                        this._addBatteryServiceAccessory(volData.Name);
                     }
-                    // Check for accessories whose volumes are unknown.
-                    const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
-                    for (const key of this._accessories.keys()) {
-                        if ((!this._volumesData.has(key)) &&
-                            (excludedAccessoryKeys.indexOf(key) === -1)) {
-                            purgeList.push(this._accessories.get(key));
-                        }
+
+                    // Update the accessory if we know if this volume already
+                    // (i.e. it is currently or was previously visible to us).
+                    const theAccessory = this._accessories.get(volData.Name);
+                    if (theAccessory !== undefined) {
+                        this._updateBatteryServiceAccessory(theAccessory);
                     }
-                    // Clean up.
-                    purgeList.forEach(accessory => {
-                        this._removeAccessory(accessory);
-                    });
+                }
+                catch(error) {
+                    this._log.debug(`Error when managing accessory: ${volData.Name}`);
                 }
             }
-            // Get the Manual Refresh service.
-            const serviceManlRefresh = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
-            if (serviceManlRefresh !== undefined) {
-                serviceManlRefresh.updateCharacteristic(_hap.Characteristic.On, false);
-            }
-        }
 
-        // With the accessories that remain, force an update.
-        let accessoryList = [];
-        for (const accessory of this._accessories.values()) {
-            accessoryList.push(accessory);
-        }
-        // Update, if needed.
-        if (accessoryList.length > 0) {
-            this._api.updatePlatformAccessories(accessoryList);
-        }
+            const accessoryControls = this._accessories.get(FIXED_ACCESSORY_INFO.CONTROLS.model);
+            if (accessoryControls !== undefined) {
+                // Cleanup (if purge is enabled)
+                const servicePurge = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.udst);
+                if (servicePurge !== undefined) {
+                    const purgeState = this._getAccessorySwitchState(servicePurge);
+                    if (purgeState) {
+                        let purgeList = [];
+                        // Check for Volumes that are no longer Visible
+                        for (const volData of this._volumesData.values()) {
+                            if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
+                                purgeList.push(this._accessories.get(volData.Name));
+                            }
+                        }
+                        // Check for accessories whose volumes are unknown.
+                        const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
+                        for (const key of this._accessories.keys()) {
+                            if ((!this._volumesData.has(key)) &&
+                                (excludedAccessoryKeys.indexOf(key) === -1)) {
+                                purgeList.push(this._accessories.get(key));
+                            }
+                        }
+                        // Clean up.
+                        purgeList.forEach(accessory => {
+                            this._removeAccessory(accessory);
+                        });
+                    }
+                }
+                // Get the Manual Refresh service.
+                const serviceManlRefresh = accessoryControls.getServiceById(FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst);
+                if ((serviceManlRefresh !== undefined) &&
+                    (this._getAccessorySwitchState(serviceManlRefresh))) {
+                    // Ensure the switch is turned back off.
+                    serviceManlRefresh.updateCharacteristic(_hap.Characteristic.On, false);
+                }
+            }
+
+            // With the accessories that remain, force an update.
+            let accessoryList = [];
+            for (const accessory of this._accessories.values()) {
+                accessoryList.push(accessory);
+            }
+            // Update, if needed.
+            if (accessoryList.length > 0) {
+                this._api.updatePlatformAccessories(accessoryList);
+            }
+        }, theData);
     }
 
  /* ========================================================================
@@ -2184,15 +2535,17 @@ class VolumeInterrogatorPlatform {
             if (service instanceof _hap.Service.Switch) {
                 // Get the persisted switch state.
                 let switchStateValue = true;
-                for (const switchStateConfig of theSwitchStates) {
-                    if ((typeof(switchStateConfig) === 'object') &&
-                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
-                        (typeof(switchStateConfig.id) === 'string') &&
-                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
-                        (typeof(switchStateConfig.state) === 'boolean') &&
-                        (switchStateConfig.id === service.displayName)) {
-                        switchStateValue = switchStateConfig.state;
-                        break;
+                if (Array.isArray(theSwitchStates)) {
+                    for (const switchStateConfig of theSwitchStates) {
+                        if ((typeof(switchStateConfig) === 'object') &&
+                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
+                            (typeof(switchStateConfig.id) === 'string') &&
+                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
+                            (typeof(switchStateConfig.state) === 'boolean') &&
+                            (switchStateConfig.id === service.displayName)) {
+                            switchStateValue = switchStateConfig.state;
+                            break;
+                        }
                     }
                 }
                 // Set the switch to the stored setting (the default is on).
@@ -2292,9 +2645,9 @@ class VolumeInterrogatorPlatform {
             if (volData.IsVisible) {
 
                  // Compute the fraction of space remaining.
-                percentFree = ((volData.FreeSpace/volData.Size)*100.0).toFixed(0);
+                percentFree = volData.PercentFree.toFixed(0);
                 // Determine if the remaining space threshold has been exceeded.
-                lowAlert = (percentFree < this._alarmThreshold);
+                lowAlert = volData.LowSpaceAlert;
 
                 // The charging state is always 'Not Chargable'.
                 chargeState = _hap.Characteristic.ChargingState.NOT_CHARGEABLE;
