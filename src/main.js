@@ -356,12 +356,7 @@ class VolumeInterrogatorPlatform {
             catch (error)
             {
                 this._log(`Unable to configure accessory ${accessory.displayName}. Version:${accessory.context.VERSION}. Error:${error}`);
-                // We don't know where the exception happened. Ensure that the accessory is in the map.
-                const id = accessory.context.ID;
-                if (!this._accessories.has(id)){
-                    // Update our accessory listing
-                    this._accessories.set(id, accessory);
-                }
+                this._accessories.set(accessory.displayName, accessory);
             }
         }
     }
@@ -584,15 +579,17 @@ class VolumeInterrogatorPlatform {
             if (service instanceof _hap.Service.Switch) {
                 // Get the persisted switch state.
                 let switchStateValue = true;
-                for (const switchStateConfig of theSwitchStates) {
-                    if ((typeof(switchStateConfig) === 'object') &&
-                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
-                        (typeof(switchStateConfig.id) === 'string') &&
-                        (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
-                        (typeof(switchStateConfig.state) === 'boolean') &&
-                        (switchStateConfig.id === service.displayName)) {
-                        switchStateValue = switchStateConfig.state;
-                        break;
+                if (Array.isArray(theSwitchStates)) {
+                    for (const switchStateConfig of theSwitchStates) {
+                        if ((typeof(switchStateConfig) === 'object') &&
+                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
+                            (typeof(switchStateConfig.id) === 'string') &&
+                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
+                            (typeof(switchStateConfig.state) === 'boolean') &&
+                            (switchStateConfig.id === service.displayName)) {
+                            switchStateValue = switchStateConfig.state;
+                            break;
+                        }
                     }
                 }
                 // Set the switch to the stored setting (the default is on).
