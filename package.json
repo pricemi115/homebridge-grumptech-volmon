@@ -55,6 +55,6 @@
   },
   "dependencies": {
     "debug": "^4.3.2",
-    "plist": "^3.0.2"
+    "plist": "^3.0.3"
   }
 }
