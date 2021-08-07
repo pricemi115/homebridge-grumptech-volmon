@@ -415,6 +415,7 @@ class VolumeInterrogatorPlatform {
                 }
             }
 
+            // Update the volumes data.
             for (const result of data.results) {
                 if (result.IsMounted) {
                     this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
@@ -457,9 +458,13 @@ class VolumeInterrogatorPlatform {
                     const purgeState = this._getAccessorySwitchState(servicePurge);
                     if (purgeState) {
                         let purgeList = [];
-                        // Check for Volumes that are no longer Visible
+                        // Check for Volumes that are no longer Visible or did not have any results reported.
                         for (const volData of this._volumesData.values()) {
-                            if ((this._accessories.has(volData.Name)) && (!volData.IsVisible)) {
+                            const resultFound = data.results.find((element) => {
+                                return element.Name === volData.Name;
+                            });
+                            if ((this._accessories.has(volData.Name)) &&
+                                ((!volData.IsVisible) || (resultFound === undefined))) {
                                 purgeList.push(this._accessories.get(volData.Name));
                             }
                         }
