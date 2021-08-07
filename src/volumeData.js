@@ -110,11 +110,11 @@ export class VolumeData {
             }
             if (Object.prototype.hasOwnProperty.call(data, 'capacity_bytes') &&
                 (typeof(data.capacity_bytes) === 'number')) {
-                if (data.capacity_bytes > 0) {
+                if (data.capacity_bytes >= 0) {
                     capacityBytes = data.capacity_bytes;
                 }
                 else {
-                    throw new RangeError(`Volume size must be a positive number. (${data.capacity_bytes})`);
+                    throw new RangeError(`Volume capacity size must be greater than or equal to 0. (${data.capacity_bytes})`);
                 }
             }
             if (Object.prototype.hasOwnProperty.call(data, 'device_node') &&
@@ -131,7 +131,7 @@ export class VolumeData {
                     freeSpaceBytes = data.free_space_bytes;
                 }
                 else {
-                    throw new RangeError(`Volume size must be greater than or equal to 0. (${data.free_space_bytes})`);
+                    throw new RangeError(`Volume free space size must be greater than or equal to 0. (${data.free_space_bytes})`);
                 }
             }
             if (Object.prototype.hasOwnProperty.call(data, 'used_space_bytes') &&
@@ -140,7 +140,7 @@ export class VolumeData {
                     usedSpaceBytes = data.used_space_bytes;
                 }
                 else {
-                    throw new RangeError(`Volume size must be greater than or equal to 0. (${data.used_space_bytes})`);
+                    throw new RangeError(`Volume used space size must be greater than or equal to 0. (${data.used_space_bytes})`);
                 }
             }
             if (Object.prototype.hasOwnProperty.call(data, 'visible') &&

@@ -490,7 +490,6 @@ export class VolumeInterrogator extends EventEmitter {
                             // Clear the check in progress.
                             this._checkInProgress = false;
                             _debug_process(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
-                            throw new TypeError('Missing or invalid response from diskutil.');
                         }
                     }
 
@@ -500,7 +499,8 @@ export class VolumeInterrogator extends EventEmitter {
                 else {
                     // Clear the check in progress.
                     this._checkInProgress = false;
-                    throw new Error(`Unexpected call to _on_process_diskutil_info_complete. config:${config}`);
+                    _debug_process(`Unexpected call to _on_process_diskutil_info_complete. config.`);
+                    _debug_process(config);
                 }
             }
             catch (error) {
