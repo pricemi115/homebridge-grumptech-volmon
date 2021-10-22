@@ -25,8 +25,9 @@ export const VOLUME_TYPES = {
     TYPE_HFS_PLUS : 'hfs',
     TYPE_APFS     : 'apfs',
     TYPE_UDF      : 'udf',       /* Universal Disk Format (ISO, etc) */
-    TYPE_MSDOS    : 'msdos',      /* Typically used for EFI & FAT32 */
-    TYPE_NTFS     : 'ntfs'
+    TYPE_MSDOS    : 'msdos',     /* Typically used for EFI & FAT32 */
+    TYPE_NTFS     : 'ntfs',
+    TYPE_SMBFS    : 'smbfs'
 };
 
  /* ========================================================================
@@ -59,6 +60,7 @@ export class VolumeData {
     @param {number} [data.used_space_bytes]           - Actively used space (in bytes) of the volume.
     @param {boolean} [data.visible]                   - Flag indicating that the volume is visible to the user.
                                                         (Shown in /Volumes)
+    @param {boolean} [data.shown]                     - Flag indicating that the volume should be shown.
     @param {boolean} [data.low_space_alert]           - Flag indicating that the low space alert threshold has
                                                         been exceeded.
 
@@ -80,6 +82,7 @@ export class VolumeData {
         let freeSpaceBytes = 0;
         let usedSpaceBytes = undefined;
         let visible = false;
+        let shown = false;
         let lowSpaceAlert = false;
 
         // Update values from data passed in.
@@ -147,6 +150,10 @@ export class VolumeData {
                 (typeof(data.visible) === 'boolean')) {
                 visible = data.visible;
             }
+            if (Object.prototype.hasOwnProperty.call(data, 'shown') &&
+                (typeof(data.shown) === 'boolean')) {
+                shown = data.shown;
+            }
             if (Object.prototype.hasOwnProperty.call(data, 'low_space_alert') &&
                 (typeof(data.low_space_alert) === 'boolean')) {
                 lowSpaceAlert = data.low_space_alert;
@@ -163,6 +170,7 @@ export class VolumeData {
         this._volume_uuid       = volumeUUID;
         this._free_space_bytes  = freeSpaceBytes;
         this._visible           = visible;
+        this._shown             = shown;
         this._low_space_alert   = lowSpaceAlert;
         if (usedSpaceBytes === undefined) {
             // Compute the used space as the difference between the capacity and free space.
@@ -297,6 +305,33 @@ export class VolumeData {
     ======================================================================== */
     get PercentFree() {
         return ( (this.FreeSpace/this.Size)*100.0 );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor indicating is the volume should be shown.
+
+    @return {boolean} - true if the volume should be shown.
+    ======================================================================== */
+    get IsShown() {
+        return ( this._shown );
+    }
+ /* ========================================================================
+    Description: Helper to determine if the supplied object is equivalent to this one.
+
+    @param {object} [compareTarget] - Object used as the target or the comparison.
+
+    @return {bool} - true if the supplied object is a match. false otherwise.
+    ======================================================================== */
+    IsMatch(compareTarget) {
+                        // Ensure 'compareTarget' is indeed an instance of VolumeData.
+        let result = (  (compareTarget instanceof VolumeData) &&
+                        // A subset of the volume data properties are used to establish equivalence.
+                        (this.Name === compareTarget.Name) &&
+                        (this.VolumeType === compareTarget.VolumeType) &&
+                        (this.DeviceNode === compareTarget.DeviceNode) &&
+                        (this.MountPoint === compareTarget.MountPoint) );
+
+        return (result);
     }
 
  /* ========================================================================

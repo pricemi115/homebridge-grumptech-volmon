@@ -163,6 +163,22 @@ class VolumeInterrogatorPlatform {
                     throw new TypeError(`Configuration item 'alarm_threshold' must be a number. {${typeof(theSettings.alarm_threshold)}}`);
                 }
             }
+            // Array of exclusion masks
+            if (Object.prototype.hasOwnProperty.call(theSettings, 'exclusion_masks')) {
+                if (Array.isArray(theSettings.exclusion_masks)) {
+                    let exclusionMasksValid = true;
+                    for (const mask of theSettings.exclusion_masks) {
+                        exclusionMasksValid &= (typeof(mask) === 'string');
+                    }
+                    if (exclusionMasksValid) {
+                        // Set the exclusion masks.
+                        viConfig.exclusion_masks = theSettings.exclusion_masks;
+                    }
+                }
+                else {
+                    throw new TypeError(`Configuration item 'exclusion_masks' must be an array of strings. {${typeof(theSettings.exclusion_masks)}}`);
+                }
+            }
             // Enable Volume Customizations
             if (Object.prototype.hasOwnProperty.call(theSettings, 'enable_volume_customizations')) {
                 if (typeof(theSettings.enable_volume_customizations) === 'boolean') {
@@ -418,7 +434,7 @@ class VolumeInterrogatorPlatform {
             // Update the volumes data.
             for (const result of data.results) {
                 if (result.IsMounted) {
-                    this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
+                    this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tShown:${result.IsShown}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace/result.Size)*100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
                 }
 
                 // Update the map of volume data.
@@ -432,14 +448,14 @@ class VolumeInterrogatorPlatform {
                     const volIsKnown = this._accessories.has(volData.Name);
 
                     // Is this volume visible & new to us?
-                    if ((volData.IsVisible) &&
+                    if ((volData.IsShown) &&
                         (!volIsKnown)) {
                         // Does not exist. Add it
                         this._addBatteryServiceAccessory(volData.Name);
                     }
 
                     // Update the accessory if we know if this volume already
-                    // (i.e. it is currently or was previously visible to us).
+                    // (i.e. it is currently or was previously shown).
                     const theAccessory = this._accessories.get(volData.Name);
                     if (theAccessory !== undefined) {
                         this._updateBatteryServiceAccessory(theAccessory);
@@ -464,7 +480,7 @@ class VolumeInterrogatorPlatform {
                                 return element.Name === volData.Name;
                             });
                             if ((this._accessories.has(volData.Name)) &&
-                                ((!volData.IsVisible) || (resultFound === undefined))) {
+                                ((!volData.IsShown) || (resultFound === undefined))) {
                                 purgeList.push(this._accessories.get(volData.Name));
                             }
                         }
@@ -691,7 +707,7 @@ class VolumeInterrogatorPlatform {
             // Get the volume data.
             const volData = this._volumesData.get(accessory.displayName);
 
-            if (volData.IsVisible) {
+            if (volData.IsShown) {
 
                  // Compute the fraction of space remaining.
                 percentFree = volData.PercentFree.toFixed(0);
@@ -746,7 +762,7 @@ class VolumeInterrogatorPlatform {
         if ((info === undefined) ||
             (!Object.prototype.hasOwnProperty.call(info, 'model'))     || ((typeof(info.model)      !== 'string') || (info.model instanceof Error)) ||
             (!Object.prototype.hasOwnProperty.call(info, 'serialnum')) || ((typeof(info.serialnum)  !== 'string') || (info.serialnum instanceof Error)) ) {
-            throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are eother strings or Error`);
+            throw new TypeError(`info must be an object with properties named 'model' and 'serialnum' that are either strings or Error`);
         }
 
         /* Get the accessory info service. */
