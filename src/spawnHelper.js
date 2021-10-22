@@ -47,6 +47,7 @@ export class SpawnHelper extends EventEmitter {
         this._command           = undefined;
         this._arguments         = undefined;
         this._options           = undefined;
+        this._token             = undefined;
         this._result_data       = undefined;
         this._error_data        = undefined;
         this._error_encountered = false;
@@ -134,12 +135,23 @@ export class SpawnHelper extends EventEmitter {
     }
 
  /* ========================================================================
+    Description: Read-Only Property accessor to read the spawn token for
+                 this item.
+
+    @return {object]} - Current client-specified token for the spawn process.
+    ======================================================================== */
+    get Token() {
+        return ( this._token );
+    }
+
+ /* ========================================================================
     Description:    Initiate spawned process
 
     @param {object}    [request]           - Spawn command data
     @param {string}    [request.command]   - Spawn command     (required)
     @param {[string]}  [request.arguments] - Spawn arguments   (optional)
     @param {[string]}  [request.options]   - Spawn options     (optional)
+    @param {object}    [request.token]     - Spawn token       (optional)
 
     @return {bool}  - true if child process is spawned
 
@@ -204,6 +216,20 @@ export class SpawnHelper extends EventEmitter {
         else {
             // Use default
             this._options = [];
+        }
+
+        // Validate 'optional' token request.
+        // This object is a client-specified marker that can be used by the client when processing results.
+        if (Object.prototype.hasOwnProperty.call(request, 'token')) {
+            if (request.token === undefined) {
+                throw new TypeError('request.token must be something if it is specified.');
+            }
+            // If we got this far, then request.info must be legit
+            this._token = request.token;
+        }
+        else {
+            // Use default
+            this._token = undefined;
         }
 
         // Reset the internal data
@@ -301,7 +327,7 @@ export class SpawnHelper extends EventEmitter {
 
         // Notify our clients.
         const isValid = this.IsValid;
-        const response = {valid:isValid, result:(isValid ? this.Result : this.Error), source:this};
+        const response = {valid:isValid, result:(isValid ? this.Result : this.Error), token:this.Token, source:this};
         this.emit('complete', response);
     }
 }

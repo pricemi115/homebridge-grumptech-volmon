@@ -27,6 +27,19 @@
                         "maximum": 99,
                         "required": true
                     },
+                    "exclusion_masks": {
+                        "title": "Exclusion List",
+                        "description": "List of regular expressions used to exclude volume identification.",
+                        "type": "array",
+                        "required": true,
+                        "default": ["^/Volumes/\\.timemachine/.*",
+                                    "^/System/Volumes/.*"],
+                        "items": {
+                            "title": "Exclude Pattern",
+                            "description": "Regular exprerssion used to exclude a volume (by mount point)",
+                            "type": "string"
+                        }
+                    },
                     "enable_volume_customizations": {
                         "title": "Enable Volume Customizations",
                         "description": "Allow volume customizations.",
