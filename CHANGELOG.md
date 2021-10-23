@@ -3,6 +3,15 @@ Change history for _homebridge-grumptech-volmon_
 
 ---
 ---
+## [1.2.0] - 2021-10-21 (Autumn Release 🎃)
+Happy Halloween!! This update is "all treat", no tricks.
+### What's new
+- [Issue #23](https://github.com/pricemi115/homebridge-grumptech-volmon/issues/23): Added support for remote volumes mounted via SMB
+- Previously, the plug in would only recognize volumes in `/Volumes`. Now all mounted volumes are detected and the user can specify a regular expression mask to exclude volumes from detection. Common masks are set by default to exclude Time Machine APFS volumes and other "internal" volumes that are present on current versions of masOS.
+### Fixed
+- Updated all dependencies.
+
+---
 ## [1.1.0] - 2021-08-01 (Summer Release 🌞)
 While relaxing this summer and basking in the glow of the sun, enjoy a better user experience with this update to the VolMon plug-in.
 ### What's new

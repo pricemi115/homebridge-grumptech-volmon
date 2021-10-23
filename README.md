@@ -20,7 +20,7 @@ This plugin is best experienced when running as a module installed and managed b
 <img src="./assets/config-ui-x_settings.png"
      alt="Configuration Settings UI"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
-     width="30%">
+     width="20%">
 <img src="./assets/config-ui-x_configjson.png"
      alt="Configuration Settings JSON"
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
@@ -30,6 +30,7 @@ This plugin is best experienced when running as a module installed and managed b
 | :------: | :------: | :------: | :------: | :------: |:------: | :------: | :------: | :------: | :------: |
 | Polling Interval | The time between automatic scans of the system | polling_interval | Common | Number | Hours | 1 | 0.083334 | 744 | |
 | Low Space Alarm Threshold (Default) | Percent of remaining space that will trigger a _low battery_ alert (default) | alarm_threshold | Common | Number | Percent | 15 | 1 | 99 | |
+| Exclusion List | An array of regular expression patterns indicating the volumes to be excluded based on the volume mount point. | exclusion_masks | Common | Array of Strings | N/A | `^/Volumes/\\.timemachine/.*` and `^/System/Volumes/.*` | | | By default, time machine and system volumes are excluded. Emulates previous behavior. |
 | Enable Volume Customizations | Allow customixations for speficic volumes | enable_volume_customizations | Common | Boolean | N/A | Off | Off | On | |
 | Volume Identification Method | Method for identifying the volume | volume_customizations:items:volume_id_method | Per-Customization | String | N/A | name | name, serial_num | | |
 | Volume Name | Name of the volume | volume_customizations:items:volume_name | Per-Customization | String | N/A | | | | Required if the volume method is 'name' |
@@ -51,7 +52,7 @@ Additionally, especially if this system will be running other homebridge modules
 ### Manual Configuration
 If you would rather manually configure and run the plugin, you will find a sample _config.json_ file in the `./config` folder. It is left to the user to get the plugin up and running within homebridge. Refer to the section above for specifics on the configuration parameters.
 ## Usage
-When the plugin-starts, it will create a _battery service_ accessory for each visibe (_located in `/Volumes`_) volume. The _battery level_ for each accessory will be set to the percentage of storage space remaining on the volume. If the amount of remaining storage is below the _alert threahold_ the accessory will show the _low battery_ status.<br/>
+When the plugin-starts, it will create a _battery service_ accessory for each volume that does not match **any** of the patterns in the _exclusion list_. The _battery level_ for each accessory will be set to the percentage of storage space remaining on the volume. If the amount of remaining storage is below the _alert threahold_ the accessory will show the _low battery_ status.<br/>
 When viewing the details of an accessory, the accessory information section will display the _Volume UUID_ (if known) under the _Serial Number_ field and the _volume format_ under the _Model_ field. The plug-in version will show under the _Firmware_ field.<br/>
 <img src="./assets/home_app_ios_volume.png"
      alt="Home app ios volume"
@@ -65,7 +66,9 @@ When viewing the details of an accessory, the accessory information section will
 The volumes on the system will be rescanned both (a) peropdically according to the polling interval specified in the configuration settings and (b) when the contents of the `/Volumes` folder changes.
 
 - _Refresh_: This switch, when turned on, is used to initiate a rescan of the volumes on the system. The user is not permitted to turn the switch off. It will automatically turn off when the scan is complete. This allows the user to update the _battery service_ accessories without needing to wait for the polling interval to expire.
-- _Purge_: When this switch is turned on, _battery service_ accessories that correspond to volumes that are no longer visible, for example ones that have been dismounted, will be removed (or purged). When this switch is off, any volumes that have been dismounted or are no longer visible in `/Volumes` will show the battery level and battery alert as _Not Reachable_. Homekit applications will render these _not reachable_ differently. For example, the Apple Home app will simply not display the Battery Level and Low Battery Status. Other applications like [Home+ 5](https://apps.apple.com/us/app/home-5/id995994352) app shows the accessories as _Error_. The state of this switch is persisted across sessions.
+- _Purge_: When this switch is turned on, _battery service_ accessories that correspond to volumes that are no longer identified, for example ones that have been dismounted, will be removed (or purged). When this switch is off, any volumes that have been dismounted or now match one of the exclusion masks will show the battery level and battery alert as _Not Reachable_. Homekit applications will render these _not reachable_ differently. For example, the Apple Home app will simply not display the Battery Level and Low Battery Status. Other applications like [Home+ 5](https://apps.apple.com/us/app/home-5/id995994352) app shows the accessories as _Error_. The state of this switch is persisted across sessions.
+
+If customizing the `exclusion_list` configuration, it is left to the user to know the volume mount point and to be able to craft an appropriate regular expression for the volume(s) of interest.
 ## Restrictions
 This module operates by using shell commands to the `diskutil` program. Therefore, this module is only supported on the Apple OSX and macOS operating systems.
 
