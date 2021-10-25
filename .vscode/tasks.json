@@ -1,0 +1,53 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build",
+			"detail": "rollup -c rollup.config.js"
+		},
+		{
+			"type": "npm",
+			"script": "prepare",
+			"problemMatcher": [],
+			"label": "npm: prepare",
+			"detail": "npm run build",
+			"dependsOn": [
+				"CleanBuild"
+			]
+		},
+		{
+			"label": "Debug Deploy",
+			"type": "shell",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"clear": true
+			},
+			"options": {
+				"cwd": "${workspaceFolder}${pathSeparator}dist",
+				"env": {
+					"DEPLOY_LOC": "${pathSeparator}usr${pathSeparator}local${pathSeparator}lib${pathSeparator}node_modules${pathSeparator}${workspaceFolderBasename}/dist"
+				}
+			},
+			"command": "mv ${workspaceFolderBasename}.js ${DEPLOY_LOC}",
+			"dependsOn": [
+				"npm: prepare"
+			]
+		},
+		{
+			"label": "CleanBuild",
+			"type": "shell",
+			"group": "build",
+			"options": {
+				"cwd": "${workspaceFolder}${pathSeparator}dist"
+			},
+			"command": "rm -rf ${workspaceFolderBasename}.js",
+		}
+	]
+}
