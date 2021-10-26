@@ -197,7 +197,13 @@ class VolumeInterrogatorPlatform {
         }
 
         // Underlying engine
-        this._volumeInterrogator = new _VolumeInterrogator(viConfig);
+        try {
+            this._volumeInterrogator = new _VolumeInterrogator(viConfig);
+        }
+        catch (error) {
+            this._volumeInterrogator = undefined;
+            this._log(`Unable to create the VolumeInterrogator. err:'${error.message}`);
+        }
 
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
@@ -227,8 +233,10 @@ class VolumeInterrogatorPlatform {
         process.on('uncaughtException', this._bindDestructorAbnormal);
 
         // Register for Volume Interrogator events.
-        this._volumeInterrogator.on('scanning', this._CB_VolumeIterrrogatorScanning);
-        this._volumeInterrogator.on('ready',    this._CB_VolumeIterrrogatorReady);
+        if (this._volumeInterrogator !== undefined) {
+            this._volumeInterrogator.on('scanning', this._CB_VolumeIterrrogatorScanning);
+            this._volumeInterrogator.on('ready',    this._CB_VolumeIterrrogatorReady);
+        }
     }
 
  /* ========================================================================
@@ -243,7 +251,7 @@ class VolumeInterrogatorPlatform {
         // be cleaned up?
         if ((options.exit) || (options.cleanup)) {
             // Cleanup the volume interrogator.
-            if (this._volumeInterrogator != undefined) {
+            if (this._volumeInterrogator !== undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
                 await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
@@ -264,6 +272,12 @@ class VolumeInterrogatorPlatform {
     async _doInitialization() {
 
         this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
+
+        // Abort if there is no interrogator
+        if (this._volumeInterrogator === undefined) {
+            this._log(`Volume Interrogator not set.`);
+            return;
+        }
 
         let theSettings = undefined;
         if (Object.prototype.hasOwnProperty.call(this._config, 'settings')) {

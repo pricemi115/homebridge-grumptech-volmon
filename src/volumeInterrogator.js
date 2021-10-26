@@ -44,6 +44,11 @@ const VOLUME_IDENTIFICATION_METHODS = {
     SerialNumber: 'serial_num'
 };
 
+// Supported operating systems.
+const SUPPORTED_OPERATING_SYSTEMS = {
+    OS_DARWIN: 'darwin',
+};
+
 /* ==========================================================================
    Class:              VolumeInterrogator
    Description:	       Manager for interrogating volumes on the system
@@ -76,6 +81,14 @@ export class VolumeInterrogator extends EventEmitter {
         let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
         let volumeCustomizations    = [];
         let exclusionMasks          = [];
+
+        // Get the operating system this plugin is running on.
+        const operating_system = process.platform;
+        // Is the Operating System Supported?
+        if (Object.values(SUPPORTED_OPERATING_SYSTEMS).indexOf(operating_system) < 0) {
+            throw new Error(`Operating system not supported. os:${operating_system}`);
+        }
+
         if (config !== undefined) {
             // Polling Period (hours)
             if (Object.prototype.hasOwnProperty.call(config, 'period_hr')) {
@@ -153,6 +166,7 @@ export class VolumeInterrogator extends EventEmitter {
         this._defaultAlarmThreshold         = defaultAlarmThreshold;
         this._volumeCustomizations          = volumeCustomizations;
         this._exclusionMasks                = exclusionMasks;
+        this._operating_system              = operating_system;
 
         // Callbacks bound to this object.
         this._CB__initiateCheck                             = this._on_initiateCheck.bind(this);
@@ -243,6 +257,15 @@ export class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     get Active() {
         return (this._timeoutID !== INVALID_TIMEOUT_ID);
+    }
+
+  /* ========================================================================
+    Description: Read Property accessor for the operating system.
+
+    @return {SUPPORTED_OPERATING_SYSTEMS(string)} - operating system.
+    ======================================================================== */
+    get OS() {
+        return (this._operating_system);
     }
 
  /* ========================================================================
@@ -367,7 +390,7 @@ export class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     _on_lsvfs_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result);
+        _debug_config(response.result.toString());
 
         // If a prior error was detected, ignore future processing
         if (!this._checkInProgress)
@@ -382,53 +405,53 @@ export class VolumeInterrogator extends EventEmitter {
         if (response.valid &&
             (response.result !== undefined)) {
             // Process the response from `lsvfs`.
-            // There are two header rows and a dummy footer (as the result of the '\n' split), followd by lines with the following fields:
-            // [virtual file system type], [number of file systems], [flags]
-            const headerLines = 2;
-            const footerLines = -1;
-            const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
-            lines.forEach((element) => {
-                // Break up the element based on white space.
-                const fields = element.split(REGEX_WHITE_SPACE);
+                // There are two header rows and a dummy footer (as the result of the '\n' split), followd by lines with the following fields:
+                // [virtual file system type], [number of file systems], [flags]
+                const headerLines = 2;
+                const footerLines = -1;
+                const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
+                lines.forEach((element) => {
+                    // Break up the element based on white space.
+                    const fields = element.split(REGEX_WHITE_SPACE);
 
-                // Does the response correspond to expectations?
-                if (fields.length === 3) {
-                    // Does this file system have any volumes?
-                    const fsCount = Number.parseInt(fields[INDEX_FILE_SYSTEM_COUNT]);
-                    if (fsCount > 0) {
-                        const newFS = { type:fields[INDEX_FILE_SYSTEM_TYPE].toLowerCase(), count:fsCount, flags:fields[INDEX_FILE_SYSTEM_FLAGS].toLowerCase() };
+                    // Does the response correspond to expectations?
+                    if (fields.length === 3) {
+                        // Does this file system have any volumes?
+                        const fsCount = Number.parseInt(fields[INDEX_FILE_SYSTEM_COUNT]);
+                        if (fsCount > 0) {
+                            const newFS = { type:fields[INDEX_FILE_SYSTEM_TYPE].toLowerCase(), count:fsCount, flags:fields[INDEX_FILE_SYSTEM_FLAGS].toLowerCase() };
 
-                        // Sanity. Ensure this file system type is not already in the pending list.
-                        const existingFSIndex = this._pendingFileSystems.findIndex((element) => {
-                            const isMatch = (element.type.toLowerCase() === newFS.type);
-                            return isMatch;
-                        });
-                        if (existingFSIndex < 0) {
-                            // Add this file system type to the pending list.
-                            this._pendingFileSystems.push(newFS);
+                            // Sanity. Ensure this file system type is not already in the pending list.
+                            const existingFSIndex = this._pendingFileSystems.findIndex((element) => {
+                                const isMatch = (element.type.toLowerCase() === newFS.type);
+                                return isMatch;
+                            });
+                            if (existingFSIndex < 0) {
+                                // Add this file system type to the pending list.
+                                this._pendingFileSystems.push(newFS);
 
-                            // Spawn a 'diskutil list' to see all the disk/volume data
-                            _debug_process(`Spawn df for fs type '${newFS.type}'.`);
-                            const diskutil_list = new SpawnHelper();
-                            diskutil_list.on('complete', this._CB__display_free_disk_space_complete);
-                            diskutil_list.Spawn({ command:'df', arguments:['-a', '-b', '-T', newFS.type], token:newFS });
-                        }
-                        else
-                        {
-                            // Replace the existing item with this one
-                            this._pendingFileSystems[existingFSIndex] = newFS;
+                                // Spawn a 'diskutil list' to see all the disk/volume data
+                                _debug_process(`Spawn df for fs type '${newFS.type}'.`);
+                                const diskutil_list = new SpawnHelper();
+                                diskutil_list.on('complete', this._CB__display_free_disk_space_complete);
+                                diskutil_list.Spawn({ command:'df', arguments:['-a', '-b', '-T', newFS.type], token:newFS });
+                            }
+                            else
+                            {
+                                // Replace the existing item with this one
+                                this._pendingFileSystems[existingFSIndex] = newFS;
 
-                            _debug_process(`_on_lsvfs_complete: Duplicated file system type. '${newFS.type}'`);
+                                _debug_process(`_on_lsvfs_complete: Duplicated file system type. '${newFS.type}'`);
+                            }
                         }
                     }
-                }
-                else {
-                    _debug_process(`_on_lsvfs_complete: Error processing line '${element}'`);
-                    _debug_process(fields);
-                }
-            });
-        }
-        else {
+                    else {
+                        _debug_process(`_on_lsvfs_complete: Error processing line '${element}'`);
+                        _debug_process(fields);
+                    }
+                });
+            }
+            else {
             // Clear the check in progress.
             this._checkInProgress = false;
             _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
@@ -454,7 +477,7 @@ export class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     _on_df_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result);
+        _debug_config(response.result.toString());
         if (response.token !== undefined) {
             _debug_config(`Spawn Token:`);
             _debug_config(response.token);
@@ -580,7 +603,7 @@ export class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     _on_process_visible_volumes(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result);
+        _debug_config(response.result.toString());
 
         // If a prior error was detected, ignore future processing
         if (!this._checkInProgress)
@@ -624,7 +647,7 @@ export class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     _on_process_diskutil_info_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result);
+        _debug_config(response.result.toString());
 
         let errorEncountered = false;
 
