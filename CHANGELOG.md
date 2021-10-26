@@ -3,7 +3,7 @@ Change history for _homebridge-grumptech-volmon_
 
 ---
 ---
-## [1.2.1] - 2021-10-21 (Autumn Release 🎃🎃)
+## [1.2.1] - 2021-10-25 (Autumn Release 🎃🎃)
 Happy Halloween!! Apparently, prior versions did indeed contain a trick!! Sorry about that.
 ### Fixed
 - [Issue #31](https://github.com/pricemi115/homebridge-grumptech-volmon/issues/31): Graceful handling of unsupported operating systems. Previously, installation on an unsupported operating system would result in homebridge rebooting indefinitely. Appologies to any who were affected by this issue.
