@@ -11,6 +11,7 @@
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 const _plist            = require('plist');
+const _os               = require('os');
 import EventEmitter        from 'events';
 import * as modFileSystem  from 'fs';
 
@@ -37,6 +38,7 @@ const MAX_LOW_SPACE_THRESHOLD           = 100.0;
 const MAX_RETRY_INIT_CHECK_Time         = 120000;
 const BLOCKS512_TO_BYTES                = 512;
 const REGEX_WHITE_SPACE                 = /\s+/;
+const MIN_OS_UPTIME_TO_START_MS         = 600000; /* 10 minutes */
 
 // Volume Identification Methods
 const VOLUME_IDENTIFICATION_METHODS = {
@@ -272,15 +274,25 @@ export class VolumeInterrogator extends EventEmitter {
     Description: Start/Restart the interrogation process.
     ======================================================================== */
     Start() {
-
-        // Clear the decoupled timer id.
-        this._decoupledStartTimeoutID = INVALID_TIMEOUT_ID;
+        // Clear the decoupled start timer, if active.
+        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._decoupledStartTimeoutID);
+        }
 
         // Stop the interrogation in case it is running.
         this.Stop();
 
-        // Perform a check now.
-        this._on_initiateCheck();
+        // Get the current uptime of the operating system
+        const uptime_ms = _os.uptime() * 1000.0;
+        // Has the operating system been running long enough?
+        if (uptime_ms < MIN_OS_UPTIME_TO_START_MS) {
+            // No. So defer the start for a bit.
+            this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, (MIN_OS_UPTIME_TO_START_MS-uptime_ms));
+        }
+        else {
+            // Perform a check now.
+            this._on_initiateCheck();
+        }
     }
 
  /* ========================================================================
