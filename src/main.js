@@ -5,6 +5,7 @@
    ========================================================================== */
 'use strict';
 
+// External dependencies and imports.
 const _debug = require('debug')('homebridge');
 // eslint-disable-next-line no-unused-vars
 import { version as PLUGIN_VER }      from '../package.json';
@@ -49,7 +50,7 @@ import {
 */
 
 // Internal dependencies
-import { VolumeInterrogator as _VolumeInterrogator } from './volumeInterrogator.js';
+import { VolumeInterrogator_darwin as _VolInterrogatorDarwin } from './volumeInterrogator_darwin.js';
 import { VolumeData } from './volumeData';
 
 // Configuration constants.
@@ -71,6 +72,13 @@ const FIXED_ACCESSORY_INFO = {
     CONTROLS  : {uuid:`2CF5A6C7-8041-4805-8582-821B19589D60`, model:`Control Switches`, serial_num:`00000001`, service_list: { MANUAL_REFRESH:{type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Refresh`, uuid:`23CB97AC-6F0C-46B5-ACF6-78025632A11F`, udst:`ManualRefresh`},
                                                                                                                                PURGE_OFFLINE: {type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Purge`,   uuid:`FEE232D5-8E25-4C1A-89AC-5476B778ADEF`, udst:`PurgeOffline` } }
                 }
+};
+
+// Host Operating System
+const HOST_OPERATING_SYSTEM = process.platform;
+// Supported operating systems.
+const SUPPORTED_OPERATING_SYSTEMS = {
+    OS_DARWIN: 'darwin',
 };
 
 // Accessory must be created from PlatformAccessory Constructor
@@ -196,9 +204,21 @@ class VolumeInterrogatorPlatform {
             }
         }
 
-        // Underlying engine
+        // Underlying engine. Operating system dependent.
         try {
-            this._volumeInterrogator = new _VolumeInterrogator(viConfig);
+            switch (HOST_OPERATING_SYSTEM.toLowerCase()) {
+                // OSX & macOS
+                case SUPPORTED_OPERATING_SYSTEMS.OS_DARWIN: {
+                    this._volumeInterrogator = new _VolInterrogatorDarwin(viConfig);
+                }
+                break;
+
+                default: {
+                    // Unsupported OS
+                    this._volumeInterrogator = undefined;
+                    this._log(`Operating system not supported. os:${HOST_OPERATING_SYSTEM}`);
+                }
+            }
         }
         catch (error) {
             this._volumeInterrogator = undefined;
@@ -253,6 +273,8 @@ class VolumeInterrogatorPlatform {
             // Cleanup the volume interrogator.
             if (this._volumeInterrogator !== undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
+                this._volumeInterrogator.removeListener('scanning', this._CB_VolumeIterrrogatorScanning);
+                this._volumeInterrogator.removeListener('ready',    this._CB_VolumeIterrrogatorReady);
                 await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
             }

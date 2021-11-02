@@ -1,9 +1,9 @@
 /* ==========================================================================
-   File:               volumeInterrogator.js
-   Class:              Volume Interrogator
-   Description:	       Interrogates the system to determine properties and
-                       attribures of interest for volumes.
-   Copyright:          Dec 2020
+   File:               volumeInterrogator_darwin.js
+   Class:              Volume Interrogator for OSX/macOS (darwin)
+   Description:	       Controls the collection of volume specific information
+                       and attributes to be published to homekit.
+   Copyright:          Oct 2021
    ========================================================================== */
 'use strict';
 
@@ -11,50 +11,27 @@
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 const _plist            = require('plist');
-const _os               = require('os');
-import EventEmitter        from 'events';
-import * as modFileSystem  from 'fs';
+import * as modFileSystem from 'fs';
 
 // Internal dependencies.
+import { VolumeInterrogatorBase as _VolumeInterrogatorBase } from './volumeInterrogatorBase.js';
+import { VOLUME_TYPES, VolumeData } from './volumeData.js';
 import { SpawnHelper } from './spawnHelper.js';
-// eslint-disable-next-line no-unused-vars
-import { VOLUME_TYPES, VolumeData, CONVERSION_BASES } from './volumeData.js';
 
 // Bind debug to console.log
 _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const DEFAULT_PERIOD_HR                 = 6.0;
-const MIN_PERIOD_HR                     = (5.0 / 60.0);     // Once every 5 minutes.
-const MAX_PERIOD_HR                     = (31.0 * 24.0);    // Once per month.
-const CONVERT_HR_TO_MS                  = (60.0 * 60.0 * 1000.0);
 const INVALID_TIMEOUT_ID                = -1;
-const RETRY_TIMEOUT_MS                  = 250 /* milliseconds */;
 const FS_CHANGED_DETECTION_TIMEOUT_MS   = 500 /*milliseconds */
-const DEFAULT_LOW_SPACE_THRESHOLD       = 15.0;
-const MIN_LOW_SPACE_THRESHOLD           = 0.0;
-const MAX_LOW_SPACE_THRESHOLD           = 100.0;
-const MAX_RETRY_INIT_CHECK_Time         = 120000;
 const BLOCKS512_TO_BYTES                = 512;
 const REGEX_WHITE_SPACE                 = /\s+/;
-const MIN_OS_UPTIME_TO_START_MS         = 600000; /* 10 minutes */
-
-// Volume Identification Methods
-const VOLUME_IDENTIFICATION_METHODS = {
-    Name: 'name',
-    SerialNumber: 'serial_num'
-};
-
-// Supported operating systems.
-const SUPPORTED_OPERATING_SYSTEMS = {
-    OS_DARWIN: 'darwin',
-};
 
 /* ==========================================================================
-   Class:              VolumeInterrogator
-   Description:	       Manager for interrogating volumes on the system
-   Copyright:          Dec 2020
+   Class:              VolumeInterrogator_darwin
+   Description:	       Manager for interrogating volumes on the OSX/macOS systems.
+   Copyright:          Oct 2021
 
    @event 'ready' => function({object})
    @event_param {<VolumeData>}  [results]  - Array of volume data results.
@@ -63,137 +40,52 @@ const SUPPORTED_OPERATING_SYSTEMS = {
    @event 'scanning' => function({object})
    Event emmitted when a refresh/rescan is initiated.
    ========================================================================== */
-export class VolumeInterrogator extends EventEmitter {
+export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
  /* ========================================================================
     Description:    Constructor
 
     @param {object}     [config]                         - The settings to use for creating the object.
-    @param {number}     [config.period_hr]               - The time (in hours) for periodically interrogating the system.
-    @param {number}     [config.default_alarm_threshold] - The default low space threshold, in percent.
-    @param { [object] } [config.volume_customizations]   - Array of objects for per-volume customizations.
 
-    @return {object}  - Instance of the SpawnHelper class.
+    @return {object}  - Instance of the volumeInterrogator_darwin class.
 
-    @throws {TypeError}  - thrown if the configuration is not undefined.
-    @throws {RangeError} - thrown if the configuration parameters are out of bounds.
+    @throws {Error}   - If the platform operating system is not compatible.
     ======================================================================== */
     constructor(config) {
 
-        let polling_period          = DEFAULT_PERIOD_HR;
-        let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
-        let volumeCustomizations    = [];
-        let exclusionMasks          = [];
-
-        // Get the operating system this plugin is running on.
+        // Sanity - ensure the Operating System is supported.
         const operating_system = process.platform;
-        // Is the Operating System Supported?
-        if (Object.values(SUPPORTED_OPERATING_SYSTEMS).indexOf(operating_system) < 0) {
+        if ((operating_system === undefined) || (typeof(operating_system) !== 'string') ||
+            (operating_system.length <= 0) || (operating_system.toLowerCase() !== 'darwin')) {
             throw new Error(`Operating system not supported. os:${operating_system}`);
         }
 
-        if (config !== undefined) {
-            // Polling Period (hours)
-            if (Object.prototype.hasOwnProperty.call(config, 'period_hr')) {
-                if ((typeof(config.period_hr)==='number') &&
-                    (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
-                    polling_period = config.period_hr;
-                }
-                else if (typeof(config.period_hr)!=='number') {
-                    throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-                }
-                else {
-                    throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-                }
-            }
-            // Default Alarm Threshold (percent)
-            if (Object.prototype.hasOwnProperty.call(config, 'default_alarm_threshold')) {
-                if ((typeof(config.period_hr)==='number') &&
-                    (config.default_alarm_threshold >= MIN_LOW_SPACE_THRESHOLD) && (config.default_alarm_threshold <= MAX_LOW_SPACE_THRESHOLD)) {
-                        defaultAlarmThreshold = config.default_alarm_threshold;
-                }
-                else if (typeof(config.period_hr)!=='number') {
-                    throw new TypeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
-                }
-                else {
-                    throw new RangeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
-                }
-            }
-            // Exclusion Masks
-            if (Object.prototype.hasOwnProperty.call(config, 'exclusion_masks')) {
-                if (Array.isArray(config.exclusion_masks)) {
-                    for (const mask of config.exclusion_masks) {
-                        if (VolumeInterrogator._validateVolumeExclusionMask(mask)) {
-                            exclusionMasks.push(mask);
-                        }
-                        else {
-                            throw new TypeError(`'config.volume_customizations' item is not valid.`);
-                        }
-                    }
-                }
-                else {
-                    throw new TypeError(`'config.volume_customizations' must be an array.`);
-                }
-            }
-            // Enable Volume Customizations
-            if (Object.prototype.hasOwnProperty.call(config, 'volume_customizations')) {
-                if (Array.isArray(config.volume_customizations)) {
-                    for (const item of config.volume_customizations) {
-                        if (VolumeInterrogator._validateVolumeCustomization(item)) {
-                            volumeCustomizations.push(item);
-                        }
-                        else {
-                            throw new TypeError(`'config.volume_customizations' item is not valid.`);
-                        }
-                    }
-                }
-                else {
-                    throw new TypeError(`'config.volume_customizations' must be an array.`);
-                }
-            }
-        }
-
         // Initialize the base class.
-        super();
+        super(config);
 
         // Initialize data members.
-        this._timeoutID                     = INVALID_TIMEOUT_ID;
-        this._deferInitCheckTimeoutID       = INVALID_TIMEOUT_ID;
-        this._decoupledStartTimeoutID       = INVALID_TIMEOUT_ID;
-        this._checkInProgress               = false;
-        this._period_hr                     = DEFAULT_PERIOD_HR;
         this._pendingFileSystems            = [];
         this._pendingVolumes                = [];
-        this._theVolumes                    = [];
         this._theVisibleVolumeNames         = [];
-        this._defaultAlarmThreshold         = defaultAlarmThreshold;
-        this._volumeCustomizations          = volumeCustomizations;
-        this._exclusionMasks                = exclusionMasks;
-        this._operating_system              = operating_system;
 
         // Callbacks bound to this object.
-        this._CB__initiateCheck                             = this._on_initiateCheck.bind(this);
         this._CB__list_known_virtual_filesystems_complete   = this._on_lsvfs_complete.bind(this);
         this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
         this._CB__visible_volumes                           = this._on_process_visible_volumes.bind(this);
         this._CB_process_diskUtil_info_complete             = this._on_process_diskutil_info_complete.bind(this);
         this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
         this._CB__VolumeWatcherChange                       = this._handleVolumeWatcherChangeDetected.bind(this);
-        this._CB__ResetCheck                                = this._on_reset_check.bind(this);
-        this._DECOUPLE_Start                                = this.Start.bind(this);
 
         // Create a watcher on the `/Volumes` folder to initiate a re-scan
         // when changes are detected.
         this._volWatcher = modFileSystem.watch(`/Volumes`, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
-
-        // Set the polling period
-        this.Period = polling_period;
     }
 
  /* ========================================================================
     Description:    Destuctor
     ======================================================================== */
     Terminate() {
-        this.Stop();
+        // Call the base.
+        super.Terminate();
 
         // Cleanup the volume watcher
         if (this._volWatcher !== undefined) {
@@ -203,188 +95,82 @@ export class VolumeInterrogator extends EventEmitter {
     }
 
  /* ========================================================================
-    Description: Read Property accessor for the polling period (hours)
+    Description: Helper function used to initiate an interrogation of the
+                 system volumes on darwin operating systems.
 
-    @return {number} - Polling period in hours.
+    @remarks: Called periodically by a timeout timer.
     ======================================================================== */
-    get Period() {
-        return this._period_hr;
+    _initiateInterrogation() {
+        // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
+        const ls_Volumes = new SpawnHelper();
+        ls_Volumes.on('complete', this._CB__visible_volumes);
+        ls_Volumes.Spawn({ command:'ls', arguments:['/Volumes'] });
     }
 
  /* ========================================================================
-    Description: Write Property accessor for the polling period (hours)
+    Description: Helper function used to reset an interrogation.
 
-    @param {number} [period_hr] - Polling period in hours.
-
-    @throws {TypeError}  - thrown if 'period_hr' is not a number.
-    @throws {RangeError} - thrown if 'period_hr' outside the allowed bounds.
+    @remarks: Called periodically by a timeout timer.
     ======================================================================== */
-    set Period(period_hr) {
-        if ((period_hr === undefined) || (typeof(period_hr) !== 'number')) {
-            throw new TypeError(`'period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-        }
-        if ((period_hr < MIN_PERIOD_HR) && (period_hr > MAX_PERIOD_HR)) {
-            throw new RangeError(`'period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-        }
-
-        // Update the polling period
-        this._period_hr = period_hr;
-
-        // Manage the timeout
-        this.Stop();
-    }
-
- /* ========================================================================
-    Description: Read Property accessor for the minimum polling period (hours)
-
-    @return {number} - Minimum polling period in hours.
-    ======================================================================== */
-    get MinimumPeriod() {
-        return MIN_PERIOD_HR;
-    }
-
- /* ========================================================================
-    Description: Read Property accessor for the maximum polling period (hours)
-
-    @return {number} - Maximum polling period in hours.
-    ======================================================================== */
-    get MaximumPeriod() {
-        return MAX_PERIOD_HR;
-    }
-
-  /* ========================================================================
-    Description: Read Property accessor for indicating if the checking of volume data is active
-
-    @return {boolean} - true if active.
-    ======================================================================== */
-    get Active() {
-        return (this._timeoutID !== INVALID_TIMEOUT_ID);
-    }
-
-  /* ========================================================================
-    Description: Read Property accessor for the operating system.
-
-    @return {SUPPORTED_OPERATING_SYSTEMS(string)} - operating system.
-    ======================================================================== */
-    get OS() {
-        return (this._operating_system);
-    }
-
- /* ========================================================================
-    Description: Start/Restart the interrogation process.
-    ======================================================================== */
-    Start() {
-        // Clear the decoupled start timer, if active.
-        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._decoupledStartTimeoutID);
-        }
-
-        // Stop the interrogation in case it is running.
-        this.Stop();
-
-        // Get the current uptime of the operating system
-        const uptime_ms = _os.uptime() * 1000.0;
-        // Has the operating system been running long enough?
-        if (uptime_ms < MIN_OS_UPTIME_TO_START_MS) {
-            // No. So defer the start for a bit.
-            this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, (MIN_OS_UPTIME_TO_START_MS-uptime_ms));
-        }
-        else {
-            // Perform a check now.
-            this._on_initiateCheck();
-        }
-    }
-
- /* ========================================================================
-    Description: Stop the interrogation process, if running.
-    ======================================================================== */
-    Stop() {
-        if (this._timeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._timeoutID);
-            this._timeoutID = INVALID_TIMEOUT_ID;
-        }
-    }
-
- /* ========================================================================
-    Description: Helper function used to reset an ongoing check.
-
-    @param {boolean} [issueReady] - Flag indicating if a Ready event should be emitted.
-
-    @remarks: Used to recover from unexpected errors.
-    ======================================================================== */
-    _on_reset_check(issueReady) {
-        if ((issueReady === undefined) || (typeof(issueReady) !== 'boolean')) {
-            console.log(issueReady);
-            throw new TypeError(`issueReadyEvent is not a boolean.`);
-        }
-
-        // Mark that the check is no longer in progress.
-        this._checkInProgress = false;
-
-        // Reset the timer id, now that it has tripped.
-        this._deferInitCheckTimeoutID = INVALID_TIMEOUT_ID;
-
-        // Clear the previously known volune data.
+    _doReset() {
         this._pendingFileSystems    = [];
         this._theVisibleVolumeNames = [];
-        this._theVolumes            = [];
         this._pendingVolumes        = [];
+    }
 
-        if (this._defaultAlarmThreshold !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._defaultAlarmThreshold);
-            this._defaultAlarmThreshold = INVALID_TIMEOUT_ID;
+ /* ========================================================================
+    Description:    Read-Only Property used to determine if a check is in progress.
+
+    @return {boolean} - true if a check is in progress.
+    ======================================================================== */
+    get _isCheckInProgress() {
+        const checkInProgress = ((this._pendingVolumes.length !== 0) ||
+                                 (this._pendingFileSystems.length !== 0));
+        return checkInProgress;
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_process_visible_volumes(response) {
+        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+        _debug_config(response.result.toString());
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
         }
 
-        if (issueReady) {
+        if (response.valid &&
+            (response.result !== undefined)) {
+            // Update the list of visible volumes
+            this._theVisibleVolumeNames = response.result.toString().split('\n');
+
+            // Spawn a 'lsvfs' to determine the number and types of known file systems.
+            const diskutil_list = new SpawnHelper();
+            diskutil_list.on('complete', this._CB__list_known_virtual_filesystems_complete);
+            diskutil_list.Spawn({ command:'lsvfs' });
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
+
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
             this.emit('ready', {results:[]});
         }
-    }
-
- /* ========================================================================
-    Description: Helper function used to initiate an interrogation of the
-                 system volumes.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
-    _on_initiateCheck() {
-        // Is there a current volume check underway?
-        const isPriorCheckInProgress = this._checkInProgress;
-
-        _debug_process(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
-
-        if (!this._checkInProgress) {
-
-            // Alert interested clients that the scan was initiated.
-            this.emit('scanning');
-
-            // Mark that the check is in progress.
-            this._checkInProgress = true;
-
-            // Clear the previously known volune data.
-            this._pendingFileSystems    = [];
-            this._theVisibleVolumeNames = [];
-            this._theVolumes            = [];
-            this._pendingVolumes        = [];
-
-            // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
-            const ls_Volumes = new SpawnHelper();
-            ls_Volumes.on('complete', this._CB__visible_volumes);
-            ls_Volumes.Spawn({ command:'ls', arguments:['/Volumes'] });
-        }
-        else {
-            if (this._deferInitCheckTimeoutID === INVALID_TIMEOUT_ID) {
-                this._deferInitCheckTimeoutID = setTimeout(this._CB__ResetCheck, MAX_RETRY_INIT_CHECK_Time, true);
-            }
-        }
-
-        // Compute the number of milliseconds for the timeout.
-        // Note: If there was a check in progress when we got here, try again in a little bit,
-        //       do not wait for the full timeout.
-        const theDelay = ( isPriorCheckInProgress ? RETRY_TIMEOUT_MS : (this._period_hr * CONVERT_HR_TO_MS) );
-        // Queue another check
-        this._timeoutID = setTimeout(this._CB__initiateCheck, theDelay);
     }
 
  /* ========================================================================
@@ -600,49 +386,6 @@ export class VolumeInterrogator extends EventEmitter {
             this.emit('ready', {results:[]});
         }
     }
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
-    _on_process_visible_volumes(response) {
-        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result.toString());
-
-        // If a prior error was detected, ignore future processing
-        if (!this._checkInProgress)
-        {
-            return;
-        }
-
-        if (response.valid &&
-            (response.result !== undefined)) {
-            // Update the list of visible volumes
-            this._theVisibleVolumeNames = response.result.toString().split('\n');
-
-            // Spawn a 'lsvfs' to determine the number and types of known file systems.
-            const diskutil_list = new SpawnHelper();
-            diskutil_list.on('complete', this._CB__list_known_virtual_filesystems_complete);
-            diskutil_list.Spawn({ command:'lsvfs' });
-        }
-        else {
-            // Clear the check in progress.
-            this._checkInProgress = false;
-            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
-
-            // Fire the ready event with no data.
-            // This willl provide the client an opportunity to reset
-            this.emit('ready', {results:[]});
-        }
-    }
 
  /* ========================================================================
     Description:    Event handler for the SpawnHelper 'complete' Notification
@@ -751,7 +494,7 @@ export class VolumeInterrogator extends EventEmitter {
                                                                 low_space_alert:    lowSpaceAlert
                                 });
                                 this._theVolumes.push(volData);
-    /*
+/*
                                 // APFS volumes may have some of their capacity consumed by purgable data. For example: APFS Snapshots.
                                 // This purgable data can only be evaluated if the volume is mounted.
                                 if ((volData.VolumeType === VOLUME_TYPES.TYPE_APFS) &&
@@ -765,7 +508,7 @@ export class VolumeInterrogator extends EventEmitter {
                                     du_process.on('complete', this._CB_process_disk_utilization_stats_complete);
                                     du_process.Spawn({ command:'du', arguments:['-skHx', volData.MountPoint] });
                                 }
-    */
+*/
                         }
                         else {
                             // Ignore the inability to process this item if there is no valid volume name.
@@ -780,7 +523,7 @@ export class VolumeInterrogator extends EventEmitter {
                         if ((Object.prototype.hasOwnProperty.call(config, 'Error')) && (typeof(config.Error) === 'boolean') && (config.Error)) {
                             // We were unable to get more detailed informatopn. Just use what we have, but update the IsShown property.
                             const volData = new VolumeData({name:               response.token.Name,
-                                                            volume_type:        response.token.FilesystemType,
+                                                            volume_type:        response.token.VolumeType,
                                                             disk_id:            response.token.DeviceIdentifier,
                                                             mount_point:        response.token.MountPoint,
                                                             capacity_bytes:     response.token.Size,
@@ -1017,34 +760,6 @@ export class VolumeInterrogator extends EventEmitter {
     }
 
  /* ========================================================================
-    Description:  Helper for managing the "in progress" flag and 'ready' event
-    ======================================================================== */
-    _updateCheckInProgress() {
-        const wasCheckInProgress = this._checkInProgress;
-        this._checkInProgress = ((this._pendingVolumes.length !== 0) &&
-                                 (this._pendingFileSystems.length === 0));
-        _debug_process(`_updateCheckInProgress(): Pending Volume Count - ${this._pendingVolumes.length}`);
-        if (wasCheckInProgress && !this._checkInProgress) {
-
-            // Fire Ready event
-            this.emit('ready', {results:this._theVolumes});
-
-            _debug_process(`Ready event.`);
-            for (const volume of this._theVolumes) {
-                _debug_process(`Volume Name: ${volume.Name}`);
-                _debug_process(`\tVisible:    ${volume.IsVisible}`);
-                _debug_process(`\tShown:      ${volume.IsShown}`);
-                _debug_process(`\tMountPoint: ${volume.MountPoint}`);
-                _debug_process(`\tDevNode:    ${volume.DeviceNode}`);
-                _debug_process(`\tCapacity:   ${VolumeData.ConvertFromBytesToGB(volume.Size).toFixed(4)} GB`);
-                _debug_process(`\tFree:       ${VolumeData.ConvertFromBytesToGB(volume.FreeSpace).toFixed(4)} GB`);
-                _debug_process(`\tUsed:       ${VolumeData.ConvertFromBytesToGB(volume.UsedSpace).toFixed(4)} GB`);
-                _debug_process(`\t% Used:     ${((volume.UsedSpace/volume.Size)*100.0).toFixed(2)}%`);
-            }
-        }
-    }
-
- /* ========================================================================
     Description:  Event handler for file system change detections.
                   Called when the contents of `/Volumes' changes.
 
@@ -1063,133 +778,5 @@ export class VolumeInterrogator extends EventEmitter {
                 this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
             }
         }, eventType, fileName);
-    }
-
- /* ========================================================================
-    Description:  Helper to compute the alert for a specific volume.
-
-    @param { string } [volumeName]          - Name of the volume
-    @param { string } [volumeUUID]          - Unique Identifier (serial number) of the volume
-    @param { number}  [volumePercentFree]   - Percentage of free space (0...100)
-
-    @throws {TypeError} - thrown for invalid arguments
-    @throws {RangeError} - thrown when 'volumePercentFree' is outside the range of 0...100
-    ======================================================================== */
-    _determineLowSpaceAlert(volumeName, volumeUUID, volumePercentFree) {
-        // Validate arguments
-        if ((volumeName === undefined) || (typeof(volumeName) !== 'string') || (volumeName.length <= 0)) {
-            throw new TypeError(`'volumeName' must be a non-zero length string`);
-        }
-        if ((volumeUUID === undefined) || (typeof(volumeUUID) !== 'string') || (volumeUUID.length <= 0)) {
-            throw new TypeError(`'volumeUUID' must be a non-zero length string`);
-        }
-        if ((volumePercentFree === undefined) || (typeof(volumePercentFree) !== 'number')) {
-            throw new TypeError(`'volumePercentFree' must be a number`);
-        }
-        else if ((volumePercentFree < MIN_LOW_SPACE_THRESHOLD) || (volumePercentFree > MAX_LOW_SPACE_THRESHOLD)) {
-            throw new RangeError(`'volumePercentFree' must be in the range of ${MIN_LOW_SPACE_THRESHOLD}...${MAX_LOW_SPACE_THRESHOLD}. ${volumePercentFree}`);
-        }
-
-        // Determine the default alert state.
-        let alert = (volumePercentFree < this._defaultAlarmThreshold);
-
-        // Does this volume have a customization?
-        const volCustomizations = this._volumeCustomizations.filter((item) => {
-            const match = ( ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
-                             (item.volume_name.toLowerCase() === volumeName.toLowerCase())) ||
-                            ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
-                             (item.volume_serial_num.toLowerCase() === volumeUUID.toLowerCase())) );
-            return match;
-        });
-        if ((volCustomizations !== undefined) && (volCustomizations.length > 0)) {
-            // There is at least one customization.
-
-            // Filter for the matching customizations that indicate an alert.
-            const trippedAlerts = volCustomizations.filter((item) => {
-                const alertTripped = ((item.volume_low_space_alarm_active) &&
-                                      (volumePercentFree < item.volume_alarm_threshold));
-
-                return alertTripped;
-            });
-
-            // If any alerts were set, then indicate that.
-            alert = (trippedAlerts.length > 0);
-        }
-
-        return alert;
-    }
-
- /* ========================================================================
-    Description:  Helper to evaluate the validity of the custom configuration settings.
-
-    @param { object }   [custom_config]                        - Custom per-volume configuration settings.
-    @param { string }   [config.volume_id_method]              - The method for identifying the volume.
-    @param { string }   [config.volume_name]                   - The name of the volume. (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
-    @param { string }   [config.volume_serial_num]             - The serial number of the volume. (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
-    @param { boolean }  [config.volume_low_space_alarm_active] - The flag indicating if the low space alarm is active or not.
-    @param { number }   [config.volume_alarm_threshold]        - The  low space threshold, in percent. (required when `config.volume_low_space_alarm_active === true`)
-
-    @return {boolean} - `true` if the configuration is valid. `false` otherwise.
-    ======================================================================== */
-    static _validateVolumeCustomization(custom_config) {
-        // Initial sanoty check.
-        let valid = (custom_config !== undefined);
-
-        if (valid) {
-            // Volume Id Method
-            if ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_id_method')) ||
-                (typeof(custom_config.volume_id_method) !=='string')                       ||
-                (Object.values(VOLUME_IDENTIFICATION_METHODS).indexOf(custom_config.volume_id_method) < 0)) {
-                    valid = false;
-            }
-            // Volume Name
-            if (valid &&
-                (custom_config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
-                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_name')) ||
-                 (typeof(custom_config.volume_name) !=='string')                       ||
-                 (custom_config.volume_name.length <= 0))) {
-                valid = false;
-            }
-            // Volume Serial Number
-            if (valid &&
-                (custom_config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
-                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_serial_num')) ||
-                 (typeof(custom_config.volume_serial_num) !=='string')                       ||
-                 (custom_config.volume_serial_num.length <= 0))) {
-                valid = false;
-            }
-            // Low Space Alarm Active
-            if ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_low_space_alarm_active')) ||
-                (typeof(custom_config.volume_low_space_alarm_active) !=='boolean')) {
-                valid = false;
-            }
-            // Low Space Alarm Threshold
-            if (valid &&
-                custom_config.volume_low_space_alarm_active &&
-                ((!Object.prototype.hasOwnProperty.call(custom_config, 'volume_alarm_threshold')) ||
-                 (typeof(custom_config.volume_alarm_threshold) !=='number')                       ||
-                 (custom_config.volume_alarm_threshold <= MIN_LOW_SPACE_THRESHOLD)                ||
-                 (custom_config.volume_alarm_threshold >= MAX_LOW_SPACE_THRESHOLD))) {
-                valid = false;
-            }
-        }
-
-        return valid;
-    }
-
- /* ========================================================================
-    Description:  Helper to evaluate the validity of the volume exclusion configuration.
-
-    @param { object }   [mask_config]                          - Volume exclusion mask.
-
-    @return {boolean} - `true` if the exclusion mask is valid. `false` otherwise.
-    ======================================================================== */
-    static _validateVolumeExclusionMask(mask_config) {
-        let valid = (mask_config !== undefined);
-
-        if (valid) {
-            valid = (typeof(mask_config) === 'string');
-        }
-        return valid;
     }
 }

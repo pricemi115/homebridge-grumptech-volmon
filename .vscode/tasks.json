@@ -26,9 +26,6 @@
 				"kind": "build",
 				"isDefault": true
 			},
-			"presentation": {
-				"clear": true
-			},
 			"options": {
 				"cwd": "${workspaceFolder}${pathSeparator}dist",
 				"env": {
@@ -46,6 +43,9 @@
 			"group": "build",
 			"options": {
 				"cwd": "${workspaceFolder}${pathSeparator}dist"
+			},
+			"presentation": {
+				"clear": true
 			},
 			"command": "rm -rf ${workspaceFolderBasename}.js",
 		}
