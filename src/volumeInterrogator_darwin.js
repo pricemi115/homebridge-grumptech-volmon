@@ -24,7 +24,7 @@ _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
 const INVALID_TIMEOUT_ID                = -1;
-const FS_CHANGED_DETECTION_TIMEOUT_MS   = 500 /*milliseconds */
+const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000 /*milliseconds */
 const BLOCKS512_TO_BYTES                = 512;
 const REGEX_WHITE_SPACE                 = /\s+/;
 
@@ -230,9 +230,9 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
 
                                 // Spawn a 'diskutil list' to see all the disk/volume data
                                 _debug_process(`Spawn df for fs type '${newFS.type}'.`);
-                                const diskutil_list = new SpawnHelper();
-                                diskutil_list.on('complete', this._CB__display_free_disk_space_complete);
-                                diskutil_list.Spawn({ command:'df', arguments:['-a', '-b', '-T', newFS.type], token:newFS });
+                                const diskUsage = new SpawnHelper();
+                                diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+                                diskUsage.Spawn({ command:'df', arguments:['-a', '-b', '-T', newFS.type], token:newFS });
                             }
                             else
                             {
