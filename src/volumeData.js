@@ -27,7 +27,9 @@ export const VOLUME_TYPES = {
     TYPE_UDF      : 'udf',       /* Universal Disk Format (ISO, etc) */
     TYPE_MSDOS    : 'msdos',     /* Typically used for EFI & FAT32 */
     TYPE_NTFS     : 'ntfs',
-    TYPE_SMBFS    : 'smbfs'
+    TYPE_SMBFS    : 'smbfs',
+    TYPE_EXT4     : 'ext4',     /* Typically seen on linux */
+    TYPE_VFAT     : 'vfat'      /* Typically seen on linux */
 };
 
  /* ========================================================================
