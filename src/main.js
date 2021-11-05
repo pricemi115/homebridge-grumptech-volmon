@@ -530,6 +530,7 @@ class VolumeInterrogatorPlatform {
                         }
                         // Clean up.
                         purgeList.forEach(accessory => {
+                            this._volumesData.delete(accessory.displayName);
                             this._removeAccessory(accessory);
                         });
                     }
