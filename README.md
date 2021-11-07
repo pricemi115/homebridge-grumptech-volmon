@@ -68,6 +68,7 @@ The volumes on the system will be rescanned both (a) periodically according to t
 - OSX / macOS: `/Volumes`
 - Linux:       `/media/<username>` and `/mnt`
 <br>
+
 ### Control Switches
 - _Refresh_: This switch, when turned on, is used to initiate a rescan of the volumes on the system. The user is not permitted to turn the switch off. It will automatically turn off when the scan is complete. This allows the user to update the _battery service_ accessories without needing to wait for the polling interval to expire.
 - _Purge_: When this switch is turned on, _battery service_ accessories that correspond to volumes that are no longer identified, for example ones that have been dismounted, will be removed (or purged). When this switch is off, any volumes that have been dismounted or now match one of the exclusion masks will show the battery level and battery alert as _Not Reachable_. Homekit applications will render these _not reachable_ differently. For example, the Apple Home app will simply not display the Battery Level and Low Battery Status. Other applications like [Home+ 5](https://apps.apple.com/us/app/home-5/id995994352) app shows the accessories as _Error_. The state of this switch is persisted across sessions.
