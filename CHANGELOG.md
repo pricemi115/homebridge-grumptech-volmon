@@ -4,7 +4,7 @@ Change history for _homebridge-grumptech-volmon_
 ---
 ---
 
-## [1.3.0] - 2021-11-07 (Thanskgiving Release 🦃)
+## [1.3.1] - 2021-11-07 (Thanskgiving Release 🦃)
 This update is not a turkey !
 ### What's new
 - [Issue #30](https://github.com/pricemi115/homebridge-grumptech-volmon/issues/30): Support for additional operating systems. Included in this release is support for the _linux_ operating system.
