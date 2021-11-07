@@ -1,6 +1,6 @@
 # Homebridge Volume Monitor
 
-[Homebridge Volume Monitor](https://github.com/pricemi115/homebridge-grumptech-volmon), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that publishes the remaining storage of mounted volumes on macOS/OSX operating systems to Homekit. The remaining storage, computed as a percentage of the total, is presented as a _Battery Service_ accessory. A _low battery alert_ will be issued when the remaining storage falls below a specified threshold.
+[Homebridge Volume Monitor](https://github.com/pricemi115/homebridge-grumptech-volmon), by [GrumpTech](https://github.com/pricemi115/), is a [Homebridge](https://homebridge.io) dynamic platform plug-in that publishes the remaining storage of mounted volumes on macOS/OSX and linux operating systems to Homekit. The remaining storage, computed as a percentage of the total, is presented as a _Battery Service_ accessory. A _low battery alert_ will be issued when the remaining storage falls below a specified threshold.
 
 ## Change Log
 The change history can be viewed [here](./CHANGELOG.md)
