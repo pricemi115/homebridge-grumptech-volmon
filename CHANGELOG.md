@@ -3,6 +3,17 @@ Change history for _homebridge-grumptech-volmon_
 
 ---
 ---
+
+## [1.3.0] - 2021-11-07 (Thanskgiving Release 🦃)
+This update is not a turkey !
+### What's new
+- [Issue #30](https://github.com/pricemi115/homebridge-grumptech-volmon/issues/30): Support for additional operating systems. Included in this release is support for the _linux_ operating system.
+- Note: if your operating system is not supported, please submit a request [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues) or, better yet, contribute a solution.
+
+### Fixed
+- Disconnected/dismounted volumes would be republished to homekit and then be immediately removed on each scan. End users would never observe this issue using homekit, but the issue was apparent when studying the homebridge logs.
+
+---
 ## [1.2.1] - 2021-10-25 (Autumn Release 🎃🎃)
 Happy Halloween!! Apparently, prior versions did indeed contain a trick!! Sorry about that.
 ### Fixed
