@@ -51,6 +51,7 @@ import {
 
 // Internal dependencies
 import { VolumeInterrogator_darwin as _VolInterrogatorDarwin } from './volumeInterrogator_darwin.js';
+import { VolumeInterrogator_linux  as _VolInterrogatorLinux } from './volumeInterrogator_linux.js';
 import { VolumeData } from './volumeData';
 
 // Configuration constants.
@@ -79,6 +80,7 @@ const HOST_OPERATING_SYSTEM = process.platform;
 // Supported operating systems.
 const SUPPORTED_OPERATING_SYSTEMS = {
     OS_DARWIN: 'darwin',
+    OS_LINUX:  'linux',
 };
 
 // Accessory must be created from PlatformAccessory Constructor
@@ -210,6 +212,12 @@ class VolumeInterrogatorPlatform {
                 // OSX & macOS
                 case SUPPORTED_OPERATING_SYSTEMS.OS_DARWIN: {
                     this._volumeInterrogator = new _VolInterrogatorDarwin(viConfig);
+                }
+                break;
+
+                // Linux
+                case SUPPORTED_OPERATING_SYSTEMS.OS_LINUX: {
+                    this._volumeInterrogator = new _VolInterrogatorLinux(viConfig);
                 }
                 break;
 

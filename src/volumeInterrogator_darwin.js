@@ -102,8 +102,11 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
     @return {boolean} - true if a check is in progress.
     ======================================================================== */
     get _isCheckInProgress() {
+        _debug_process(`_isCheckInProgress: Pending Volume Count - ${this._pendingVolumes.length}`);
+
         const checkInProgress = ((this._pendingVolumes.length !== 0) ||
                                  (this._pendingFileSystems.length !== 0));
+
         return checkInProgress;
     }
 
@@ -436,14 +439,8 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
                     // Attempt to parse the data as a plist.
                     const config = _plist.parse(response.result.toString());
 
-                    let isShown = true;
-                    for (const mask of this._exclusionMasks) {
-                        _debug_process(`Evaluating exclusion mask '${mask}' for volume '${response.token.Name}'`);
-                        const reMask = new RegExp(mask);
-                        const matches = response.token.MountPoint.match(reMask);
-                        _debug_process(matches);
-                        isShown = isShown && (matches === null);
-                    }
+                    // Determine if the volume should be shown.
+                    const  isShown = this._isVolumeShown(response.token.MountPoint);
 
                     // Get the device identifier for this volume and manage the pending
                     // items.
