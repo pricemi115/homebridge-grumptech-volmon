@@ -8,6 +8,7 @@
 'use strict';
 
 // External dependencies and imports.
+const _os               = require('os');
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 
@@ -95,6 +96,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
     @return {boolean} - true if a check is in progress.
     ======================================================================== */
     get _isCheckInProgress() {
+        console.log(`_isCheckInProgress: ${this._dfSpawnInProgress}`);
         return this._dfSpawnInProgress;
     }
 
@@ -105,7 +107,10 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
     @return {[string]} - Array of folders to be watched for changes.
     ======================================================================== */
     get _watchFolders() {
-        return (['/media', '/mnt']);
+        const username = _os.userInfo().username;
+        _debug_process(`Username: ${username}`);
+
+        return ([`/media/${username}`, '/mnt']);
     }
 
  /* ========================================================================
@@ -190,6 +195,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
                                                     capacity_bytes:     newVol.blocks * BLOCKS512_TO_BYTES,
                                                     free_space_bytes:   (newVol.blocks - newVol.used_blks) * BLOCKS512_TO_BYTES,
                                                     visible:            true,
+                                                    shown:              this._isVolumeShown(newVol.mount_point),
                                                     low_space_alert:    lowSpaceAlert
                     });
 

@@ -422,8 +422,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
     _updateCheckInProgress() {
         const wasCheckInProgress = this._checkInProgress;
         this._checkInProgress = this._isCheckInProgress;
-        _debug_process(`_updateCheckInProgress(): Pending Volume Count - ${this._pendingVolumes.length}`);
-        if (wasCheckInProgress && !this._checkInProgress) {
+         if (wasCheckInProgress && !this._checkInProgress) {
 
             // Fire Ready event
             this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results:this._theVolumes});
@@ -516,6 +515,34 @@ export class VolumeInterrogatorBase extends EventEmitter {
                 this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
             }
         }, eventType, fileName);
+    }
+
+ /* ========================================================================
+    Description:  Helper to determine if the volume should be shown or not.
+
+    @param { string } [mountPoint] - Mount Point of the volume
+
+    #return { boolena } - True if shown. False otherwise.
+
+    @throws { TypeError } - thrown if mountPoint is not a non-null string.
+    ======================================================================== */
+    _isVolumeShown(mountPoint) {
+
+        if ((mountPoint === undefined) ||
+            (typeof(mountPoint) !== 'string') ||(mountPoint.length <= 0)) {
+            throw new TypeError(`_isVolumeShown. mountPoint is not valid. ${mountPoint}`);
+        }
+
+        let isShown = true;
+        for (const mask of this._exclusionMasks) {
+            _debug_process(`Evaluating exclusion mask '${mask}' for mount point '${mountPoint}'`);
+            const reMask = new RegExp(mask);
+            const matches = mountPoint.match(reMask);
+            _debug_process(matches);
+            isShown = isShown && (matches === null);
+        }
+
+        return isShown
     }
 
  /* ========================================================================
