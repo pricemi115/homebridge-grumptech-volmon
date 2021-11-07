@@ -11,6 +11,7 @@
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 const _os               = require('os');
+import * as modFileSystem from 'fs';
 import EventEmitter       from 'events';
 
 // Internal dependencies.
@@ -33,6 +34,7 @@ const MIN_LOW_SPACE_THRESHOLD           = 0.0;
 const MAX_LOW_SPACE_THRESHOLD           = 100.0;
 const MAX_RETRY_INIT_CHECK_Time         = 120000;
 const MIN_OS_UPTIME_TO_START_MS         = 600000; /* 10 minutes */
+const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000 /*milliseconds */
 
 // Volume Identification Methods
 const VOLUME_IDENTIFICATION_METHODS = {
@@ -155,12 +157,33 @@ export class VolumeInterrogatorBase extends EventEmitter {
         this._exclusionMasks                = exclusionMasks;
 
         // Callbacks bound to this object.
-        this._CB__initiateCheck                             = this._on_initiateCheck.bind(this);
-        this._CB__ResetCheck                                = this._on_reset_check.bind(this);
-        this._DECOUPLE_Start                                = this.Start.bind(this);
+        this._CB__initiateCheck             = this._on_initiateCheck.bind(this);
+        this._CB__ResetCheck                = this._on_reset_check.bind(this);
+        this._DECOUPLE_Start                = this.Start.bind(this);
+        this._CB__VolumeWatcherChange       = this._handleVolumeWatcherChangeDetected.bind(this);
 
         // Set the polling period
         this.Period = polling_period;
+
+        // Create an empty array of folder watchers.
+        this._volWatchers = [];
+
+        // Get the list of watch folders.
+        const watchFolders = this._watchFolders;
+        // Create a watcher on the folders to initiate a re-scan
+        // when changes are detected.
+        for (const folder of watchFolders)
+        {
+            modFileSystem.access(folder, modFileSystem.constants.F_OK, (err) => {
+                if (!err) {
+                    const watcher = modFileSystem.watch(folder, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
+                    this._volWatchers.push(watcher);
+                }
+                else {
+                    _debug_config(`Unable to watch folder: '${folder}`);
+                }
+            });
+        }
     }
 
  /* ========================================================================
@@ -168,6 +191,16 @@ export class VolumeInterrogatorBase extends EventEmitter {
     ======================================================================== */
     Terminate() {
         this.Stop();
+
+        // Cleanup the volume watcher
+        let watcher = undefined;
+        do {
+            watcher = this._volWatchers.pop();
+            if (watcher !== undefined) {
+                watcher.close();
+            }
+        } while (watcher !== undefined);
+
         this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
         this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
     }
@@ -265,8 +298,6 @@ export class VolumeInterrogatorBase extends EventEmitter {
             this._timeoutID = INVALID_TIMEOUT_ID;
         }
     }
-
-
 
  /* ========================================================================
     Description: Helper function used to reset an ongoing check.
@@ -376,6 +407,16 @@ export class VolumeInterrogatorBase extends EventEmitter {
     }
 
  /* ========================================================================
+    Description:    Abstract property used to get an array of watch folders
+                    used to initiate an interrogation.
+
+    @throws {Error} - Always thrown. Should only be invoked on derived classes.
+    ======================================================================== */
+    get _watchFolders() {
+        throw new Error(`Abstract Property _watchFolders() invoked!`);
+    }
+
+ /* ========================================================================
     Description:  Helper for managing the "in progress" flag and 'ready' event
     ======================================================================== */
     _updateCheckInProgress() {
@@ -454,6 +495,27 @@ export class VolumeInterrogatorBase extends EventEmitter {
         }
 
         return alert;
+    }
+
+ /* ========================================================================
+    Description:  Event handler for file system change detections.
+                  Called when the contents of `/Volumes' changes.
+
+    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
+    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
+    ======================================================================== */
+    _handleVolumeWatcherChangeDetected(eventType, fileName) {
+        // Decouple the automatic refresh.
+        setImmediate((eType, fName) => {
+            _debug_process(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
+            // Initiate a re-scan (decoupled from the notification event), if active (even if there is a scan already in progress.)
+            if (this.Active) {
+                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+                    clearTimeout(this._decoupledStartTimeoutID);
+                }
+                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
+            }
+        }, eventType, fileName);
     }
 
  /* ========================================================================
