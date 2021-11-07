@@ -11,7 +11,6 @@
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 const _plist            = require('plist');
-import * as modFileSystem from 'fs';
 
 // Internal dependencies.
 import { VolumeInterrogatorBase as _VolumeInterrogatorBase } from './volumeInterrogatorBase.js';
@@ -23,8 +22,6 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const INVALID_TIMEOUT_ID                = -1;
-const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000 /*milliseconds */
 const BLOCKS512_TO_BYTES                = 512;
 const REGEX_WHITE_SPACE                 = /\s+/;
 
@@ -73,25 +70,6 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         this._CB__visible_volumes                           = this._on_process_visible_volumes.bind(this);
         this._CB_process_diskUtil_info_complete             = this._on_process_diskutil_info_complete.bind(this);
         this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
-        this._CB__VolumeWatcherChange                       = this._handleVolumeWatcherChangeDetected.bind(this);
-
-        // Create a watcher on the `/Volumes` folder to initiate a re-scan
-        // when changes are detected.
-        this._volWatcher = modFileSystem.watch(`/Volumes`, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
-    }
-
- /* ========================================================================
-    Description:    Destuctor
-    ======================================================================== */
-    Terminate() {
-        // Call the base.
-        super.Terminate();
-
-        // Cleanup the volume watcher
-        if (this._volWatcher !== undefined) {
-            this._volWatcher.close();
-            this._volWatcher = undefined;
-        }
     }
 
  /* ========================================================================
@@ -127,6 +105,16 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         const checkInProgress = ((this._pendingVolumes.length !== 0) ||
                                  (this._pendingFileSystems.length !== 0));
         return checkInProgress;
+    }
+
+ /* ========================================================================
+    Description:    Read-only property used to get an array of watch folders
+                    used to initiate an interrogation.
+
+    @return {[string]} - Array of folders to be watched for changes.
+    ======================================================================== */
+    get _watchFolders() {
+        return (['/Volumes']);
     }
 
  /* ========================================================================
@@ -757,26 +745,5 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         }
 
         return diskIdentifiers;
-    }
-
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-                  Called when the contents of `/Volumes' changes.
-
-    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
-    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
-    ======================================================================== */
-    _handleVolumeWatcherChangeDetected(eventType, fileName) {
-        // Decouple the automatic refresh.
-        setImmediate((eType, fName) => {
-            _debug_process(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
-            // Initiate a re-scan (decoupled from the notification event), if active (even if there is a scan already in progress.)
-            if (this.Active) {
-                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-                    clearTimeout(this._decoupledStartTimeoutID);
-                }
-                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
-            }
-        }, eventType, fileName);
     }
 }

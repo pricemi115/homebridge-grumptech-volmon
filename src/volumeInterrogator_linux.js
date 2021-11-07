@@ -10,7 +10,6 @@
 // External dependencies and imports.
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
-import * as modFileSystem from 'fs';
 
 // Internal dependencies.
 import { VolumeInterrogatorBase as _VolumeInterrogatorBase } from './volumeInterrogatorBase.js';
@@ -22,8 +21,6 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const INVALID_TIMEOUT_ID                = -1;
-const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000 /*milliseconds */
 const BLOCKS512_TO_BYTES                = 512;
 const REGEX_WHITE_SPACE                 = /\s+/;
 
@@ -61,28 +58,9 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
         // Initialize the base class.
         super(config);
 
-        this._spawnInProgress = false;
+        this._dfSpawnInProgress = false;
 
         this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
-        this._CB__VolumeWatcherChange                       = this._handleVolumeWatcherChangeDetected.bind(this);
-
-        // Create a watcher on the `/Volumes` folder to initiate a re-scan
-        // when changes are detected.
-        this._volWatcher = modFileSystem.watch(`/media`, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
-    }
-
- /* ========================================================================
-    Description:    Destuctor
-    ======================================================================== */
-    Terminate() {
-        // Call the base.
-        super.Terminate();
-
-        // Cleanup the volume watcher
-        if (this._volWatcher !== undefined) {
-            this._volWatcher.close();
-            this._volWatcher = undefined;
-        }
     }
 
  /* ========================================================================
@@ -93,7 +71,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
     ======================================================================== */
     _initiateInterrogation() {
         // Set Check-in-Progress.
-        this._spawnInProgress = true;
+        this._dfSpawnInProgress = true;
 
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const diskUsage = new SpawnHelper();
@@ -108,7 +86,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
     ======================================================================== */
     _doReset() {
         // Clear Check-in-Progress.
-        this._spawnInProgress = false;
+        this._dfSpawnInProgress = false;
     }
 
  /* ========================================================================
@@ -117,7 +95,17 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
     @return {boolean} - true if a check is in progress.
     ======================================================================== */
     get _isCheckInProgress() {
-        return this._spawnInProgress;
+        return this._dfSpawnInProgress;
+    }
+
+ /* ========================================================================
+    Description:    Read-only property used to get an array of watch folders
+                    used to initiate an interrogation.
+
+    @return {[string]} - Array of folders to be watched for changes.
+    ======================================================================== */
+    get _watchFolders() {
+        return (['/media', '/mnt']);
     }
 
  /* ========================================================================
@@ -142,7 +130,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
         }
 
         // Clear the spawn in progress.
-        this._spawnInProgress = false;
+        this._dfSpawnInProgress = false;
 
         // If a prior error was detected, ignore future processing
         if (!this._checkInProgress)
@@ -222,26 +210,5 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
             // This willl provide the client an opportunity to reset
             this.emit('ready', {results:[]});
         }
-    }
-
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-                  Called when the contents of `/Volumes' changes.
-
-    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
-    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
-    ======================================================================== */
-    _handleVolumeWatcherChangeDetected(eventType, fileName) {
-        // Decouple the automatic refresh.
-        setImmediate((eType, fName) => {
-            _debug_process(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
-            // Initiate a re-scan (decoupled from the notification event), if active (even if there is a scan already in progress.)
-            if (this.Active) {
-                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-                    clearTimeout(this._decoupledStartTimeoutID);
-                }
-                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
-            }
-        }, eventType, fileName);
     }
 }
