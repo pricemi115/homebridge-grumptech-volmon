@@ -13,14 +13,12 @@ function _interopNamespace(e) {
         var d = Object.getOwnPropertyDescriptor(e, k);
         Object.defineProperty(n, k, d.get ? d : {
           enumerable: true,
-          get: function () {
-            return e[k];
-          }
+          get: function () { return e[k]; }
         });
       }
     });
   }
-  n['default'] = e;
+  n["default"] = e;
   return Object.freeze(n);
 }
 
@@ -502,338 +500,6 @@ function unwrapListeners(arr) {
 }
 
 /* ==========================================================================
-   File:               spawnHelper.js
-   Class:              Spawn Helper
-   Description:	       Wrapper for managing spawned tasks.
-   Copyright:          Dec 2020
-   ========================================================================== */
-
-// External dependencies and imports.
-const _debug$2    = require('debug')('spawn_helper');
-const { spawn } = require('child_process');
-
-// Bind debug to console.log
-_debug$2.log = console.log.bind(console);
-
-/* ==========================================================================
-   Class:              SpawnHelper
-   Description:	       Wrapper class for handling spawned tasks
-   Copyright:          Dec 2020
-
-   @event 'complete' => function({object})
-   @event_param {bool}              [valid]  - Flag indicating if the spawned task completed successfully.
-   @event_param {<Buffer>}          [result] - Buffer of the data or error returned by the spawned process.
-   #event_param {<SpawnHelper>}     [source] - Reference to *this* SpawnHelper that provided the results.
-   Event emmitted when the spawned task completes.
-   ========================================================================== */
-class SpawnHelper extends EventEmitter {
- /* ========================================================================
-    Description:    Constructor
-
-    @param {object} [config] - Not used.
-
-    @return {object}  - Instance of the SpawnHelper class.
-
-    @throws {TypeError}  - thrown if the configuration is not undefined.
-    ======================================================================== */
-    constructor(config) {
-        if (config !== undefined) {
-            throw new TypeError(`SpawnHelper does not use any arguments.`);
-        }
-
-        // Initialize the base class.
-        super();
-
-        // Initialize data members.
-        this._command           = undefined;
-        this._arguments         = undefined;
-        this._options           = undefined;
-        this._token             = undefined;
-        this._result_data       = undefined;
-        this._error_data        = undefined;
-        this._error_encountered = false;
-        this._pending           = false;
-
-        // Bound Callbacks
-        this._CB__process_stdout_data   = this._process_stdout_data.bind(this);
-        this._CB__process_stderror_data = this._process_stderror_data.bind(this);
-        this._CB_process_message        = this._process_message.bind(this);
-        this._CB_process_error          = this._process_error.bind(this);
-        this._CB_process_close          = this._process_close.bind(this);
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the pending flag for this
-                 item.
-
-    @return {bool} - true if processing of this item is pending.
-    ======================================================================== */
-    get IsPending() {
-        return ( this._pending );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the valid flag for this
-                 item.
-
-    @return {bool} - true if processing completed successfully.
-    ======================================================================== */
-    get IsValid() {
-        return ( (this._command !== undefined) &&
-                 !this.IsPending && !this._error_encountered );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the result data for this
-                 item.
-
-    @return {<Buffer>} - Data collected from the spawn process.
-                         Unreliable and/or undefined if processing was not successful.
-    ======================================================================== */
-    get Result() {
-        return ( this._result_data );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the error data for this
-                 item.
-
-    @return {<Buffer>} - Error data collected from the spawn process.
-                         Unreliable and/or undefined if processing completed successfully.
-    ======================================================================== */
-    get Error() {
-        return ( this._error_data );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the spawn command for this
-                 item.
-
-    @return {string} - Current command for the spawn process.
-    ======================================================================== */
-    get Command() {
-        return ( this._command );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the spawn arguments for
-                 this item.
-
-    @return {[string]]} - Current command arguments for the spawn process.
-    ======================================================================== */
-    get Arguments() {
-        return ( this._arguments );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the spawn options for
-                 this item.
-
-    @return {[string]]} - Current command options for the spawn process.
-    ======================================================================== */
-    get Options() {
-        return ( this._options );
-    }
-
- /* ========================================================================
-    Description: Read-Only Property accessor to read the spawn token for
-                 this item.
-
-    @return {object]} - Current client-specified token for the spawn process.
-    ======================================================================== */
-    get Token() {
-        return ( this._token );
-    }
-
- /* ========================================================================
-    Description:    Initiate spawned process
-
-    @param {object}    [request]           - Spawn command data
-    @param {string}    [request.command]   - Spawn command     (required)
-    @param {[string]}  [request.arguments] - Spawn arguments   (optional)
-    @param {[string]}  [request.options]   - Spawn options     (optional)
-    @param {object}    [request.token]     - Spawn token       (optional)
-
-    @return {bool}  - true if child process is spawned
-
-    @throws {TypeError}  - arguments are not of the expected type.
-    @throws {Error}      - Spawn invoked when an existing spawn is still pending.
-    ======================================================================== */
-    Spawn(request) {
-
-        // Ensure a spawn is not already in progress.
-        if (this.IsPending) {
-            throw new Error('Spawn is already in progress.');
-        }
-
-        // Validate the arguments.
-        if ((request === undefined) || (typeof(request) !== 'object')) {
-            throw new TypeError('request must be an obkect');
-        }
-        // Validate 'required' command request.
-        if ( (!Object.prototype.hasOwnProperty.call(request, 'command'))   ||
-             (typeof(request.command) !== 'string') ||
-             (request.command.length <= 0)            ) {
-            throw new TypeError('request.command must be a non-zero length string.');
-        }
-        // If we got this far, then request.command mus be legit.
-        this._command = request.command;
-
-        // Validate 'optional' arguments request
-        if (Object.prototype.hasOwnProperty.call(request, 'arguments')) {
-            if (!Array.isArray(request.arguments)) {
-                throw new TypeError('request.arguments must be an array of strings.');
-            }
-            else {
-                for (const arg of request.arguments) {
-                    if (typeof(arg) !== 'string') {
-                        throw new TypeError('request.arguments must contain only strings.');
-                    }
-                }
-            }
-            // If we got this far, then request.arguments must be legit
-            this._arguments = request.arguments;
-        }
-        else {
-            // Use default
-            this._arguments = [];
-        }
-
-        // Validate 'optional' options request
-        if (Object.prototype.hasOwnProperty.call(request, 'options')) {
-            if (!Array.isArray(request.options)) {
-                throw new TypeError('request.options must be an array of strings.');
-            }
-            else {
-                for (const arg of request.options) {
-                    if (typeof(arg) !== 'string') {
-                        throw new TypeError('request.options must contain only strings.');
-                    }
-                }
-            }
-            // If we got this far, then request.options must be legit
-            this._options = request.options;
-        }
-        else {
-            // Use default
-            this._options = [];
-        }
-
-        // Validate 'optional' token request.
-        // This object is a client-specified marker that can be used by the client when processing results.
-        if (Object.prototype.hasOwnProperty.call(request, 'token')) {
-            if (request.token === undefined) {
-                throw new TypeError('request.token must be something if it is specified.');
-            }
-            // If we got this far, then request.info must be legit
-            this._token = request.token;
-        }
-        else {
-            // Use default
-            this._token = undefined;
-        }
-
-        // Reset the internal data
-        this._result_data       = undefined;
-        this._error_data        = undefined;
-        this._error_encountered = false;
-        this._pending           = true;  // Think positive :)
-
-        // Spawn the request
-        const childProcess = spawn(this._command, this._arguments, this._options);
-        // Register for the stdout.data notifications
-        childProcess.stdout.on('data', this._CB__process_stdout_data);
-        // Register for the stderr.data notifications
-        childProcess.stderr.on('data', this._CB__process_stderror_data);
-        // Register for the message notification
-        childProcess.on('message', this._CB_process_message);
-        // Register for the error notification
-        childProcess.on('error', this._CB_process_error );
-        // Register for the close notification
-        childProcess.on('close', this._CB_process_close);
-    }
-
- /* ========================================================================
-    Description:    Event handler for the STDOUT Data Notification
-
-    @param { <Buffer> | <string> | <any>} [chunk] - notification data
-    ======================================================================== */
-    _process_stdout_data(chunk) {
-        if (this._result_data === undefined) {
-            // Initialize the result data
-            this._result_data = chunk;
-        }
-        else {
-            // Otherwise, append the chunk.
-            this._result_data += chunk;
-        }
-    }
-
- /* ========================================================================
-    Description:    Event handler for the STDERR Data Notification
-
-    @param { <Buffer> | <string> | <any>} [chunk] - notification data
-    ======================================================================== */
-    _process_stderror_data(chunk) {
-        if (this._error_data === undefined) {
-            // Initialize the result data
-            this._error_data = chunk;
-        }
-        else {
-            // Otherwise, append the chunk.
-            this._error_data += chunk;
-        }
-
-        // Ensure that the error is recorded.
-        this._error_encountered = true;
-    }
-
- /* ========================================================================
-    Description:    Event handler for the Child Process Message Notification
-
-    @param { <Object> } [message]      - A parsed JSON object or primitive value.
-    @param { <Handle> } [sendHandle]   - Handle
-    ======================================================================== */
-    // eslint-disable-next-line no-unused-vars
-    _process_message(message, sendHandle) {
-        // TODO: Not sure if I need this.
-        _debug$2(`Child Process for ${this.Command}: '${message}'`);
-    }
-
- /* ========================================================================
-    Description:    Event handler for the Child Process Error Notification
-
-    @param { <Error> } [error] - The error
-    ======================================================================== */
-    _process_error(error) {
-        // Log the error info.
-        _debug$2(`Child Process for ${this.Command}: error_num:${error.number} error_name:${error.name} error_msg:${error.message}`);
-
-        // Ensure that the error is recorded.
-        this._error_encountered = true;
-    }
-
- /* ========================================================================
-    Description:    Event handler for the Child Process Close Notification
-
-    @param { <number> } [code]   - The exit code if the child exited on its own.
-    @param { <string> } [signal] - The signal by which the child process was terminated.
-    ======================================================================== */
-    _process_close(code, signal) {
-        // Log the close info.
-        _debug$2(`Child Process for ${this.Command}: exit_code:${code} by signal:'${signal}'`);
-
-        // Indicate that we are done.
-        this._pending = false;
-
-        // Notify our clients.
-        const isValid = this.IsValid;
-        const response = {valid:isValid, result:(isValid ? this.Result : this.Error), token:this.Token, source:this};
-        this.emit('complete', response);
-    }
-}
-
-/* ==========================================================================
    File:               volumeData.js
    Class:              Volume Data
    Description:	       Provides read/write access to data metrics of interest.
@@ -841,10 +507,10 @@ class SpawnHelper extends EventEmitter {
    ========================================================================== */
 
 // External dependencies and imports.
-const _debug$1 = require('debug')('vol_data');
+const _debug$2 = require('debug')('vol_data');
 
 // Bind debug to console.log
-_debug$1.log = console.log.bind(console);
+_debug$2.log = console.log.bind(console);
 
 // Helpful constants and conversion factors.
 const BYTES_TO_GB_BASE2     = (1024.0 * 1024.0 * 1024.0);
@@ -861,7 +527,9 @@ const VOLUME_TYPES = {
     TYPE_UDF      : 'udf',       /* Universal Disk Format (ISO, etc) */
     TYPE_MSDOS    : 'msdos',     /* Typically used for EFI & FAT32 */
     TYPE_NTFS     : 'ntfs',
-    TYPE_SMBFS    : 'smbfs'
+    TYPE_SMBFS    : 'smbfs',
+    TYPE_EXT4     : 'ext4',     /* Typically seen on linux */
+    TYPE_VFAT     : 'vfat'      /* Typically seen on linux */
 };
 
  /* ========================================================================
@@ -1221,21 +889,21 @@ class VolumeData {
 }
 
 /* ==========================================================================
-   File:               volumeInterrogator.js
-   Class:              Volume Interrogator
-   Description:	       Interrogates the system to determine properties and
-                       attribures of interest for volumes.
+   File:               volumeInterrogatorBase.js
+   Class:              Volume Interrogator Base Class
+   Description:	       Controls the collection of volume specific information
+                       and attributes to be published to homekit.
    Copyright:          Dec 2020
    ========================================================================== */
 
 // External dependencies and imports.
-const _debug_process    = require('debug')('vi_process');
-const _debug_config     = require('debug')('vi_config');
-const _plist            = require('plist');
+const _debug_process$2    = require('debug')('vi_process');
+const _debug_config$2     = require('debug')('vi_config');
+const _os$1               = require('os');
 
 // Bind debug to console.log
-_debug_process.log = console.log.bind(console);
-_debug_config.log  = console.log.bind(console);
+_debug_process$2.log = console.log.bind(console);
+_debug_config$2.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
 const DEFAULT_PERIOD_HR                 = 6.0;
@@ -1244,13 +912,12 @@ const MAX_PERIOD_HR                     = (31.0 * 24.0);    // Once per month.
 const CONVERT_HR_TO_MS                  = (60.0 * 60.0 * 1000.0);
 const INVALID_TIMEOUT_ID                = -1;
 const RETRY_TIMEOUT_MS                  = 250 /* milliseconds */;
-const FS_CHANGED_DETECTION_TIMEOUT_MS   = 500; /*milliseconds */
 const DEFAULT_LOW_SPACE_THRESHOLD       = 15.0;
 const MIN_LOW_SPACE_THRESHOLD           = 0.0;
 const MAX_LOW_SPACE_THRESHOLD           = 100.0;
 const MAX_RETRY_INIT_CHECK_Time         = 120000;
-const BLOCKS512_TO_BYTES                = 512;
-const REGEX_WHITE_SPACE                 = /\s+/;
+const MIN_OS_UPTIME_TO_START_MS         = 600000; /* 10 minutes */
+const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000; /*milliseconds */
 
 // Volume Identification Methods
 const VOLUME_IDENTIFICATION_METHODS = {
@@ -1258,9 +925,10 @@ const VOLUME_IDENTIFICATION_METHODS = {
     SerialNumber: 'serial_num'
 };
 
-// Supported operating systems.
-const SUPPORTED_OPERATING_SYSTEMS = {
-    OS_DARWIN: 'darwin',
+// Published events
+const VOLUME_INTERROGATOR_BASE_EVENTS = {
+    EVENT_SCANNING: 'scanning',
+    EVENT_READY:    'ready'
 };
 
 /* ==========================================================================
@@ -1275,7 +943,7 @@ const SUPPORTED_OPERATING_SYSTEMS = {
    @event 'scanning' => function({object})
    Event emmitted when a refresh/rescan is initiated.
    ========================================================================== */
-class VolumeInterrogator extends EventEmitter {
+class VolumeInterrogatorBase extends EventEmitter {
  /* ========================================================================
     Description:    Constructor
 
@@ -1284,7 +952,7 @@ class VolumeInterrogator extends EventEmitter {
     @param {number}     [config.default_alarm_threshold] - The default low space threshold, in percent.
     @param { [object] } [config.volume_customizations]   - Array of objects for per-volume customizations.
 
-    @return {object}  - Instance of the SpawnHelper class.
+    @return {object}  - Instance of the VolumeInterrogator class.
 
     @throws {TypeError}  - thrown if the configuration is not undefined.
     @throws {RangeError} - thrown if the configuration parameters are out of bounds.
@@ -1295,13 +963,6 @@ class VolumeInterrogator extends EventEmitter {
         let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
         let volumeCustomizations    = [];
         let exclusionMasks          = [];
-
-        // Get the operating system this plugin is running on.
-        const operating_system = process.platform;
-        // Is the Operating System Supported?
-        if (Object.values(SUPPORTED_OPERATING_SYSTEMS).indexOf(operating_system) < 0) {
-            throw new Error(`Operating system not supported. os:${operating_system}`);
-        }
 
         if (config !== undefined) {
             // Polling Period (hours)
@@ -1334,7 +995,7 @@ class VolumeInterrogator extends EventEmitter {
             if (Object.prototype.hasOwnProperty.call(config, 'exclusion_masks')) {
                 if (Array.isArray(config.exclusion_masks)) {
                     for (const mask of config.exclusion_masks) {
-                        if (VolumeInterrogator._validateVolumeExclusionMask(mask)) {
+                        if (VolumeInterrogatorBase._validateVolumeExclusionMask(mask)) {
                             exclusionMasks.push(mask);
                         }
                         else {
@@ -1350,7 +1011,7 @@ class VolumeInterrogator extends EventEmitter {
             if (Object.prototype.hasOwnProperty.call(config, 'volume_customizations')) {
                 if (Array.isArray(config.volume_customizations)) {
                     for (const item of config.volume_customizations) {
-                        if (VolumeInterrogator._validateVolumeCustomization(item)) {
+                        if (VolumeInterrogatorBase._validateVolumeCustomization(item)) {
                             volumeCustomizations.push(item);
                         }
                         else {
@@ -1373,32 +1034,39 @@ class VolumeInterrogator extends EventEmitter {
         this._decoupledStartTimeoutID       = INVALID_TIMEOUT_ID;
         this._checkInProgress               = false;
         this._period_hr                     = DEFAULT_PERIOD_HR;
-        this._pendingFileSystems            = [];
-        this._pendingVolumes                = [];
         this._theVolumes                    = [];
-        this._theVisibleVolumeNames         = [];
         this._defaultAlarmThreshold         = defaultAlarmThreshold;
         this._volumeCustomizations          = volumeCustomizations;
         this._exclusionMasks                = exclusionMasks;
-        this._operating_system              = operating_system;
 
         // Callbacks bound to this object.
-        this._CB__initiateCheck                             = this._on_initiateCheck.bind(this);
-        this._CB__list_known_virtual_filesystems_complete   = this._on_lsvfs_complete.bind(this);
-        this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
-        this._CB__visible_volumes                           = this._on_process_visible_volumes.bind(this);
-        this._CB_process_diskUtil_info_complete             = this._on_process_diskutil_info_complete.bind(this);
-        this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
-        this._CB__VolumeWatcherChange                       = this._handleVolumeWatcherChangeDetected.bind(this);
-        this._CB__ResetCheck                                = this._on_reset_check.bind(this);
-        this._DECOUPLE_Start                                = this.Start.bind(this);
-
-        // Create a watcher on the `/Volumes` folder to initiate a re-scan
-        // when changes are detected.
-        this._volWatcher = modFileSystem__namespace.watch(`/Volumes`, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
+        this._CB__initiateCheck             = this._on_initiateCheck.bind(this);
+        this._CB__ResetCheck                = this._on_reset_check.bind(this);
+        this._DECOUPLE_Start                = this.Start.bind(this);
+        this._CB__VolumeWatcherChange       = this._handleVolumeWatcherChangeDetected.bind(this);
 
         // Set the polling period
         this.Period = polling_period;
+
+        // Create an empty array of folder watchers.
+        this._volWatchers = [];
+
+        // Get the list of watch folders.
+        const watchFolders = this._watchFolders;
+        // Create a watcher on the folders to initiate a re-scan
+        // when changes are detected.
+        for (const folder of watchFolders)
+        {
+            modFileSystem__namespace.access(folder, modFileSystem__namespace.constants.F_OK, (err) => {
+                if (!err) {
+                    const watcher = modFileSystem__namespace.watch(folder, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
+                    this._volWatchers.push(watcher);
+                }
+                else {
+                    _debug_config$2(`Unable to watch folder: '${folder}`);
+                }
+            });
+        }
     }
 
  /* ========================================================================
@@ -1408,10 +1076,16 @@ class VolumeInterrogator extends EventEmitter {
         this.Stop();
 
         // Cleanup the volume watcher
-        if (this._volWatcher !== undefined) {
-            this._volWatcher.close();
-            this._volWatcher = undefined;
-        }
+        let watcher = undefined;
+        do {
+            watcher = this._volWatchers.pop();
+            if (watcher !== undefined) {
+                watcher.close();
+            }
+        } while (watcher !== undefined);
+
+        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
+        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
     }
 
  /* ========================================================================
@@ -1473,28 +1147,29 @@ class VolumeInterrogator extends EventEmitter {
         return (this._timeoutID !== INVALID_TIMEOUT_ID);
     }
 
-  /* ========================================================================
-    Description: Read Property accessor for the operating system.
-
-    @return {SUPPORTED_OPERATING_SYSTEMS(string)} - operating system.
-    ======================================================================== */
-    get OS() {
-        return (this._operating_system);
-    }
-
  /* ========================================================================
     Description: Start/Restart the interrogation process.
     ======================================================================== */
     Start() {
-
-        // Clear the decoupled timer id.
-        this._decoupledStartTimeoutID = INVALID_TIMEOUT_ID;
+        // Clear the decoupled start timer, if active.
+        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._decoupledStartTimeoutID);
+        }
 
         // Stop the interrogation in case it is running.
         this.Stop();
 
-        // Perform a check now.
-        this._on_initiateCheck();
+        // Get the current uptime of the operating system
+        const uptime_ms = _os$1.uptime() * 1000.0;
+        // Has the operating system been running long enough?
+        if (uptime_ms < MIN_OS_UPTIME_TO_START_MS) {
+            // No. So defer the start for a bit.
+            this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, (MIN_OS_UPTIME_TO_START_MS-uptime_ms));
+        }
+        else {
+            // Perform a check now.
+            this._on_initiateCheck();
+        }
     }
 
  /* ========================================================================
@@ -1527,20 +1202,20 @@ class VolumeInterrogator extends EventEmitter {
         this._deferInitCheckTimeoutID = INVALID_TIMEOUT_ID;
 
         // Clear the previously known volune data.
-        this._pendingFileSystems    = [];
-        this._theVisibleVolumeNames = [];
-        this._theVolumes            = [];
-        this._pendingVolumes        = [];
+        this._theVolumes = [];
 
-        if (this._defaultAlarmThreshold !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._defaultAlarmThreshold);
-            this._defaultAlarmThreshold = INVALID_TIMEOUT_ID;
+        // Perform operating system specific reset actions.
+        this._doReset();
+
+        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._decoupledStartTimeoutID);
+            this._decoupledStartTimeoutID = INVALID_TIMEOUT_ID;
         }
 
         if (issueReady) {
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit('ready', {results:[]});
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results:[]});
         }
     }
 
@@ -1554,26 +1229,24 @@ class VolumeInterrogator extends EventEmitter {
         // Is there a current volume check underway?
         const isPriorCheckInProgress = this._checkInProgress;
 
-        _debug_process(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
+        _debug_process$2(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
 
         if (!this._checkInProgress) {
 
             // Alert interested clients that the scan was initiated.
-            this.emit('scanning');
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
 
             // Mark that the check is in progress.
             this._checkInProgress = true;
 
             // Clear the previously known volune data.
-            this._pendingFileSystems    = [];
-            this._theVisibleVolumeNames = [];
-            this._theVolumes            = [];
-            this._pendingVolumes        = [];
+            this._theVolumes = [];
 
-            // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
-            const ls_Volumes = new SpawnHelper();
-            ls_Volumes.on('complete', this._CB__visible_volumes);
-            ls_Volumes.Spawn({ command:'ls', arguments:['/Volumes'] });
+            // Perform operating system specific reset actions.
+            this._doReset();
+
+            // Let the interrogation begin.
+            this._initiateInterrogation();
         }
         else {
             if (this._deferInitCheckTimeoutID === INVALID_TIMEOUT_ID) {
@@ -1590,632 +1263,40 @@ class VolumeInterrogator extends EventEmitter {
     }
 
  /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
+    Description:    Abstract method used to initiate interrogation on derived classes.
 
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
+    @throws {Error} - Always thrown. Should only be invoked on derived classes.
     ======================================================================== */
-    _on_lsvfs_complete(response) {
-        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result.toString());
-
-        // If a prior error was detected, ignore future processing
-        if (!this._checkInProgress)
-        {
-            return;
-        }
-
-        const INDEX_FILE_SYSTEM_TYPE  = 0;
-        const INDEX_FILE_SYSTEM_COUNT = 1;
-        const INDEX_FILE_SYSTEM_FLAGS = 2;
-
-        if (response.valid &&
-            (response.result !== undefined)) {
-            // Process the response from `lsvfs`.
-                // There are two header rows and a dummy footer (as the result of the '\n' split), followd by lines with the following fields:
-                // [virtual file system type], [number of file systems], [flags]
-                const headerLines = 2;
-                const footerLines = -1;
-                const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
-                lines.forEach((element) => {
-                    // Break up the element based on white space.
-                    const fields = element.split(REGEX_WHITE_SPACE);
-
-                    // Does the response correspond to expectations?
-                    if (fields.length === 3) {
-                        // Does this file system have any volumes?
-                        const fsCount = Number.parseInt(fields[INDEX_FILE_SYSTEM_COUNT]);
-                        if (fsCount > 0) {
-                            const newFS = { type:fields[INDEX_FILE_SYSTEM_TYPE].toLowerCase(), count:fsCount, flags:fields[INDEX_FILE_SYSTEM_FLAGS].toLowerCase() };
-
-                            // Sanity. Ensure this file system type is not already in the pending list.
-                            const existingFSIndex = this._pendingFileSystems.findIndex((element) => {
-                                const isMatch = (element.type.toLowerCase() === newFS.type);
-                                return isMatch;
-                            });
-                            if (existingFSIndex < 0) {
-                                // Add this file system type to the pending list.
-                                this._pendingFileSystems.push(newFS);
-
-                                // Spawn a 'diskutil list' to see all the disk/volume data
-                                _debug_process(`Spawn df for fs type '${newFS.type}'.`);
-                                const diskutil_list = new SpawnHelper();
-                                diskutil_list.on('complete', this._CB__display_free_disk_space_complete);
-                                diskutil_list.Spawn({ command:'df', arguments:['-a', '-b', '-T', newFS.type], token:newFS });
-                            }
-                            else
-                            {
-                                // Replace the existing item with this one
-                                this._pendingFileSystems[existingFSIndex] = newFS;
-
-                                _debug_process(`_on_lsvfs_complete: Duplicated file system type. '${newFS.type}'`);
-                            }
-                        }
-                    }
-                    else {
-                        _debug_process(`_on_lsvfs_complete: Error processing line '${element}'`);
-                        _debug_process(fields);
-                    }
-                });
-            }
-            else {
-            // Clear the check in progress.
-            this._checkInProgress = false;
-            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
-
-            // Fire the ready event with no data.
-            // This willl provide the client an opportunity to reset
-            this.emit('ready', {results:[]});
-        }
+    _initiateInterrogation() {
+        throw new Error(`Abstract Method _initiateInterrogation() invoked!`);
     }
 
  /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
+    Description:    Abstract method used to reset an interrogation.
 
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
+    @throws {Error} - Always thrown. Should only be invoked on derived classes.
     ======================================================================== */
-    _on_df_complete(response) {
-        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result.toString());
-        if (response.token !== undefined) {
-            _debug_config(`Spawn Token:`);
-            _debug_config(response.token);
-        }
-
-        // If a prior error was detected, ignore future processing
-        if (!this._checkInProgress)
-        {
-            return;
-        }
-
-        const INDEX_FILE_SYSTEM_NAME  = 0;
-        const INDEX_FILE_SYSTEM_512BLOCKS = 1;
-        const INDEX_FILE_SYSTEM_USED_BLOCKS = 2;
-        const INDEX_FILE_SYSTEM_AVAILABLE_BLOCKS = 3;
-        const INDEX_FILE_SYSTEM_CAPACITY = 4;
-        const INDEX_FILE_SYSTEM_MOUNT_PT = 5;
-
-        if (response.valid &&
-            (response.result !== undefined)) {
-            // This spawn is expected to have been issued with a token.
-            if (response.token !== undefined) {
-                if (typeof(response.token) !== 'object') {
-                    throw new TypeError(`Spawn token is not a string.`);
-                }
-                // Ensure that the pending file system list contains the token.
-                if (this._pendingFileSystems.includes(response.token)) {
-                    // Remove token from the list.
-                    this._pendingFileSystems = this._pendingFileSystems.filter((item) => {
-                        const isEqual = ( (item.type !== response.token.type) ||
-                                          (item.count !== response.token.count) ||
-                                          (item.flags !== response.token.flags));
-                        return isEqual;
-                    });
-                }
-                else
-                {
-                    throw new Error(`Spawn token is not in the pending file system list.`);
-                }
-            }
-            else
-            {
-                throw new Error(`Spawn token is missing.`);
-            }
-
-            // Is this list of file systems one of the types we handle?
-            if (Object.values(VOLUME_TYPES).includes(response.token.type)) {
-                // Process the response from `df`.
-                // There are two header rows and a dummy footer (as the result of the '\n' split), followed by lines with the following fields:
-                // [virtual file system type], [number of file systems], [flags]
-                const headerLines = 1;
-                const footerLines = -1;
-                const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
-                lines.forEach((element) => {
-                    // Break up the element based on white space.
-                    let fields = element.split(REGEX_WHITE_SPACE);
-
-                    // Note: The Mount Point may include white space. Handle that possibility
-                    const fieldsMountPoint = fields.slice(INDEX_FILE_SYSTEM_MOUNT_PT, fields.length);
-                    fields[INDEX_FILE_SYSTEM_MOUNT_PT] = fieldsMountPoint.join(' ');
-
-                    const newVol = { device_node:fields[INDEX_FILE_SYSTEM_NAME].toLowerCase(), blocks:Number.parseInt(fields[INDEX_FILE_SYSTEM_512BLOCKS]), used_blks:Number.parseInt(fields[INDEX_FILE_SYSTEM_USED_BLOCKS]),
-                                     avail_blks:Number.parseInt(fields[INDEX_FILE_SYSTEM_AVAILABLE_BLOCKS]), capacity:Number.parseInt(fields[INDEX_FILE_SYSTEM_CAPACITY].slice(0,-1)), mount_point:fields[INDEX_FILE_SYSTEM_MOUNT_PT] };
-
-                    // Determine the name of the volume (text following the last '/')
-                    let volName = newVol.mount_point;
-                    const volNameParts = newVol.mount_point.split('/');
-                    if (volNameParts.length > 0) {
-                        const candidateName = volNameParts[volNameParts.length-1];
-                        if (candidateName.length > 0) {
-                            volName = volNameParts[volNameParts.length-1];
-                        }
-                    }
-
-                    // Determine if the low space alert threshold has been exceeded.
-                    const lowSpaceAlert = this._determineLowSpaceAlert(volName, "~~ not used ~~", ((newVol.avail_blks/newVol.blocks)*100.0));
-
-                    // Create a new (and temporary) VolumeData item.
-                    const volData = new VolumeData({name:               volName,
-                                                    volume_type:        response.token.type,
-                                                    mount_point:        newVol.mount_point,
-                                                    volume_uuid:        'unknown',
-                                                    device_node:        newVol.device_node,
-                                                    capacity_bytes:     newVol.blocks * BLOCKS512_TO_BYTES,
-                                                    free_space_bytes:   (newVol.blocks - newVol.used_blks) * BLOCKS512_TO_BYTES,
-                                                    visible:            this._theVisibleVolumeNames.includes(volName),
-                                                    low_space_alert:    lowSpaceAlert
-                    });
-
-                    // Get more informaion on this volume.
-                    _debug_process(`Initiating 'diskutil info' for DiskId '${volData.DeviceNode}'`);
-                    const diskutil_info = new SpawnHelper();
-                    diskutil_info.on('complete', this._CB_process_diskUtil_info_complete);
-                    diskutil_info.Spawn({ command:'diskutil', arguments:['info', '-plist', volData.DeviceNode], token:volData});
-
-                    // Add this volume to the list of pending volumes.
-                    this._pendingVolumes.push(volData);
-                });
-            }
-        }
-        else {
-            // Clear the check in progress.
-            this._checkInProgress = false;
-            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
-
-            // Fire the ready event with no data.
-            // This willl provide the client an opportunity to reset
-            this.emit('ready', {results:[]});
-        }
-    }
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
-    _on_process_visible_volumes(response) {
-        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result.toString());
-
-        // If a prior error was detected, ignore future processing
-        if (!this._checkInProgress)
-        {
-            return;
-        }
-
-        if (response.valid &&
-            (response.result !== undefined)) {
-            // Update the list of visible volumes
-            this._theVisibleVolumeNames = response.result.toString().split('\n');
-
-            // Spawn a 'lsvfs' to determine the number and types of known file systems.
-            const diskutil_list = new SpawnHelper();
-            diskutil_list.on('complete', this._CB__list_known_virtual_filesystems_complete);
-            diskutil_list.Spawn({ command:'lsvfs' });
-        }
-        else {
-            // Clear the check in progress.
-            this._checkInProgress = false;
-            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
-
-            // Fire the ready event with no data.
-            // This willl provide the client an opportunity to reset
-            this.emit('ready', {results:[]});
-        }
+    _doReset() {
+        throw new Error(`Abstract Method _doReset() invoked!`);
     }
 
  /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
+    Description:    Abstract property used to determine if a check is in progress.
 
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
+    @throws {Error} - Always thrown. Should only be invoked on derived classes.
     ======================================================================== */
-    _on_process_diskutil_info_complete(response) {
-        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-        _debug_config(response.result.toString());
-
-        let errorEncountered = false;
-
-        // If a prior error was detected, ignore future processing
-        if (!this._checkInProgress)
-        {
-            return;
-        }
-
-        if (response.valid) {
-            try {
-                // Prurge the pending volumes listing.
-                if (response.token instanceof VolumeData) {
-                    if (this._pendingVolumes.includes(response.token)) {
-                        // Remove this item from the pending list.
-                        this._pendingVolumes = this._pendingVolumes.filter( (item) => {
-                            return item !== response.token;
-                        });
-                    }
-                    else {
-                        // Unknown token !!
-
-                        // Clear the check in progress.
-                        this._checkInProgress = false;
-                        // Flag the error
-                        errorEncountered = true;
-                        _debug_process(`Unexpected call to _on_process_diskutil_info_complete. token not pending.`);
-                        _debug_process(response.token);
-                    }
-                }
-                else {
-                    // Unexpected token data !!
-
-                    // Clear the check in progress.
-                    this._checkInProgress = false;
-                    // Flag the error
-                    errorEncountered = true;
-                    _debug_process(`Unexpected call to _on_process_diskutil_info_complete. token is not instance of VolumeData.`);
-                    _debug_process(response.token);
-                }
-
-                if (!errorEncountered) {
-                    // Attempt to parse the data as a plist.
-                    const config = _plist.parse(response.result.toString());
-
-                    let isShown = true;
-                    for (const mask of this._exclusionMasks) {
-                        _debug_process(`Evaluating exclusion mask '${mask}' for volume '${response.token.Name}'`);
-                        const reMask = new RegExp(mask);
-                        const matches = response.token.MountPoint.match(reMask);
-                        _debug_process(matches);
-                        isShown = isShown && (matches === null);
-                    }
-
-                    // Get the device identifier for this volume and manage the pending
-                    // items.
-                    if ((Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier')) && (typeof(config.DeviceIdentifier) === 'string')) {
-                        // Validate the config data.
-                        if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') &&          (typeof(config.VolumeName)          === 'string'))       &&
-                            (Object.prototype.hasOwnProperty.call(config, 'FilesystemType') &&      (typeof(config.FilesystemType)      === 'string'))       &&
-                            (Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier') &&    (typeof(config.DeviceIdentifier)    === 'string'))       &&
-                            (Object.prototype.hasOwnProperty.call(config, 'MountPoint') &&          (typeof(config.MountPoint)          === 'string'))       &&
-                            (Object.prototype.hasOwnProperty.call(config, 'DeviceNode') &&          (typeof(config.DeviceNode)          === 'string'))       &&
-                            /* UDF volumes have no Volume UUID */
-                            ( ( Object.prototype.hasOwnProperty.call(config, 'VolumeUUID') &&        (typeof(config.VolumeUUID)         === 'string'))       ||
-                            (!Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) )                                                                  &&
-                            (Object.prototype.hasOwnProperty.call(config, 'Size') &&                 (typeof(config.Size)               === 'number'))       &&
-                            // Free space is reported based on the file system type.
-                            ( ((Object.prototype.hasOwnProperty.call(config, 'FreeSpace') &&         (typeof(config.FreeSpace)          === 'number')))      ||
-                            (Object.prototype.hasOwnProperty.call(config, 'APFSContainerFree') && (typeof(config.APFSContainerFree)  === 'number')) ))         {
-
-                                // Then, process the data provided.
-                                // Free space is reported based on the file system type.
-                                const freeSpace  = ((config.FilesystemType === VOLUME_TYPES.TYPE_APFS) ? config.APFSContainerFree : config.FreeSpace);
-                                // For volumes that do not have a volume UUID, use the device node.
-                                const volumeUUID = ((Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
-                                // Determine if the low space alert threshold has been exceeded.
-                                const lowSpaceAlert = this._determineLowSpaceAlert(config.VolumeName, volumeUUID, ((freeSpace/config.Size)*100.0));
-                                const volData = new VolumeData({name:               config.VolumeName,
-                                                                volume_type:        config.FilesystemType,
-                                                                disk_id:            config.DeviceIdentifier,
-                                                                mount_point:        config.MountPoint,
-                                                                capacity_bytes:     config.Size,
-                                                                device_node:        config.DeviceNode,
-                                                                volume_uuid:        volumeUUID,
-                                                                free_space_bytes:   freeSpace,
-                                                                visible:            this._theVisibleVolumeNames.includes(config.VolumeName),
-                                                                shown:              isShown,
-                                                                low_space_alert:    lowSpaceAlert
-                                });
-                                this._theVolumes.push(volData);
-    /*
-                                // APFS volumes may have some of their capacity consumed by purgable data. For example: APFS Snapshots.
-                                // This purgable data can only be evaluated if the volume is mounted.
-                                if ((volData.VolumeType === VOLUME_TYPES.TYPE_APFS) &&
-                                    (volData.IsMounted)) {
-                                    // Append the mount point to the 'pending volumes' list to keep us busy.
-                                    this._pendingVolumes.push(volData.MountPoint);
-
-                                    // Spawn a disk usage statistics ('du') process to see the accurate storage information for the
-                                    // APFS volumes.
-                                    const du_process = new SpawnHelper();
-                                    du_process.on('complete', this._CB_process_disk_utilization_stats_complete);
-                                    du_process.Spawn({ command:'du', arguments:['-skHx', volData.MountPoint] });
-                                }
-    */
-                        }
-                        else {
-                            // Ignore the inability to process this item if there is no valid volume name.
-                            if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') && (typeof(config.VolumeName) === 'string') &&
-                                (config.VolumeName.length > 0))) {
-                                _debug_process(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
-                            }
-                        }
-                    }
-                    else {
-                        // Result did not contain a disk identifier. This may be ok, for example if the volume is mounted via SMB.
-                        if ((Object.prototype.hasOwnProperty.call(config, 'Error')) && (typeof(config.Error) === 'boolean') && (config.Error)) {
-                            // We were unable to get more detailed informatopn. Just use what we have, but update the IsShown property.
-                            const volData = new VolumeData({name:               response.token.Name,
-                                                            volume_type:        response.token.FilesystemType,
-                                                            disk_id:            response.token.DeviceIdentifier,
-                                                            mount_point:        response.token.MountPoint,
-                                                            capacity_bytes:     response.token.Size,
-                                                            device_node:        response.token.DeviceNode,
-                                                            volume_uuid:        response.token.VolumeUUID,
-                                                            free_space_bytes:   response.token.FreeSpace,
-                                                            visible:            response.token.IsVisible,
-                                                            shown:              isShown,
-                                                            low_space_alert:    response.token.LowSpaceAlert
-                            });
-                            this._theVolumes.push(volData);
-                        }
-                        else {
-                            // Unexpected result.
-
-                            // Clear the check in progress.
-                            this._checkInProgress = false;
-                            // Flag the error
-                            errorEncountered = true;
-                            _debug_process(`Unexpected call to _on_process_diskutil_info_complete. config.`);
-                            _debug_process(config);
-                        }
-                    }
-                }
-
-                // Finally, update the 'check in progress' flag.
-                if (!errorEncountered) {
-                     this._updateCheckInProgress();
-                }
-            }
-            catch (error) {
-                // Clear the check in progress.
-                this._checkInProgress = false;
-                // Flag the error
-                errorEncountered = true;
-                _debug_process(`Error processing 'diskutil info'. Err:${error}`);
-            }
-        }
-        else {
-            // Clear the check in progress.
-            this._checkInProgress = false;
-            // Flag the error
-            errorEncountered = true;
-            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
-        }
-
-        // Was a critical error encountered while processing the data?
-        if (errorEncountered) {
-            // Fire the ready event with no data.
-            // This willl provide the client an opportunity to reset
-            this.emit('ready', {results:[]});
-        }
+    get _isCheckInProgress() {
+        throw new Error(`Abstract Property _checkInProgress() invoked!`);
     }
 
  /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
+    Description:    Abstract property used to get an array of watch folders
+                    used to initiate an interrogation.
 
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
+    @throws {Error} - Always thrown. Should only be invoked on derived classes.
     ======================================================================== */
-    _on_process_disk_utilization_stats_complete(response) {
-        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
-
-        // If a prior error was detected, ignore future processing
-        if (!this._checkInProgress)
-        {
-            return;
-        }
-
-        // We expect the 'du' process to encounter errors.
-        // So get the results from the object directly.
-        const rawResult = response.source.Result.toString();
-        // Break the result up into an array of lines.
-        const lines = rawResult.split('\r');
-        for (const line of lines) {
-            // Split the lines by white space.
-            const fields = line.split('\t');
-            // Verify that there are 2 fields. These are the size and the volume name (mount point)
-            if (fields.length == 2) {
-                const used_bytes    = VolumeData.ConvertFrom1KBlockaToBytes(Number.parseInt(fields[0]));
-                const volumeName    = fields[1].trim();
-                _debug_process(`du results: Name:${volumeName} Used:${VolumeData.ConvertFromBytesToGB(used_bytes)} raw:${Number.parseInt(fields[0])}`);
-
-                // Verify that we were looking for this mount point.
-                if (this._pendingVolumes.includes(volumeName)) {
-                    // First, remove this item from the pending list.
-                    this._pendingVolumes = this._pendingVolumes.filter( (item) => {
-                        return (item !== volumeName);
-                    });
-
-                    // Find the matching volume in the list.
-                    let matchedIndex = undefined;
-                    const matchedItem = this._theVolumes.filter((item, index) => {
-                        const match = (item.MountPoint === volumeName);
-                        // Cache the index of the match as well.
-                        if (match) {
-                            matchedIndex = index;
-                        }
-                        return match;
-                    });
-                    if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedIndex < this._theVolumes.length)) {
-                        // Clear the check in progress.
-                        this._checkInProgress = false;
-                        _debug_process(`Unable to identify unique volumeData item.`);
-                        throw new Error(`Unable to identify unique volumeData item.`);
-                    }
-
-                    // Create a new volume data item to replace the original
-                    const volData = new VolumeData({name:               matchedItem[0].Name,
-                                                    volume_type:        matchedItem[0].VolumeType,
-                                                    disk_id:            matchedItem[0].DiskId,
-                                                    mount_point:        matchedItem[0].MountPoint,
-                                                    capacity_bytes:     matchedItem[0].Size,
-                                                    device_node:        matchedItem[0].DeviceNode,
-                                                    volume_uuid:        matchedItem[0].VolumeUUID,
-                                                    free_space_bytes:   matchedItem[0].FreeSpace,
-                                                    visible:            matchedItem[0].IsVisible,
-                                                    low_space_alert:    matchedItem[0].LowSpaceAlert,
-                                                    used_space_bytes:   used_bytes
-                    });
-
-                    // Replace the item in the array with the updated one.
-                    this._theVolumes[matchedIndex] = volData;
-
-                    // Finally, update the 'check in progress' flag.
-                    this._updateCheckInProgress();
-                }
-                else {
-                    // Clear the check in progress.
-                    this._checkInProgress = false;
-                    _debug_process(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
-                    throw new Error(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
-                }
-            }
-            else {
-                // Clear the check in progress.
-                this._checkInProgress = false;
-                _debug_process(`Unable to paese '${response.source.Command} ${response.source.Arguments}' results`);
-                throw Error(`Unable to paese '${response.source.Command} ${response.source.Arguments}' results`);
-            }
-        }
-    }
-
- /* ========================================================================
-    Description:  Helper for extracting the disk identifiers from the data provided
-                  by 'diskutil list' for HFS+ volumes.
-
-    @param { object } [disks] - list of disk data provided by 'diskutil list' for non-APFS disks .
-
-    @return { [string] } - Array of disk identifiers.
-
-    @throws {TypeError} - thrown for enteries that are not specific to Partitions
-    ======================================================================== */
-    _partitionDiskIdentifiers(disks) {
-        if ((disks === undefined) || (!Array.isArray(disks))) {
-            throw new TypeError(`disk must be an array`);
-        }
-
-        let diskIdentifiers = [];
-
-        for (const disk of disks) {
-            if ((Object.prototype.hasOwnProperty.call(disk, 'Partitions')) &&
-                (disk.Partitions.length > 0)) {
-                for (const partition of disk.Partitions) {
-                    // Validate that we can access the disk identifier.
-                    if ((Object.prototype.hasOwnProperty.call(partition, 'DeviceIdentifier') &&
-                        (typeof(partition.DeviceIdentifier) === 'string'))) {
-                            // Record the identifier.
-                            diskIdentifiers.push(partition.DeviceIdentifier);
-                    }
-                    else {
-                        _debug_process(`_partitionDiskIdentifiers(): partition is not as expected. Missing or Invalid Disk Identifier.`);
-                        throw new TypeError(`partition is not as expected. Missing or Invalid Disk Identifier.`);
-                    }
-                }
-            }
-            else {
-                _debug_process(`_partitionDiskIdentifiers(): drive is not as expected. No partitions.`);
-                throw new TypeError(`drive is not as expected. No partitions.`);
-            }
-        }
-
-        return diskIdentifiers;
-    }
-
- /* ========================================================================
-    Description:  Helper for extracting the disk identifiers from the data provided
-                  by 'diskutil list' for AFPS volumes.
-
-    @param { object } [containers] - list of AFPS container data provided by 'diskutil list'
-
-    @return { [string] } - Array of disk identifiers.
-
-    @throws {TypeError} - thrown for enteries that are not specific to AFPS volumes.
-    ======================================================================== */
-    _apfsDiskIdentifiers(containers) {
-        if ((containers === undefined) || (!Array.isArray(containers))) {
-            throw new TypeError(`containers must be an array`);
-        }
-
-        let diskIdentifiers = [];
-
-        for (const container of containers) {
-            if ((Object.prototype.hasOwnProperty.call(container, 'APFSVolumes')) &&
-                Array.isArray(container.APFSVolumes)) {
-                // The data of interest is stored in the APFS volumes entry.
-                for (const volume of container.APFSVolumes) {
-                    // Validate that we can access the disk identifier.
-                    if ((Object.prototype.hasOwnProperty.call(volume, 'DeviceIdentifier') &&
-                        (typeof(volume.DeviceIdentifier) === 'string'))) {
-                        // Record the identifier.
-                        diskIdentifiers.push(volume.DeviceIdentifier);
-                    }
-                    else {
-                        _debug_process(`_apfsDiskIdentifiers(): volume is not as expected. Missing or Invalid Disk Identifier.`);
-                        throw new TypeError(`volume is not as expected. Missing or Invalid Disk Identifier.`);
-                    }
-                }
-            }
-            else {
-                _debug_process(`_apfsDiskIdentifiers(): volume is not as expected. (AFPS)`);
-                throw new TypeError(`volume is not as expected. (AFPS)`);
-            }
-        }
-
-        return diskIdentifiers;
+    get _watchFolders() {
+        throw new Error(`Abstract Property _watchFolders() invoked!`);
     }
 
  /* ========================================================================
@@ -2223,48 +1304,25 @@ class VolumeInterrogator extends EventEmitter {
     ======================================================================== */
     _updateCheckInProgress() {
         const wasCheckInProgress = this._checkInProgress;
-        this._checkInProgress = ((this._pendingVolumes.length !== 0) &&
-                                 (this._pendingFileSystems.length === 0));
-        _debug_process(`_updateCheckInProgress(): Pending Volume Count - ${this._pendingVolumes.length}`);
-        if (wasCheckInProgress && !this._checkInProgress) {
+        this._checkInProgress = this._isCheckInProgress;
+         if (wasCheckInProgress && !this._checkInProgress) {
 
             // Fire Ready event
-            this.emit('ready', {results:this._theVolumes});
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results:this._theVolumes});
 
-            _debug_process(`Ready event.`);
+            _debug_process$2(`Ready event.`);
             for (const volume of this._theVolumes) {
-                _debug_process(`Volume Name: ${volume.Name}`);
-                _debug_process(`\tVisible:    ${volume.IsVisible}`);
-                _debug_process(`\tShown:      ${volume.IsShown}`);
-                _debug_process(`\tMountPoint: ${volume.MountPoint}`);
-                _debug_process(`\tDevNode:    ${volume.DeviceNode}`);
-                _debug_process(`\tCapacity:   ${VolumeData.ConvertFromBytesToGB(volume.Size).toFixed(4)} GB`);
-                _debug_process(`\tFree:       ${VolumeData.ConvertFromBytesToGB(volume.FreeSpace).toFixed(4)} GB`);
-                _debug_process(`\tUsed:       ${VolumeData.ConvertFromBytesToGB(volume.UsedSpace).toFixed(4)} GB`);
-                _debug_process(`\t% Used:     ${((volume.UsedSpace/volume.Size)*100.0).toFixed(2)}%`);
+                _debug_process$2(`Volume Name: ${volume.Name}`);
+                _debug_process$2(`\tVisible:    ${volume.IsVisible}`);
+                _debug_process$2(`\tShown:      ${volume.IsShown}`);
+                _debug_process$2(`\tMountPoint: ${volume.MountPoint}`);
+                _debug_process$2(`\tDevNode:    ${volume.DeviceNode}`);
+                _debug_process$2(`\tCapacity:   ${VolumeData.ConvertFromBytesToGB(volume.Size).toFixed(4)} GB`);
+                _debug_process$2(`\tFree:       ${VolumeData.ConvertFromBytesToGB(volume.FreeSpace).toFixed(4)} GB`);
+                _debug_process$2(`\tUsed:       ${VolumeData.ConvertFromBytesToGB(volume.UsedSpace).toFixed(4)} GB`);
+                _debug_process$2(`\t% Used:     ${((volume.UsedSpace/volume.Size)*100.0).toFixed(2)}%`);
             }
         }
-    }
-
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-                  Called when the contents of `/Volumes' changes.
-
-    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
-    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
-    ======================================================================== */
-    _handleVolumeWatcherChangeDetected(eventType, fileName) {
-        // Decouple the automatic refresh.
-        setImmediate((eType, fName) => {
-            _debug_process(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
-            // Initiate a re-scan (decoupled from the notification event), if active (even if there is a scan already in progress.)
-            if (this.Active) {
-                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-                    clearTimeout(this._decoupledStartTimeoutID);
-                }
-                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
-            }
-        }, eventType, fileName);
     }
 
  /* ========================================================================
@@ -2319,6 +1377,55 @@ class VolumeInterrogator extends EventEmitter {
         }
 
         return alert;
+    }
+
+ /* ========================================================================
+    Description:  Event handler for file system change detections.
+                  Called when the contents of `/Volumes' changes.
+
+    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
+    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
+    ======================================================================== */
+    _handleVolumeWatcherChangeDetected(eventType, fileName) {
+        // Decouple the automatic refresh.
+        setImmediate((eType, fName) => {
+            _debug_process$2(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
+            // Initiate a re-scan (decoupled from the notification event), if active (even if there is a scan already in progress.)
+            if (this.Active) {
+                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+                    clearTimeout(this._decoupledStartTimeoutID);
+                }
+                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
+            }
+        }, eventType, fileName);
+    }
+
+ /* ========================================================================
+    Description:  Helper to determine if the volume should be shown or not.
+
+    @param { string } [mountPoint] - Mount Point of the volume
+
+    #return { boolena } - True if shown. False otherwise.
+
+    @throws { TypeError } - thrown if mountPoint is not a non-null string.
+    ======================================================================== */
+    _isVolumeShown(mountPoint) {
+
+        if ((mountPoint === undefined) ||
+            (typeof(mountPoint) !== 'string') ||(mountPoint.length <= 0)) {
+            throw new TypeError(`_isVolumeShown. mountPoint is not valid. ${mountPoint}`);
+        }
+
+        let isShown = true;
+        for (const mask of this._exclusionMasks) {
+            _debug_process$2(`Evaluating exclusion mask '${mask}' for mount point '${mountPoint}'`);
+            const reMask = new RegExp(mask);
+            const matches = mountPoint.match(reMask);
+            _debug_process$2(matches);
+            isShown = isShown && (matches === null);
+        }
+
+        return isShown
     }
 
  /* ========================================================================
@@ -2397,11 +1504,1300 @@ class VolumeInterrogator extends EventEmitter {
 }
 
 /* ==========================================================================
+   File:               spawnHelper.js
+   Class:              Spawn Helper
+   Description:	       Wrapper for managing spawned tasks.
+   Copyright:          Dec 2020
+   ========================================================================== */
+
+// External dependencies and imports.
+const _debug$1    = require('debug')('spawn_helper');
+const { spawn } = require('child_process');
+
+// Bind debug to console.log
+_debug$1.log = console.log.bind(console);
+
+/* ==========================================================================
+   Class:              SpawnHelper
+   Description:	       Wrapper class for handling spawned tasks
+   Copyright:          Dec 2020
+
+   @event 'complete' => function({object})
+   @event_param {bool}              [valid]  - Flag indicating if the spawned task completed successfully.
+   @event_param {<Buffer>}          [result] - Buffer of the data or error returned by the spawned process.
+   #event_param {<SpawnHelper>}     [source] - Reference to *this* SpawnHelper that provided the results.
+   Event emmitted when the spawned task completes.
+   ========================================================================== */
+class SpawnHelper extends EventEmitter {
+ /* ========================================================================
+    Description:    Constructor
+
+    @param {object} [config] - Not used.
+
+    @return {object}  - Instance of the SpawnHelper class.
+
+    @throws {TypeError}  - thrown if the configuration is not undefined.
+    ======================================================================== */
+    constructor(config) {
+        if (config !== undefined) {
+            throw new TypeError(`SpawnHelper does not use any arguments.`);
+        }
+
+        // Initialize the base class.
+        super();
+
+        // Initialize data members.
+        this._command           = undefined;
+        this._arguments         = undefined;
+        this._options           = undefined;
+        this._token             = undefined;
+        this._result_data       = undefined;
+        this._error_data        = undefined;
+        this._error_encountered = false;
+        this._pending           = false;
+
+        // Bound Callbacks
+        this._CB__process_stdout_data   = this._process_stdout_data.bind(this);
+        this._CB__process_stderror_data = this._process_stderror_data.bind(this);
+        this._CB_process_message        = this._process_message.bind(this);
+        this._CB_process_error          = this._process_error.bind(this);
+        this._CB_process_close          = this._process_close.bind(this);
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the pending flag for this
+                 item.
+
+    @return {bool} - true if processing of this item is pending.
+    ======================================================================== */
+    get IsPending() {
+        return ( this._pending );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the valid flag for this
+                 item.
+
+    @return {bool} - true if processing completed successfully.
+    ======================================================================== */
+    get IsValid() {
+        return ( (this._command !== undefined) &&
+                 !this.IsPending && !this._error_encountered );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the result data for this
+                 item.
+
+    @return {<Buffer>} - Data collected from the spawn process.
+                         Unreliable and/or undefined if processing was not successful.
+    ======================================================================== */
+    get Result() {
+        return ( this._result_data );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the error data for this
+                 item.
+
+    @return {<Buffer>} - Error data collected from the spawn process.
+                         Unreliable and/or undefined if processing completed successfully.
+    ======================================================================== */
+    get Error() {
+        return ( this._error_data );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the spawn command for this
+                 item.
+
+    @return {string} - Current command for the spawn process.
+    ======================================================================== */
+    get Command() {
+        return ( this._command );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the spawn arguments for
+                 this item.
+
+    @return {[string]]} - Current command arguments for the spawn process.
+    ======================================================================== */
+    get Arguments() {
+        return ( this._arguments );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the spawn options for
+                 this item.
+
+    @return {[string]]} - Current command options for the spawn process.
+    ======================================================================== */
+    get Options() {
+        return ( this._options );
+    }
+
+ /* ========================================================================
+    Description: Read-Only Property accessor to read the spawn token for
+                 this item.
+
+    @return {object]} - Current client-specified token for the spawn process.
+    ======================================================================== */
+    get Token() {
+        return ( this._token );
+    }
+
+ /* ========================================================================
+    Description:    Initiate spawned process
+
+    @param {object}    [request]           - Spawn command data
+    @param {string}    [request.command]   - Spawn command     (required)
+    @param {[string]}  [request.arguments] - Spawn arguments   (optional)
+    @param {[string]}  [request.options]   - Spawn options     (optional)
+    @param {object}    [request.token]     - Spawn token       (optional)
+
+    @return {bool}  - true if child process is spawned
+
+    @throws {TypeError}  - arguments are not of the expected type.
+    @throws {Error}      - Spawn invoked when an existing spawn is still pending.
+    ======================================================================== */
+    Spawn(request) {
+
+        // Ensure a spawn is not already in progress.
+        if (this.IsPending) {
+            throw new Error('Spawn is already in progress.');
+        }
+
+        // Validate the arguments.
+        if ((request === undefined) || (typeof(request) !== 'object')) {
+            throw new TypeError('request must be an obkect');
+        }
+        // Validate 'required' command request.
+        if ( (!Object.prototype.hasOwnProperty.call(request, 'command'))   ||
+             (typeof(request.command) !== 'string') ||
+             (request.command.length <= 0)            ) {
+            throw new TypeError('request.command must be a non-zero length string.');
+        }
+        // If we got this far, then request.command mus be legit.
+        this._command = request.command;
+
+        // Validate 'optional' arguments request
+        if (Object.prototype.hasOwnProperty.call(request, 'arguments')) {
+            if (!Array.isArray(request.arguments)) {
+                throw new TypeError('request.arguments must be an array of strings.');
+            }
+            else {
+                for (const arg of request.arguments) {
+                    if (typeof(arg) !== 'string') {
+                        throw new TypeError('request.arguments must contain only strings.');
+                    }
+                }
+            }
+            // If we got this far, then request.arguments must be legit
+            this._arguments = request.arguments;
+        }
+        else {
+            // Use default
+            this._arguments = [];
+        }
+
+        // Validate 'optional' options request
+        if (Object.prototype.hasOwnProperty.call(request, 'options')) {
+            if (!Array.isArray(request.options)) {
+                throw new TypeError('request.options must be an array of strings.');
+            }
+            else {
+                for (const arg of request.options) {
+                    if (typeof(arg) !== 'string') {
+                        throw new TypeError('request.options must contain only strings.');
+                    }
+                }
+            }
+            // If we got this far, then request.options must be legit
+            this._options = request.options;
+        }
+        else {
+            // Use default
+            this._options = [];
+        }
+
+        // Validate 'optional' token request.
+        // This object is a client-specified marker that can be used by the client when processing results.
+        if (Object.prototype.hasOwnProperty.call(request, 'token')) {
+            if (request.token === undefined) {
+                throw new TypeError('request.token must be something if it is specified.');
+            }
+            // If we got this far, then request.info must be legit
+            this._token = request.token;
+        }
+        else {
+            // Use default
+            this._token = undefined;
+        }
+
+        // Reset the internal data
+        this._result_data       = undefined;
+        this._error_data        = undefined;
+        this._error_encountered = false;
+        this._pending           = true;  // Think positive :)
+
+        // Spawn the request
+        const childProcess = spawn(this._command, this._arguments, this._options);
+        // Register for the stdout.data notifications
+        childProcess.stdout.on('data', this._CB__process_stdout_data);
+        // Register for the stderr.data notifications
+        childProcess.stderr.on('data', this._CB__process_stderror_data);
+        // Register for the message notification
+        childProcess.on('message', this._CB_process_message);
+        // Register for the error notification
+        childProcess.on('error', this._CB_process_error );
+        // Register for the close notification
+        childProcess.on('close', this._CB_process_close);
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the STDOUT Data Notification
+
+    @param { <Buffer> | <string> | <any>} [chunk] - notification data
+    ======================================================================== */
+    _process_stdout_data(chunk) {
+        if (this._result_data === undefined) {
+            // Initialize the result data
+            this._result_data = chunk;
+        }
+        else {
+            // Otherwise, append the chunk.
+            this._result_data += chunk;
+        }
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the STDERR Data Notification
+
+    @param { <Buffer> | <string> | <any>} [chunk] - notification data
+    ======================================================================== */
+    _process_stderror_data(chunk) {
+        if (this._error_data === undefined) {
+            // Initialize the result data
+            this._error_data = chunk;
+        }
+        else {
+            // Otherwise, append the chunk.
+            this._error_data += chunk;
+        }
+
+        // Ensure that the error is recorded.
+        this._error_encountered = true;
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the Child Process Message Notification
+
+    @param { <Object> } [message]      - A parsed JSON object or primitive value.
+    @param { <Handle> } [sendHandle]   - Handle
+    ======================================================================== */
+    // eslint-disable-next-line no-unused-vars
+    _process_message(message, sendHandle) {
+        // TODO: Not sure if I need this.
+        _debug$1(`Child Process for ${this.Command}: '${message}'`);
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the Child Process Error Notification
+
+    @param { <Error> } [error] - The error
+    ======================================================================== */
+    _process_error(error) {
+        // Log the error info.
+        _debug$1(`Child Process for ${this.Command}: error_num:${error.number} error_name:${error.name} error_msg:${error.message}`);
+
+        // Ensure that the error is recorded.
+        this._error_encountered = true;
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the Child Process Close Notification
+
+    @param { <number> } [code]   - The exit code if the child exited on its own.
+    @param { <string> } [signal] - The signal by which the child process was terminated.
+    ======================================================================== */
+    _process_close(code, signal) {
+        // Log the close info.
+        _debug$1(`Child Process for ${this.Command}: exit_code:${code} by signal:'${signal}'`);
+
+        // Indicate that we are done.
+        this._pending = false;
+
+        // Notify our clients.
+        const isValid = this.IsValid;
+        const response = {valid:isValid, result:(isValid ? this.Result : this.Error), token:this.Token, source:this};
+        this.emit('complete', response);
+    }
+}
+
+/* ==========================================================================
+   File:               volumeInterrogator_darwin.js
+   Class:              Volume Interrogator for OSX/macOS (darwin)
+   Description:	       Controls the collection of volume specific information
+                       and attributes to be published to homekit.
+   Copyright:          Oct 2021
+   ========================================================================== */
+
+// External dependencies and imports.
+const _debug_process$1    = require('debug')('vi_process');
+const _debug_config$1     = require('debug')('vi_config');
+const _plist            = require('plist');
+
+// Bind debug to console.log
+_debug_process$1.log = console.log.bind(console);
+_debug_config$1.log  = console.log.bind(console);
+
+// Helpful constants and conversion factors.
+const BLOCKS512_TO_BYTES$1                = 512;
+const REGEX_WHITE_SPACE$1                 = /\s+/;
+
+/* ==========================================================================
+   Class:              VolumeInterrogator_darwin
+   Description:	       Manager for interrogating volumes on the OSX/macOS systems.
+   Copyright:          Oct 2021
+
+   @event 'ready' => function({object})
+   @event_param {<VolumeData>}  [results]  - Array of volume data results.
+   Event emmitted when the (periodic) interrogation is completes.
+
+   @event 'scanning' => function({object})
+   Event emmitted when a refresh/rescan is initiated.
+   ========================================================================== */
+class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
+ /* ========================================================================
+    Description:    Constructor
+
+    @param {object}     [config]                         - The settings to use for creating the object.
+
+    @return {object}  - Instance of the volumeInterrogator_darwin class.
+
+    @throws {Error}   - If the platform operating system is not compatible.
+    ======================================================================== */
+    constructor(config) {
+
+        // Sanity - ensure the Operating System is supported.
+        const operating_system = process.platform;
+        if ((operating_system === undefined) || (typeof(operating_system) !== 'string') ||
+            (operating_system.length <= 0) || (operating_system.toLowerCase() !== 'darwin')) {
+            throw new Error(`Operating system not supported. os:${operating_system}`);
+        }
+
+        // Initialize the base class.
+        super(config);
+
+        // Initialize data members.
+        this._pendingFileSystems            = [];
+        this._pendingVolumes                = [];
+        this._theVisibleVolumeNames         = [];
+
+        // Callbacks bound to this object.
+        this._CB__list_known_virtual_filesystems_complete   = this._on_lsvfs_complete.bind(this);
+        this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
+        this._CB__visible_volumes                           = this._on_process_visible_volumes.bind(this);
+        this._CB_process_diskUtil_info_complete             = this._on_process_diskutil_info_complete.bind(this);
+        this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
+    }
+
+ /* ========================================================================
+    Description: Helper function used to initiate an interrogation of the
+                 system volumes on darwin operating systems.
+
+    @remarks: Called periodically by a timeout timer.
+    ======================================================================== */
+    _initiateInterrogation() {
+        // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
+        const ls_Volumes = new SpawnHelper();
+        ls_Volumes.on('complete', this._CB__visible_volumes);
+        ls_Volumes.Spawn({ command:'ls', arguments:['/Volumes'] });
+    }
+
+ /* ========================================================================
+    Description: Helper function used to reset an interrogation.
+
+    @remarks: Called periodically by a timeout timer.
+    ======================================================================== */
+    _doReset() {
+        this._pendingFileSystems    = [];
+        this._theVisibleVolumeNames = [];
+        this._pendingVolumes        = [];
+    }
+
+ /* ========================================================================
+    Description:    Read-Only Property used to determine if a check is in progress.
+
+    @return {boolean} - true if a check is in progress.
+    ======================================================================== */
+    get _isCheckInProgress() {
+        _debug_process$1(`_isCheckInProgress: Pending Volume Count - ${this._pendingVolumes.length}`);
+
+        const checkInProgress = ((this._pendingVolumes.length !== 0) ||
+                                 (this._pendingFileSystems.length !== 0));
+
+        return checkInProgress;
+    }
+
+ /* ========================================================================
+    Description:    Read-only property used to get an array of watch folders
+                    used to initiate an interrogation.
+
+    @return {[string]} - Array of folders to be watched for changes.
+    ======================================================================== */
+    get _watchFolders() {
+        return (['/Volumes']);
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_process_visible_volumes(response) {
+        _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+        _debug_config$1(response.result.toString());
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
+        }
+
+        if (response.valid &&
+            (response.result !== undefined)) {
+            // Update the list of visible volumes
+            this._theVisibleVolumeNames = response.result.toString().split('\n');
+
+            // Spawn a 'lsvfs' to determine the number and types of known file systems.
+            const diskutil_list = new SpawnHelper();
+            diskutil_list.on('complete', this._CB__list_known_virtual_filesystems_complete);
+            diskutil_list.Spawn({ command:'lsvfs' });
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process$1(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
+
+            // Fire the ready event with no data.
+            // This willl provide the client an opportunity to reset
+            this.emit('ready', {results:[]});
+        }
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_lsvfs_complete(response) {
+        _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+        _debug_config$1(response.result.toString());
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
+        }
+
+        const INDEX_FILE_SYSTEM_TYPE  = 0;
+        const INDEX_FILE_SYSTEM_COUNT = 1;
+        const INDEX_FILE_SYSTEM_FLAGS = 2;
+
+        if (response.valid &&
+            (response.result !== undefined)) {
+            // Process the response from `lsvfs`.
+                // There are two header rows and a dummy footer (as the result of the '\n' split), followd by lines with the following fields:
+                // [virtual file system type], [number of file systems], [flags]
+                const headerLines = 2;
+                const footerLines = -1;
+                const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
+                lines.forEach((element) => {
+                    // Break up the element based on white space.
+                    const fields = element.split(REGEX_WHITE_SPACE$1);
+
+                    // Does the response correspond to expectations?
+                    if (fields.length === 3) {
+                        // Does this file system have any volumes?
+                        const fsCount = Number.parseInt(fields[INDEX_FILE_SYSTEM_COUNT]);
+                        if (fsCount > 0) {
+                            const newFS = { type:fields[INDEX_FILE_SYSTEM_TYPE].toLowerCase(), count:fsCount, flags:fields[INDEX_FILE_SYSTEM_FLAGS].toLowerCase() };
+
+                            // Sanity. Ensure this file system type is not already in the pending list.
+                            const existingFSIndex = this._pendingFileSystems.findIndex((element) => {
+                                const isMatch = (element.type.toLowerCase() === newFS.type);
+                                return isMatch;
+                            });
+                            if (existingFSIndex < 0) {
+                                // Add this file system type to the pending list.
+                                this._pendingFileSystems.push(newFS);
+
+                                // Spawn a 'diskutil list' to see all the disk/volume data
+                                _debug_process$1(`Spawn df for fs type '${newFS.type}'.`);
+                                const diskUsage = new SpawnHelper();
+                                diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+                                diskUsage.Spawn({ command:'df', arguments:['-a', '-b', '-T', newFS.type], token:newFS });
+                            }
+                            else
+                            {
+                                // Replace the existing item with this one
+                                this._pendingFileSystems[existingFSIndex] = newFS;
+
+                                _debug_process$1(`_on_lsvfs_complete: Duplicated file system type. '${newFS.type}'`);
+                            }
+                        }
+                    }
+                    else {
+                        _debug_process$1(`_on_lsvfs_complete: Error processing line '${element}'`);
+                        _debug_process$1(fields);
+                    }
+                });
+            }
+            else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process$1(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
+
+            // Fire the ready event with no data.
+            // This willl provide the client an opportunity to reset
+            this.emit('ready', {results:[]});
+        }
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_df_complete(response) {
+        _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+        _debug_config$1(response.result.toString());
+        if (response.token !== undefined) {
+            _debug_config$1(`Spawn Token:`);
+            _debug_config$1(response.token);
+        }
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
+        }
+
+        const INDEX_FILE_SYSTEM_NAME  = 0;
+        const INDEX_FILE_SYSTEM_512BLOCKS = 1;
+        const INDEX_FILE_SYSTEM_USED_BLOCKS = 2;
+        const INDEX_FILE_SYSTEM_AVAILABLE_BLOCKS = 3;
+        const INDEX_FILE_SYSTEM_CAPACITY = 4;
+        const INDEX_FILE_SYSTEM_MOUNT_PT = 5;
+
+        if (response.valid &&
+            (response.result !== undefined)) {
+            // This spawn is expected to have been issued with a token.
+            if (response.token !== undefined) {
+                if (typeof(response.token) !== 'object') {
+                    throw new TypeError(`Spawn token is not a string.`);
+                }
+                // Ensure that the pending file system list contains the token.
+                if (this._pendingFileSystems.includes(response.token)) {
+                    // Remove token from the list.
+                    this._pendingFileSystems = this._pendingFileSystems.filter((item) => {
+                        const isEqual = ( (item.type !== response.token.type) ||
+                                          (item.count !== response.token.count) ||
+                                          (item.flags !== response.token.flags));
+                        return isEqual;
+                    });
+                }
+                else
+                {
+                    throw new Error(`Spawn token is not in the pending file system list.`);
+                }
+            }
+            else
+            {
+                throw new Error(`Spawn token is missing.`);
+            }
+
+            // Is this list of file systems one of the types we handle?
+            if (Object.values(VOLUME_TYPES).includes(response.token.type)) {
+                // Process the response from `df`.
+                // There are two header rows and a dummy footer (as the result of the '\n' split), followed by lines with the following fields:
+                // [virtual file system type], [number of file systems], [flags]
+                const headerLines = 1;
+                const footerLines = -1;
+                const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
+                lines.forEach((element) => {
+                    // Break up the element based on white space.
+                    let fields = element.split(REGEX_WHITE_SPACE$1);
+
+                    // Note: The Mount Point may include white space. Handle that possibility
+                    const fieldsMountPoint = fields.slice(INDEX_FILE_SYSTEM_MOUNT_PT, fields.length);
+                    fields[INDEX_FILE_SYSTEM_MOUNT_PT] = fieldsMountPoint.join(' ');
+
+                    const newVol = { device_node:fields[INDEX_FILE_SYSTEM_NAME].toLowerCase(), blocks:Number.parseInt(fields[INDEX_FILE_SYSTEM_512BLOCKS]), used_blks:Number.parseInt(fields[INDEX_FILE_SYSTEM_USED_BLOCKS]),
+                                     avail_blks:Number.parseInt(fields[INDEX_FILE_SYSTEM_AVAILABLE_BLOCKS]), capacity:Number.parseInt(fields[INDEX_FILE_SYSTEM_CAPACITY].slice(0,-1)), mount_point:fields[INDEX_FILE_SYSTEM_MOUNT_PT] };
+
+                    // Determine the name of the volume (text following the last '/')
+                    let volName = newVol.mount_point;
+                    const volNameParts = newVol.mount_point.split('/');
+                    if (volNameParts.length > 0) {
+                        const candidateName = volNameParts[volNameParts.length-1];
+                        if (candidateName.length > 0) {
+                            volName = volNameParts[volNameParts.length-1];
+                        }
+                    }
+
+                    // Determine if the low space alert threshold has been exceeded.
+                    const lowSpaceAlert = this._determineLowSpaceAlert(volName, "~~ not used ~~", ((newVol.avail_blks/newVol.blocks)*100.0));
+
+                    // Create a new (and temporary) VolumeData item.
+                    const volData = new VolumeData({name:               volName,
+                                                    volume_type:        response.token.type,
+                                                    mount_point:        newVol.mount_point,
+                                                    volume_uuid:        'unknown',
+                                                    device_node:        newVol.device_node,
+                                                    capacity_bytes:     newVol.blocks * BLOCKS512_TO_BYTES$1,
+                                                    free_space_bytes:   (newVol.blocks - newVol.used_blks) * BLOCKS512_TO_BYTES$1,
+                                                    visible:            this._theVisibleVolumeNames.includes(volName),
+                                                    low_space_alert:    lowSpaceAlert
+                    });
+
+                    // Get more informaion on this volume.
+                    _debug_process$1(`Initiating 'diskutil info' for DiskId '${volData.DeviceNode}'`);
+                    const diskutil_info = new SpawnHelper();
+                    diskutil_info.on('complete', this._CB_process_diskUtil_info_complete);
+                    diskutil_info.Spawn({ command:'diskutil', arguments:['info', '-plist', volData.DeviceNode], token:volData});
+
+                    // Add this volume to the list of pending volumes.
+                    this._pendingVolumes.push(volData);
+                });
+            }
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process$1(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
+
+            // Fire the ready event with no data.
+            // This willl provide the client an opportunity to reset
+            this.emit('ready', {results:[]});
+        }
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_process_diskutil_info_complete(response) {
+        _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+        _debug_config$1(response.result.toString());
+
+        let errorEncountered = false;
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
+        }
+
+        if (response.valid) {
+            try {
+                // Prurge the pending volumes listing.
+                if (response.token instanceof VolumeData) {
+                    if (this._pendingVolumes.includes(response.token)) {
+                        // Remove this item from the pending list.
+                        this._pendingVolumes = this._pendingVolumes.filter( (item) => {
+                            return item !== response.token;
+                        });
+                    }
+                    else {
+                        // Unknown token !!
+
+                        // Clear the check in progress.
+                        this._checkInProgress = false;
+                        // Flag the error
+                        errorEncountered = true;
+                        _debug_process$1(`Unexpected call to _on_process_diskutil_info_complete. token not pending.`);
+                        _debug_process$1(response.token);
+                    }
+                }
+                else {
+                    // Unexpected token data !!
+
+                    // Clear the check in progress.
+                    this._checkInProgress = false;
+                    // Flag the error
+                    errorEncountered = true;
+                    _debug_process$1(`Unexpected call to _on_process_diskutil_info_complete. token is not instance of VolumeData.`);
+                    _debug_process$1(response.token);
+                }
+
+                if (!errorEncountered) {
+                    // Attempt to parse the data as a plist.
+                    const config = _plist.parse(response.result.toString());
+
+                    // Determine if the volume should be shown.
+                    const  isShown = this._isVolumeShown(response.token.MountPoint);
+
+                    // Get the device identifier for this volume and manage the pending
+                    // items.
+                    if ((Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier')) && (typeof(config.DeviceIdentifier) === 'string')) {
+                        // Validate the config data.
+                        if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') &&          (typeof(config.VolumeName)          === 'string'))       &&
+                            (Object.prototype.hasOwnProperty.call(config, 'FilesystemType') &&      (typeof(config.FilesystemType)      === 'string'))       &&
+                            (Object.prototype.hasOwnProperty.call(config, 'DeviceIdentifier') &&    (typeof(config.DeviceIdentifier)    === 'string'))       &&
+                            (Object.prototype.hasOwnProperty.call(config, 'MountPoint') &&          (typeof(config.MountPoint)          === 'string'))       &&
+                            (Object.prototype.hasOwnProperty.call(config, 'DeviceNode') &&          (typeof(config.DeviceNode)          === 'string'))       &&
+                            /* UDF volumes have no Volume UUID */
+                            ( ( Object.prototype.hasOwnProperty.call(config, 'VolumeUUID') &&        (typeof(config.VolumeUUID)         === 'string'))       ||
+                            (!Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) )                                                                  &&
+                            (Object.prototype.hasOwnProperty.call(config, 'Size') &&                 (typeof(config.Size)               === 'number'))       &&
+                            // Free space is reported based on the file system type.
+                            ( ((Object.prototype.hasOwnProperty.call(config, 'FreeSpace') &&         (typeof(config.FreeSpace)          === 'number')))      ||
+                            (Object.prototype.hasOwnProperty.call(config, 'APFSContainerFree') && (typeof(config.APFSContainerFree)  === 'number')) ))         {
+
+                                // Then, process the data provided.
+                                // Free space is reported based on the file system type.
+                                const freeSpace  = ((config.FilesystemType === VOLUME_TYPES.TYPE_APFS) ? config.APFSContainerFree : config.FreeSpace);
+                                // For volumes that do not have a volume UUID, use the device node.
+                                const volumeUUID = ((Object.prototype.hasOwnProperty.call(config, 'VolumeUUID')) ? config.VolumeUUID : config.DeviceNode);
+                                // Determine if the low space alert threshold has been exceeded.
+                                const lowSpaceAlert = this._determineLowSpaceAlert(config.VolumeName, volumeUUID, ((freeSpace/config.Size)*100.0));
+                                const volData = new VolumeData({name:               config.VolumeName,
+                                                                volume_type:        config.FilesystemType,
+                                                                disk_id:            config.DeviceIdentifier,
+                                                                mount_point:        config.MountPoint,
+                                                                capacity_bytes:     config.Size,
+                                                                device_node:        config.DeviceNode,
+                                                                volume_uuid:        volumeUUID,
+                                                                free_space_bytes:   freeSpace,
+                                                                visible:            this._theVisibleVolumeNames.includes(config.VolumeName),
+                                                                shown:              isShown,
+                                                                low_space_alert:    lowSpaceAlert
+                                });
+                                this._theVolumes.push(volData);
+/*
+                                // APFS volumes may have some of their capacity consumed by purgable data. For example: APFS Snapshots.
+                                // This purgable data can only be evaluated if the volume is mounted.
+                                if ((volData.VolumeType === VOLUME_TYPES.TYPE_APFS) &&
+                                    (volData.IsMounted)) {
+                                    // Append the mount point to the 'pending volumes' list to keep us busy.
+                                    this._pendingVolumes.push(volData.MountPoint);
+
+                                    // Spawn a disk usage statistics ('du') process to see the accurate storage information for the
+                                    // APFS volumes.
+                                    const du_process = new SpawnHelper();
+                                    du_process.on('complete', this._CB_process_disk_utilization_stats_complete);
+                                    du_process.Spawn({ command:'du', arguments:['-skHx', volData.MountPoint] });
+                                }
+*/
+                        }
+                        else {
+                            // Ignore the inability to process this item if there is no valid volume name.
+                            if ((Object.prototype.hasOwnProperty.call(config, 'VolumeName') && (typeof(config.VolumeName) === 'string') &&
+                                (config.VolumeName.length > 0))) {
+                                _debug_process$1(`_on_process_diskutil_info_complete: Unable to handle response from diskutil.`);
+                            }
+                        }
+                    }
+                    else {
+                        // Result did not contain a disk identifier. This may be ok, for example if the volume is mounted via SMB.
+                        if ((Object.prototype.hasOwnProperty.call(config, 'Error')) && (typeof(config.Error) === 'boolean') && (config.Error)) {
+                            // We were unable to get more detailed informatopn. Just use what we have, but update the IsShown property.
+                            const volData = new VolumeData({name:               response.token.Name,
+                                                            volume_type:        response.token.VolumeType,
+                                                            disk_id:            response.token.DeviceIdentifier,
+                                                            mount_point:        response.token.MountPoint,
+                                                            capacity_bytes:     response.token.Size,
+                                                            device_node:        response.token.DeviceNode,
+                                                            volume_uuid:        response.token.VolumeUUID,
+                                                            free_space_bytes:   response.token.FreeSpace,
+                                                            visible:            response.token.IsVisible,
+                                                            shown:              isShown,
+                                                            low_space_alert:    response.token.LowSpaceAlert
+                            });
+                            this._theVolumes.push(volData);
+                        }
+                        else {
+                            // Unexpected result.
+
+                            // Clear the check in progress.
+                            this._checkInProgress = false;
+                            // Flag the error
+                            errorEncountered = true;
+                            _debug_process$1(`Unexpected call to _on_process_diskutil_info_complete. config.`);
+                            _debug_process$1(config);
+                        }
+                    }
+                }
+
+                // Finally, update the 'check in progress' flag.
+                if (!errorEncountered) {
+                     this._updateCheckInProgress();
+                }
+            }
+            catch (error) {
+                // Clear the check in progress.
+                this._checkInProgress = false;
+                // Flag the error
+                errorEncountered = true;
+                _debug_process$1(`Error processing 'diskutil info'. Err:${error}`);
+            }
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            // Flag the error
+            errorEncountered = true;
+            _debug_process$1(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
+        }
+
+        // Was a critical error encountered while processing the data?
+        if (errorEncountered) {
+            // Fire the ready event with no data.
+            // This willl provide the client an opportunity to reset
+            this.emit('ready', {results:[]});
+        }
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_process_disk_utilization_stats_complete(response) {
+        _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
+        }
+
+        // We expect the 'du' process to encounter errors.
+        // So get the results from the object directly.
+        const rawResult = response.source.Result.toString();
+        // Break the result up into an array of lines.
+        const lines = rawResult.split('\r');
+        for (const line of lines) {
+            // Split the lines by white space.
+            const fields = line.split('\t');
+            // Verify that there are 2 fields. These are the size and the volume name (mount point)
+            if (fields.length == 2) {
+                const used_bytes    = VolumeData.ConvertFrom1KBlockaToBytes(Number.parseInt(fields[0]));
+                const volumeName    = fields[1].trim();
+                _debug_process$1(`du results: Name:${volumeName} Used:${VolumeData.ConvertFromBytesToGB(used_bytes)} raw:${Number.parseInt(fields[0])}`);
+
+                // Verify that we were looking for this mount point.
+                if (this._pendingVolumes.includes(volumeName)) {
+                    // First, remove this item from the pending list.
+                    this._pendingVolumes = this._pendingVolumes.filter( (item) => {
+                        return (item !== volumeName);
+                    });
+
+                    // Find the matching volume in the list.
+                    let matchedIndex = undefined;
+                    const matchedItem = this._theVolumes.filter((item, index) => {
+                        const match = (item.MountPoint === volumeName);
+                        // Cache the index of the match as well.
+                        if (match) {
+                            matchedIndex = index;
+                        }
+                        return match;
+                    });
+                    if ((matchedItem === undefined) || (matchedItem.length !== 1) || (matchedIndex < this._theVolumes.length)) {
+                        // Clear the check in progress.
+                        this._checkInProgress = false;
+                        _debug_process$1(`Unable to identify unique volumeData item.`);
+                        throw new Error(`Unable to identify unique volumeData item.`);
+                    }
+
+                    // Create a new volume data item to replace the original
+                    const volData = new VolumeData({name:               matchedItem[0].Name,
+                                                    volume_type:        matchedItem[0].VolumeType,
+                                                    disk_id:            matchedItem[0].DiskId,
+                                                    mount_point:        matchedItem[0].MountPoint,
+                                                    capacity_bytes:     matchedItem[0].Size,
+                                                    device_node:        matchedItem[0].DeviceNode,
+                                                    volume_uuid:        matchedItem[0].VolumeUUID,
+                                                    free_space_bytes:   matchedItem[0].FreeSpace,
+                                                    visible:            matchedItem[0].IsVisible,
+                                                    low_space_alert:    matchedItem[0].LowSpaceAlert,
+                                                    used_space_bytes:   used_bytes
+                    });
+
+                    // Replace the item in the array with the updated one.
+                    this._theVolumes[matchedIndex] = volData;
+
+                    // Finally, update the 'check in progress' flag.
+                    this._updateCheckInProgress();
+                }
+                else {
+                    // Clear the check in progress.
+                    this._checkInProgress = false;
+                    _debug_process$1(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
+                    throw new Error(`Unexpected call to _on_process_disk_utilization_stats_complete. mount_point:${fields[1]}`);
+                }
+            }
+            else {
+                // Clear the check in progress.
+                this._checkInProgress = false;
+                _debug_process$1(`Unable to paese '${response.source.Command} ${response.source.Arguments}' results`);
+                throw Error(`Unable to paese '${response.source.Command} ${response.source.Arguments}' results`);
+            }
+        }
+    }
+
+ /* ========================================================================
+    Description:  Helper for extracting the disk identifiers from the data provided
+                  by 'diskutil list' for HFS+ volumes.
+
+    @param { object } [disks] - list of disk data provided by 'diskutil list' for non-APFS disks .
+
+    @return { [string] } - Array of disk identifiers.
+
+    @throws {TypeError} - thrown for enteries that are not specific to Partitions
+    ======================================================================== */
+    _partitionDiskIdentifiers(disks) {
+        if ((disks === undefined) || (!Array.isArray(disks))) {
+            throw new TypeError(`disk must be an array`);
+        }
+
+        let diskIdentifiers = [];
+
+        for (const disk of disks) {
+            if ((Object.prototype.hasOwnProperty.call(disk, 'Partitions')) &&
+                (disk.Partitions.length > 0)) {
+                for (const partition of disk.Partitions) {
+                    // Validate that we can access the disk identifier.
+                    if ((Object.prototype.hasOwnProperty.call(partition, 'DeviceIdentifier') &&
+                        (typeof(partition.DeviceIdentifier) === 'string'))) {
+                            // Record the identifier.
+                            diskIdentifiers.push(partition.DeviceIdentifier);
+                    }
+                    else {
+                        _debug_process$1(`_partitionDiskIdentifiers(): partition is not as expected. Missing or Invalid Disk Identifier.`);
+                        throw new TypeError(`partition is not as expected. Missing or Invalid Disk Identifier.`);
+                    }
+                }
+            }
+            else {
+                _debug_process$1(`_partitionDiskIdentifiers(): drive is not as expected. No partitions.`);
+                throw new TypeError(`drive is not as expected. No partitions.`);
+            }
+        }
+
+        return diskIdentifiers;
+    }
+
+ /* ========================================================================
+    Description:  Helper for extracting the disk identifiers from the data provided
+                  by 'diskutil list' for AFPS volumes.
+
+    @param { object } [containers] - list of AFPS container data provided by 'diskutil list'
+
+    @return { [string] } - Array of disk identifiers.
+
+    @throws {TypeError} - thrown for enteries that are not specific to AFPS volumes.
+    ======================================================================== */
+    _apfsDiskIdentifiers(containers) {
+        if ((containers === undefined) || (!Array.isArray(containers))) {
+            throw new TypeError(`containers must be an array`);
+        }
+
+        let diskIdentifiers = [];
+
+        for (const container of containers) {
+            if ((Object.prototype.hasOwnProperty.call(container, 'APFSVolumes')) &&
+                Array.isArray(container.APFSVolumes)) {
+                // The data of interest is stored in the APFS volumes entry.
+                for (const volume of container.APFSVolumes) {
+                    // Validate that we can access the disk identifier.
+                    if ((Object.prototype.hasOwnProperty.call(volume, 'DeviceIdentifier') &&
+                        (typeof(volume.DeviceIdentifier) === 'string'))) {
+                        // Record the identifier.
+                        diskIdentifiers.push(volume.DeviceIdentifier);
+                    }
+                    else {
+                        _debug_process$1(`_apfsDiskIdentifiers(): volume is not as expected. Missing or Invalid Disk Identifier.`);
+                        throw new TypeError(`volume is not as expected. Missing or Invalid Disk Identifier.`);
+                    }
+                }
+            }
+            else {
+                _debug_process$1(`_apfsDiskIdentifiers(): volume is not as expected. (AFPS)`);
+                throw new TypeError(`volume is not as expected. (AFPS)`);
+            }
+        }
+
+        return diskIdentifiers;
+    }
+}
+
+/* ==========================================================================
+   File:               volumeInterrogator_darwin.js
+   Class:              Volume Interrogator for OSX/macOS (darwin)
+   Description:	       Controls the collection of volume specific information
+                       and attributes to be published to homekit.
+   Copyright:          Nov 2021
+   ========================================================================== */
+
+// External dependencies and imports.
+const _os               = require('os');
+const _debug_process    = require('debug')('vi_process');
+const _debug_config     = require('debug')('vi_config');
+
+// Bind debug to console.log
+_debug_process.log = console.log.bind(console);
+_debug_config.log  = console.log.bind(console);
+
+// Helpful constants and conversion factors.
+const BLOCKS512_TO_BYTES                = 512;
+const REGEX_WHITE_SPACE                 = /\s+/;
+
+/* ==========================================================================
+   Class:              VolumeInterrogator_linux
+   Description:	       Manager for interrogating volumes on the linux-based systems.
+   Copyright:          Nov 2021
+
+   @event 'ready' => function({object})
+   @event_param {<VolumeData>}  [results]  - Array of volume data results.
+   Event emmitted when the (periodic) interrogation is completes.
+
+   @event 'scanning' => function({object})
+   Event emmitted when a refresh/rescan is initiated.
+   ========================================================================== */
+class VolumeInterrogator_linux extends VolumeInterrogatorBase {
+/* ========================================================================
+    Description:    Constructor
+
+    @param {object}     [config]                         - The settings to use for creating the object.
+
+    @return {object}  - Instance of the volumeInterrogator_darwin class.
+
+    @throws {Error}   - If the platform operating system is not compatible.
+    ======================================================================== */
+    constructor(config) {
+
+        // Sanity - ensure the Operating System is supported.
+        const operating_system = process.platform;
+        if ((operating_system === undefined) || (typeof(operating_system) !== 'string') ||
+            (operating_system.length <= 0) || (operating_system.toLowerCase() !== 'linux')) {
+            throw new Error(`Operating system not supported. os:${operating_system}`);
+        }
+
+        // Initialize the base class.
+        super(config);
+
+        this._dfSpawnInProgress = false;
+
+        this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
+    }
+
+ /* ========================================================================
+    Description: Helper function used to initiate an interrogation of the
+                 system volumes on darwin operating systems.
+
+    @remarks: Called periodically by a timeout timer.
+    ======================================================================== */
+    _initiateInterrogation() {
+        // Set Check-in-Progress.
+        this._dfSpawnInProgress = true;
+
+        // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
+        const diskUsage = new SpawnHelper();
+        diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+        diskUsage.Spawn({ command:'df', arguments:['--block-size=512', '--portability', '--print-type', '--exclude-type=tmpfs', '--exclude-type=devtmpfs'] });
+    }
+
+ /* ========================================================================
+    Description: Helper function used to reset an interrogation.
+
+    @remarks: Called periodically by a timeout timer.
+    ======================================================================== */
+    _doReset() {
+        // Clear Check-in-Progress.
+        this._dfSpawnInProgress = false;
+    }
+
+ /* ========================================================================
+    Description:    Read-Only Property used to determine if a check is in progress.
+
+    @return {boolean} - true if a check is in progress.
+    ======================================================================== */
+    get _isCheckInProgress() {
+        console.log(`_isCheckInProgress: ${this._dfSpawnInProgress}`);
+        return this._dfSpawnInProgress;
+    }
+
+ /* ========================================================================
+    Description:    Read-only property used to get an array of watch folders
+                    used to initiate an interrogation.
+
+    @return {[string]} - Array of folders to be watched for changes.
+    ======================================================================== */
+    get _watchFolders() {
+        const username = _os.userInfo().username;
+        _debug_process(`Username: ${username}`);
+
+        return ([`/media/${username}`, '/mnt']);
+    }
+
+ /* ========================================================================
+    Description:    Event handler for the SpawnHelper 'complete' Notification
+
+    @param { object }                      [response]        - Spawn response.
+    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
+                                                               was completed successfully.
+    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
+                                                               the spawned process.
+    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
+    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
+
+    @throws {Error} - thrown for vaious error conditions.
+    ======================================================================== */
+    _on_df_complete(response) {
+        _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
+        _debug_config(response.result.toString());
+        if (response.token !== undefined) {
+            _debug_config(`Spawn Token:`);
+            _debug_config(response.token);
+        }
+
+        // Clear the spawn in progress.
+        this._dfSpawnInProgress = false;
+
+        // If a prior error was detected, ignore future processing
+        if (!this._checkInProgress)
+        {
+            return;
+        }
+
+        const INDEX_FILE_SYSTEM_NAME  = 0;
+        const INDEC_FILE_SYSTEM_TYPE = 1;
+        const INDEX_FILE_SYSTEM_512BLOCKS = 2;
+        const INDEX_FILE_SYSTEM_USED_BLOCKS = 3;
+        const INDEX_FILE_SYSTEM_AVAILABLE_BLOCKS = 4;
+        const INDEX_FILE_SYSTEM_CAPACITY = 5;
+        const INDEX_FILE_SYSTEM_MOUNT_PT = 6;
+
+        if (response.valid &&
+            (response.result !== undefined)) {
+            // Process the response from `df`.
+            // There are two header rows and a dummy footer (as the result of the '\n' split), followed by lines with the following fields:
+            // [virtual file system type], [number of file systems], [flags]
+            const headerLines = 1;
+            const footerLines = -1;
+            const lines = response.result.toString().split('\n').slice(headerLines, footerLines);
+            lines.forEach((element) => {
+                // Break up the element based on white space.
+                let fields = element.split(REGEX_WHITE_SPACE);
+
+                // Note: The Mount Point may include white space. Handle that possibility
+                const fieldsMountPoint = fields.slice(INDEX_FILE_SYSTEM_MOUNT_PT, fields.length);
+                fields[INDEX_FILE_SYSTEM_MOUNT_PT] = fieldsMountPoint.join(' ');
+
+                const newVol = { device_node:fields[INDEX_FILE_SYSTEM_NAME].toLowerCase(), fs_type:fields[INDEC_FILE_SYSTEM_TYPE], blocks:Number.parseInt(fields[INDEX_FILE_SYSTEM_512BLOCKS]), used_blks:Number.parseInt(fields[INDEX_FILE_SYSTEM_USED_BLOCKS]),
+                                    avail_blks:Number.parseInt(fields[INDEX_FILE_SYSTEM_AVAILABLE_BLOCKS]), capacity:Number.parseInt(fields[INDEX_FILE_SYSTEM_CAPACITY].slice(0,-1)), mount_point:fields[INDEX_FILE_SYSTEM_MOUNT_PT] };
+
+                // Is this list of file systems one of the types we handle?
+                if (Object.values(VOLUME_TYPES).includes(newVol.fs_type)) {
+
+                    // Determine the name of the volume (text following the last '/')
+                    let volName = newVol.mount_point;
+                    const volNameParts = newVol.mount_point.split('/');
+                    if (volNameParts.length > 0) {
+                        const candidateName = volNameParts[volNameParts.length-1];
+                        if (candidateName.length > 0) {
+                            volName = volNameParts[volNameParts.length-1];
+                        }
+                    }
+
+                    // Determine if the low space alert threshold has been exceeded.
+                    const lowSpaceAlert = this._determineLowSpaceAlert(volName, "~~ not used ~~", ((newVol.avail_blks/newVol.blocks)*100.0));
+
+                    // Create a new (and temporary) VolumeData item.
+                    const volData = new VolumeData({name:               volName,
+                                                    volume_type:        newVol.fs_type,
+                                                    mount_point:        newVol.mount_point,
+                                                    volume_uuid:        'unknown',
+                                                    device_node:        newVol.device_node,
+                                                    capacity_bytes:     newVol.blocks * BLOCKS512_TO_BYTES,
+                                                    free_space_bytes:   (newVol.blocks - newVol.used_blks) * BLOCKS512_TO_BYTES,
+                                                    visible:            true,
+                                                    shown:              this._isVolumeShown(newVol.mount_point),
+                                                    low_space_alert:    lowSpaceAlert
+                    });
+
+                    // Add this volume to the list of volumes.
+                    this._theVolumes.push(volData);
+                }
+            });
+
+            // This is all we had to do.
+            this._updateCheckInProgress();
+        }
+        else {
+            // Clear the check in progress.
+            this._checkInProgress = false;
+            _debug_process(`Error processing '${response.source.Command} ${response.source.Arguments}'. Err:${response.result}`);
+
+            // Fire the ready event with no data.
+            // This willl provide the client an opportunity to reset
+            this.emit('ready', {results:[]});
+        }
+    }
+}
+
+/* ==========================================================================
    File:               main.js
    Description:	       Homebridge integration for Volume Monitor
    Copyright:          Jan 2021
    ========================================================================== */
 
+// External dependencies and imports.
 const _debug = require('debug')('homebridge');
 
 // Configuration constants.
@@ -2423,6 +2819,14 @@ const FIXED_ACCESSORY_INFO = {
     CONTROLS  : {uuid:`2CF5A6C7-8041-4805-8582-821B19589D60`, model:`Control Switches`, serial_num:`00000001`, service_list: { MANUAL_REFRESH:{type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Refresh`, uuid:`23CB97AC-6F0C-46B5-ACF6-78025632A11F`, udst:`ManualRefresh`},
                                                                                                                                PURGE_OFFLINE: {type:FIXED_ACCESSORY_SERVICE_TYPES.Switch, name:`Purge`,   uuid:`FEE232D5-8E25-4C1A-89AC-5476B778ADEF`, udst:`PurgeOffline` } }
                 }
+};
+
+// Host Operating System
+const HOST_OPERATING_SYSTEM = process.platform;
+// Supported operating systems.
+const SUPPORTED_OPERATING_SYSTEMS = {
+    OS_DARWIN: 'darwin',
+    OS_LINUX:  'linux',
 };
 
 // Accessory must be created from PlatformAccessory Constructor
@@ -2548,9 +2952,27 @@ class VolumeInterrogatorPlatform {
             }
         }
 
-        // Underlying engine
+        // Underlying engine. Operating system dependent.
         try {
-            this._volumeInterrogator = new VolumeInterrogator(viConfig);
+            switch (HOST_OPERATING_SYSTEM.toLowerCase()) {
+                // OSX & macOS
+                case SUPPORTED_OPERATING_SYSTEMS.OS_DARWIN: {
+                    this._volumeInterrogator = new VolumeInterrogator_darwin(viConfig);
+                }
+                break;
+
+                // Linux
+                case SUPPORTED_OPERATING_SYSTEMS.OS_LINUX: {
+                    this._volumeInterrogator = new VolumeInterrogator_linux(viConfig);
+                }
+                break;
+
+                default: {
+                    // Unsupported OS
+                    this._volumeInterrogator = undefined;
+                    this._log(`Operating system not supported. os:${HOST_OPERATING_SYSTEM}`);
+                }
+            }
         }
         catch (error) {
             this._volumeInterrogator = undefined;
@@ -2605,6 +3027,8 @@ class VolumeInterrogatorPlatform {
             // Cleanup the volume interrogator.
             if (this._volumeInterrogator !== undefined) {
                 this._log.debug(`Terminating the volume interrogator.`);
+                this._volumeInterrogator.removeListener('scanning', this._CB_VolumeIterrrogatorScanning);
+                this._volumeInterrogator.removeListener('ready',    this._CB_VolumeIterrrogatorReady);
                 await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
             }
@@ -2860,6 +3284,7 @@ class VolumeInterrogatorPlatform {
                         }
                         // Clean up.
                         purgeList.forEach(accessory => {
+                            this._volumesData.delete(accessory.displayName);
                             this._removeAccessory(accessory);
                         });
                     }
@@ -3386,4 +3811,4 @@ class VolumeInterrogatorPlatform {
     }
 }
 
-exports['default'] = main;
+exports["default"] = main;

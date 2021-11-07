@@ -30,7 +30,7 @@ This plugin is best experienced when running as a module installed and managed b
 | :------: | :------: | :------: | :------: | :------: |:------: | :------: | :------: | :------: | :------: |
 | Polling Interval | The time between automatic scans of the system | polling_interval | Common | Number | Hours | 1 | 0.083334 | 744 | |
 | Low Space Alarm Threshold (Default) | Percent of remaining space that will trigger a _low battery_ alert (default) | alarm_threshold | Common | Number | Percent | 15 | 1 | 99 | |
-| Exclusion List | An array of regular expression patterns indicating the volumes to be excluded based on the volume mount point. | exclusion_masks | Common | Array of Strings | N/A | `^/Volumes/\\.timemachine/.*` and `^/System/Volumes/.*` | | | By default, time machine and system volumes are excluded. Emulates previous behavior. |
+| Exclusion List | An array of regular expression patterns indicating the volumes to be excluded based on the volume mount point. | exclusion_masks | Common | Array of Strings | N/A | `^/Volumes/\\.timemachine/.*` and `^/System/Volumes/.*` | | | By default, time machine and system volumes (on macOS) are excluded. Emulates previous behavior. |
 | Enable Volume Customizations | Allow customixations for speficic volumes | enable_volume_customizations | Common | Boolean | N/A | Off | Off | On | |
 | Volume Identification Method | Method for identifying the volume | volume_customizations:items:volume_id_method | Per-Customization | String | N/A | name | name, serial_num | | |
 | Volume Name | Name of the volume | volume_customizations:items:volume_name | Per-Customization | String | N/A | | | | Required if the volume method is 'name' |
@@ -63,16 +63,24 @@ When viewing the details of an accessory, the accessory information section will
      style="padding:2px 2px 2px 2px; border:2px solid; margin:0px 10px 0px 0px; vertical-align:top;"
      width="15%">
 
-The volumes on the system will be rescanned both (a) peropdically according to the polling interval specified in the configuration settings and (b) when the contents of the `/Volumes` folder changes.
-
+The volumes on the system will be rescanned both (a) periodically according to the polling interval specified in the configuration settings and (b) when the contents of operating system specific folders change.
+<br>Monitored Folders:
+- OSX / macOS: `/Volumes`
+- Linux:       `/media/<username>` and `/mnt`
+<br>
+### Control Switches
 - _Refresh_: This switch, when turned on, is used to initiate a rescan of the volumes on the system. The user is not permitted to turn the switch off. It will automatically turn off when the scan is complete. This allows the user to update the _battery service_ accessories without needing to wait for the polling interval to expire.
 - _Purge_: When this switch is turned on, _battery service_ accessories that correspond to volumes that are no longer identified, for example ones that have been dismounted, will be removed (or purged). When this switch is off, any volumes that have been dismounted or now match one of the exclusion masks will show the battery level and battery alert as _Not Reachable_. Homekit applications will render these _not reachable_ differently. For example, the Apple Home app will simply not display the Battery Level and Low Battery Status. Other applications like [Home+ 5](https://apps.apple.com/us/app/home-5/id995994352) app shows the accessories as _Error_. The state of this switch is persisted across sessions.
 
+### Exclusions
 If customizing the `exclusion_list` configuration, it is left to the user to know the volume mount point and to be able to craft an appropriate regular expression for the volume(s) of interest.
 
 It should be noted that the plug-in will not interrogate the system for mounted volumes until at least 10 minutes has elapsed since bootup. This will allow enough time for boot up operations to settle out and allow the system to reach stability.
 ## Restrictions
-This module operates by using shell commands to the `diskutil` program. Therefore, this module is only supported on the Apple OSX and macOS operating systems.
+Not all operating systems are supported. If your operating system or file system type is not supported, submit a request [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues) or, better yet, contribute a solution !!
+<br>Currently supported operating systems:
+- OSX / macOS
+- Linux
 
 ## Known Issues and Planned Enhancements
 Refer to the bugs and enhancements listed [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues)
