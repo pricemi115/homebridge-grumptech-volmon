@@ -11,12 +11,12 @@
 const _debug_process    = require('debug')('vi_process');
 const _debug_config     = require('debug')('vi_config');
 const _os               = require('os');
-import * as modFileSystem from 'fs';
 import EventEmitter       from 'events';
 
 // Internal dependencies.
 // eslint-disable-next-line no-unused-vars
 import { VOLUME_TYPES, VolumeData, CONVERSION_BASES } from './volumeData.js';
+import { VolumeWatcher as _volumeWatcher, VOLUME_CHANGE_DETECTION_EVENTS as _VOLUME_CHANGE_DETECTION_EVENTS} from './volumeWatchers.js';
 
 // Bind debug to console.log
 _debug_process.log = console.log.bind(console);
@@ -71,7 +71,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
 
     @return {object}  - Instance of the VolumeInterrogator class.
 
-    @throws {TypeError}  - thrown if the configuration is not undefined.
+    @throws {TypeError}  - thrown if the configuration parameters are not the correct type.
     @throws {RangeError} - thrown if the configuration parameters are out of bounds.
     ======================================================================== */
     constructor(config) {
@@ -165,25 +165,17 @@ export class VolumeInterrogatorBase extends EventEmitter {
         // Set the polling period
         this.Period = polling_period;
 
-        // Create an empty array of folder watchers.
-        this._volWatchers = [];
-
-        // Get the list of watch folders.
+         // Get the list of watch folders.
         const watchFolders = this._watchFolders;
-        // Create a watcher on the folders to initiate a re-scan
-        // when changes are detected.
+        // Compose the configuration for the volume watcher.
+        const watcherConfig = [];
         for (const folder of watchFolders)
         {
-            modFileSystem.access(folder, modFileSystem.constants.F_OK, (err) => {
-                if (!err) {
-                    const watcher = modFileSystem.watch(folder, {persistent:true, recursive:false, encoding:'utf8'}, this._CB__VolumeWatcherChange);
-                    this._volWatchers.push(watcher);
-                }
-                else {
-                    _debug_config(`Unable to watch folder: '${folder}`);
-                }
-            });
+            watcherConfig.push( {target:folder, recursive:false, ignoreAccess:false} );
         }
+       // Create volume watchers and register for change notifications.
+       this._volWatcher = new _volumeWatcher( {watch_list:watcherConfig} );
+       this._volWatcher.on(_VOLUME_CHANGE_DETECTION_EVENTS.EVENT_CHANGE_DETECTED, this._CB__VolumeWatcherChange);
     }
 
  /* ========================================================================
@@ -193,16 +185,10 @@ export class VolumeInterrogatorBase extends EventEmitter {
         this.Stop();
 
         // Cleanup the volume watcher
-        let watcher = undefined;
-        do {
-            watcher = this._volWatchers.pop();
-            if (watcher !== undefined) {
-                watcher.close();
-            }
-        } while (watcher !== undefined);
+        this._volWatcher.Terminate();
 
         this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
-        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
+        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY);
     }
 
  /* ========================================================================
@@ -498,7 +484,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
 
  /* ========================================================================
     Description:  Event handler for file system change detections.
-                  Called when the contents of `/Volumes' changes.
+                  Called when the contents of the watched folder(s) change(s).
 
     @param { string }           [eventType] - Type of change detected ('rename' or 'change')
     @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.

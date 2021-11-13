@@ -1,6 +1,6 @@
 /* ==========================================================================
    File:               volumeInterrogator_darwin.js
-   Class:              Volume Interrogator for OSX/macOS (darwin)
+   Class:              Volume Interrogator for Linux
    Description:	       Controls the collection of volume specific information
                        and attributes to be published to homekit.
    Copyright:          Nov 2021
