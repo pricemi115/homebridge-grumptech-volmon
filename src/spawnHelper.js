@@ -1,32 +1,35 @@
 /* ==========================================================================
    File:               spawnHelper.js
    Class:              Spawn Helper
-   Description:	       Wrapper for managing spawned tasks.
+   Description:        Wrapper for managing spawned tasks.
    Copyright:          Dec 2020
    ========================================================================== */
-'use strict';
 
 // External dependencies and imports.
-const _debug    = require('debug')('spawn_helper');
-const { spawn } = require('child_process');
 import EventEmitter from 'events';
 
+const _debug    = require('debug')('spawn_helper');
+const { spawn } = require('child_process');
 // Bind debug to console.log
+// eslint-disable-next-line no-console
 _debug.log = console.log.bind(console);
 
 /* ==========================================================================
    Class:              SpawnHelper
-   Description:	       Wrapper class for handling spawned tasks
+   Description:        Wrapper class for handling spawned tasks
    Copyright:          Dec 2020
 
    @event 'complete' => function({object})
-   @event_param {bool}              [valid]  - Flag indicating if the spawned task completed successfully.
-   @event_param {<Buffer>}          [result] - Buffer of the data or error returned by the spawned process.
-   #event_param {<SpawnHelper>}     [source] - Reference to *this* SpawnHelper that provided the results.
+   @event_param {bool}              [valid]  - Flag indicating if the spawned task completed
+                                               successfully.
+   @event_param {<Buffer>}          [result] - Buffer of the data or error returned by the
+                                               spawned process.
+   #event_param {<SpawnHelper>}     [source] - Reference to *this* SpawnHelper that provided
+                                               the results.
    Event emmitted when the spawned task completes.
    ========================================================================== */
 export class SpawnHelper extends EventEmitter {
- /* ========================================================================
+/*  ========================================================================
     Description:    Constructor
 
     @param {object} [config] - Not used.
@@ -37,7 +40,7 @@ export class SpawnHelper extends EventEmitter {
     ======================================================================== */
     constructor(config) {
         if (config !== undefined) {
-            throw new TypeError(`SpawnHelper does not use any arguments.`);
+            throw new TypeError('SpawnHelper does not use any arguments.');
         }
 
         // Initialize the base class.
@@ -61,6 +64,7 @@ export class SpawnHelper extends EventEmitter {
         this._CB_process_close          = this._process_close.bind(this);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the pending flag for this
                  item.
@@ -68,9 +72,10 @@ export class SpawnHelper extends EventEmitter {
     @return {bool} - true if processing of this item is pending.
     ======================================================================== */
     get IsPending() {
-        return ( this._pending );
+        return (this._pending);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the valid flag for this
                  item.
@@ -78,10 +83,11 @@ export class SpawnHelper extends EventEmitter {
     @return {bool} - true if processing completed successfully.
     ======================================================================== */
     get IsValid() {
-        return ( (this._command !== undefined) &&
-                 !this.IsPending && !this._error_encountered );
+        return ((this._command !== undefined) &&
+                !this.IsPending && !this._error_encountered);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the result data for this
                  item.
@@ -90,9 +96,10 @@ export class SpawnHelper extends EventEmitter {
                          Unreliable and/or undefined if processing was not successful.
     ======================================================================== */
     get Result() {
-        return ( this._result_data );
+        return (this._result_data);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the error data for this
                  item.
@@ -101,9 +108,10 @@ export class SpawnHelper extends EventEmitter {
                          Unreliable and/or undefined if processing completed successfully.
     ======================================================================== */
     get Error() {
-        return ( this._error_data );
+        return (this._error_data);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the spawn command for this
                  item.
@@ -111,9 +119,10 @@ export class SpawnHelper extends EventEmitter {
     @return {string} - Current command for the spawn process.
     ======================================================================== */
     get Command() {
-        return ( this._command );
+        return (this._command);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the spawn arguments for
                  this item.
@@ -121,9 +130,10 @@ export class SpawnHelper extends EventEmitter {
     @return {[string]]} - Current command arguments for the spawn process.
     ======================================================================== */
     get Arguments() {
-        return ( this._arguments );
+        return (this._arguments);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the spawn options for
                  this item.
@@ -131,9 +141,10 @@ export class SpawnHelper extends EventEmitter {
     @return {[string]]} - Current command options for the spawn process.
     ======================================================================== */
     get Options() {
-        return ( this._options );
+        return (this._options);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor to read the spawn token for
                  this item.
@@ -141,9 +152,10 @@ export class SpawnHelper extends EventEmitter {
     @return {object]} - Current client-specified token for the spawn process.
     ======================================================================== */
     get Token() {
-        return ( this._token );
+        return (this._token);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Initiate spawned process
 
@@ -159,7 +171,6 @@ export class SpawnHelper extends EventEmitter {
     @throws {Error}      - Spawn invoked when an existing spawn is still pending.
     ======================================================================== */
     Spawn(request) {
-
         // Ensure a spawn is not already in progress.
         if (this.IsPending) {
             throw new Error('Spawn is already in progress.');
@@ -170,9 +181,9 @@ export class SpawnHelper extends EventEmitter {
             throw new TypeError('request must be an obkect');
         }
         // Validate 'required' command request.
-        if ( (!Object.prototype.hasOwnProperty.call(request, 'command'))   ||
-             (typeof(request.command) !== 'string') ||
-             (request.command.length <= 0)            ) {
+        if ((!Object.prototype.hasOwnProperty.call(request, 'command')) ||
+            (typeof(request.command) !== 'string') ||
+            (request.command.length <= 0)) {
             throw new TypeError('request.command must be a non-zero length string.');
         }
         // If we got this far, then request.command mus be legit.
@@ -219,7 +230,8 @@ export class SpawnHelper extends EventEmitter {
         }
 
         // Validate 'optional' token request.
-        // This object is a client-specified marker that can be used by the client when processing results.
+        // This object is a client-specified marker that can be used by the client when processing
+        // results.
         if (Object.prototype.hasOwnProperty.call(request, 'token')) {
             if (request.token === undefined) {
                 throw new TypeError('request.token must be something if it is specified.');
@@ -247,11 +259,12 @@ export class SpawnHelper extends EventEmitter {
         // Register for the message notification
         childProcess.on('message', this._CB_process_message);
         // Register for the error notification
-        childProcess.on('error', this._CB_process_error );
+        childProcess.on('error', this._CB_process_error);
         // Register for the close notification
         childProcess.on('close', this._CB_process_close);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Event handler for the STDOUT Data Notification
 
@@ -268,6 +281,7 @@ export class SpawnHelper extends EventEmitter {
         }
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Event handler for the STDERR Data Notification
 
@@ -287,6 +301,7 @@ export class SpawnHelper extends EventEmitter {
         this._error_encountered = true;
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Event handler for the Child Process Message Notification
 
@@ -299,6 +314,7 @@ export class SpawnHelper extends EventEmitter {
         _debug(`Child Process for ${this.Command}: '${message}'`);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Event handler for the Child Process Error Notification
 
@@ -312,6 +328,7 @@ export class SpawnHelper extends EventEmitter {
         this._error_encountered = true;
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Event handler for the Child Process Close Notification
 
@@ -327,7 +344,9 @@ export class SpawnHelper extends EventEmitter {
 
         // Notify our clients.
         const isValid = this.IsValid;
-        const response = {valid:isValid, result:(isValid ? this.Result : this.Error), token:this.Token, source:this};
+        // eslint-disable-next-line object-curly-newline
+        const response = { valid: isValid, result: (isValid ? this.Result : this.Error), token: this.Token, source: this };
         this.emit('complete', response);
     }
 }
+export default SpawnHelper;

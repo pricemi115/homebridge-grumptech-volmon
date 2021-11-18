@@ -1,15 +1,15 @@
 /* ==========================================================================
    File:               volumeData.js
    Class:              Volume Data
-   Description:	       Provides read/write access to data metrics of interest.
+   Description:        Provides read/write access to data metrics of interest.
    Copyright:          Dec 2020
    ========================================================================== */
-'use strict';
 
 // External dependencies and imports.
 const _debug = require('debug')('vol_data');
 
 // Bind debug to console.log
+// eslint-disable-next-line no-console
 _debug.log = console.log.bind(console);
 
 // Helpful constants and conversion factors.
@@ -17,10 +17,11 @@ const BYTES_TO_GB_BASE2     = (1024.0 * 1024.0 * 1024.0);
 const BYTES_TO_GB_BASE10    = (1000.0 * 1000.0 * 1000.0);
 const BLOCK_1K_TO_BYTES     = 1024.0;
 
- /* ========================================================================
+/*  ========================================================================
     Description:    Enumeration of supported file systems
     ======================================================================== */
 export const VOLUME_TYPES = {
+    /* eslint-disable key-spacing */
     TYPE_UNKNOWN  : 'unknown',
     TYPE_HFS_PLUS : 'hfs',
     TYPE_APFS     : 'apfs',
@@ -29,24 +30,27 @@ export const VOLUME_TYPES = {
     TYPE_NTFS     : 'ntfs',
     TYPE_SMBFS    : 'smbfs',
     TYPE_EXT4     : 'ext4',     /* Typically seen on linux */
-    TYPE_VFAT     : 'vfat'      /* Typically seen on linux */
+    TYPE_VFAT     : 'vfat',     /* Typically seen on linux */
+    /* eslint-enable key-spacing */
 };
 
- /* ========================================================================
+/*  ========================================================================
     Description:    Enumeration of supported conversion factors
     ======================================================================== */
 export const CONVERSION_BASES = {
+    /* eslint-disable key-spacing */
     BASE_2  : 2,
-    BASE_10 : 10
+    BASE_10 : 10,
+    /* eslint-enable key-spacing */
 };
 
 /* ==========================================================================
    Class:              VolumeData
-   Description:	       Provides data of interest for volumes.
+   Description:        Provides data of interest for volumes.
    Copyright:          Dec 2020
    ========================================================================== */
 export class VolumeData {
- /* ========================================================================
+/*  ========================================================================
     Description:    Constructor
 
     @param {object} [data] - The settings to use for creating the object.
@@ -59,12 +63,15 @@ export class VolumeData {
     @param {string} [data.volume_uuid]                - Unique identifier of the volume.
     @param {number} [data.capacity_bytes]             - Total size (in bytes) of the volume.
     @param {number} [data.free_space_bytes]           - Remaining space (in bytes) of the volume.
-    @param {number} [data.used_space_bytes]           - Actively used space (in bytes) of the volume.
-    @param {boolean} [data.visible]                   - Flag indicating that the volume is visible to the user.
+    @param {number} [data.used_space_bytes]           - Actively used space (in bytes) of the
+                                                        volume.
+    @param {boolean} [data.visible]                   - Flag indicating that the volume is visible
+                                                        to the user.
                                                         (Shown in /Volumes)
-    @param {boolean} [data.shown]                     - Flag indicating that the volume should be shown.
-    @param {boolean} [data.low_space_alert]           - Flag indicating that the low space alert threshold has
-                                                        been exceeded.
+    @param {boolean} [data.shown]                     - Flag indicating that the volume should be
+                                                        shown.
+    @param {boolean} [data.low_space_alert]           - Flag indicating that the low space alert
+                                                        threshold has been exceeded.
 
     @return {object}  - Instance of the SpawnHelper class.
 
@@ -72,25 +79,24 @@ export class VolumeData {
     @throws {RangeError} - thrown if the configuration parameters are out of bounds.
     ======================================================================== */
     constructor(data) {
-
         // Initialize default values
-        let name = undefined;
-        let diskIdentifier = undefined;
+        let name;
+        let diskIdentifier;
         let volumeType = VOLUME_TYPES.TYPE_UNKNOWN;
-        let mountPoint = undefined;
+        let mountPoint;
         let capacityBytes = 0;
-        let deviceNode = undefined;
-        let volumeUUID = undefined;
+        let deviceNode;
+        let volumeUUID;
         let freeSpaceBytes = 0;
-        let usedSpaceBytes = undefined;
+        let usedSpaceBytes;
         let visible = false;
         let shown = false;
         let lowSpaceAlert = false;
 
         // Update values from data passed in.
         if (data !== undefined) {
-            if (typeof(data) != 'object') {
-                throw new TypeError(`'data' must be an object`);
+            if (typeof(data) !== 'object') {
+                throw new TypeError('\'data\' must be an object');
             }
             if (Object.prototype.hasOwnProperty.call(data, 'name') &&
                 (typeof(data.name) === 'string')) {
@@ -180,85 +186,94 @@ export class VolumeData {
         }
         else {
             // Use the used space as provided.
-            this._used_space_bytes = usedSpaceBytes
+            this._used_space_bytes = usedSpaceBytes;
         }
         if (this._used_space_bytes < 0) {
             throw new RangeError(`Used space cannot be negative. ${this._used_space_bytes}`);
         }
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for the name of the volume.
 
     @return {string} - Name of the volume
     ======================================================================== */
     get Name() {
-        return ( this._name );
+        return (this._name);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for the disk identifier of the volume.
 
     @return {string} - Disk identifier of the volume
     ======================================================================== */
     get DiskId() {
-        return ( this._disk_identifier );
+        return (this._disk_identifier);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for the file system of the volume.
 
     @return {VOLUME_TYPE(string)} - File system of the volume
     ======================================================================== */
     get VolumeType() {
-        return ( this._volume_type );
+        return (this._volume_type);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for the mount point of the volume.
 
     @return {string} - Mount point of the volume. Undefined if not mounted.
     ======================================================================== */
     get MountPoint() {
-        return ( this._mount_point );
+        return (this._mount_point);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for the device node of the volume.
 
     @return {string} - Device node of the volume.
     ======================================================================== */
     get DeviceNode() {
-        return ( this._device_node );
+        return (this._device_node);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for the UUID of the volume.
 
     @return {string} - Unique identifier of the volume.
     ======================================================================== */
     get VolumeUUID() {
-        return ( this._volume_uuid );
+        return (this._volume_uuid);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for size (in bytes) of the volume.
 
     @return {number} - Size (in bytes) of the volume.
     ======================================================================== */
     get Size() {
-        return ( this._capacity_bytes );
+        return (this._capacity_bytes);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for free space (in bytes) of the volume.
 
     @return {number} - Free space (in bytes) of the volume.
     ======================================================================== */
     get FreeSpace() {
-        return ( this._free_space_bytes );
+        return (this._free_space_bytes);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor for used space (in bytes) of the volume.
 
@@ -267,9 +282,10 @@ export class VolumeData {
     @remarks - Excludes purgable space. Example APFS Snapshots.
     ======================================================================== */
     get UsedSpace() {
-        return ( this._used_space_bytes );
+        return (this._used_space_bytes);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor indicating if the volume is mounted.
 
@@ -280,6 +296,7 @@ export class VolumeData {
                 (this._mount_point.length > 0));
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor indicating if the volume is visible
                  to the user (as determined by the contents of /Volumes).
@@ -287,9 +304,10 @@ export class VolumeData {
     @return {bool} - true if the volume is visible.
     ======================================================================== */
     get IsVisible() {
-        return ( this._visible );
+        return (this._visible);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor indicating if the low space alert
                  threshold has been exceeded.
@@ -297,26 +315,30 @@ export class VolumeData {
     @return {bool} - true if the low space threshold has been exceeded.
     ======================================================================== */
     get LowSpaceAlert() {
-        return ( this._low_space_alert );
+        return (this._low_space_alert);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor indicating the percentage of free space.
 
     @return {number} - percentage of space remaining (0...100)
     ======================================================================== */
     get PercentFree() {
-        return ( (this.FreeSpace/this.Size)*100.0 );
+        return ((this.FreeSpace / this.Size) * 100.0);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Read-Only Property accessor indicating is the volume should be shown.
 
     @return {boolean} - true if the volume should be shown.
     ======================================================================== */
     get IsShown() {
-        return ( this._shown );
+        return (this._shown);
     }
+
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description: Helper to determine if the supplied object is equivalent to this one.
 
@@ -325,22 +347,27 @@ export class VolumeData {
     @return {bool} - true if the supplied object is a match. false otherwise.
     ======================================================================== */
     IsMatch(compareTarget) {
-                        // Ensure 'compareTarget' is indeed an instance of VolumeData.
-        let result = (  (compareTarget instanceof VolumeData) &&
-                        // A subset of the volume data properties are used to establish equivalence.
-                        (this.Name === compareTarget.Name) &&
-                        (this.VolumeType === compareTarget.VolumeType) &&
-                        (this.DeviceNode === compareTarget.DeviceNode) &&
-                        (this.MountPoint === compareTarget.MountPoint) );
+        /* eslint-disable indent, space-in-parens */
+                          // Ensure 'compareTarget' is indeed an instance of VolumeData.
+        const result = (  (compareTarget instanceof VolumeData) &&
+                          // A subset of the volume data properties are used to establish
+                          // equivalence.
+                          (this.Name === compareTarget.Name) &&
+                          (this.VolumeType === compareTarget.VolumeType) &&
+                          (this.DeviceNode === compareTarget.DeviceNode) &&
+                          (this.MountPoint === compareTarget.MountPoint)   );
+       /* eslint-enable indent, space-in-parens */
 
         return (result);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Helper to convert from bytes to GB
 
     @param {number}                     [bytes] - Size in bytes to be converted
-    @param {number | CONVERSION_BASES } [base] - Base to use for the conversion. (Optional. Default=CONVERSION_BASES.BASE_2)
+    @param {number | CONVERSION_BASES } [base] - Base to use for the conversion.
+                                                 (Optional. Default=CONVERSION_BASES.BASE_2)
 
     @return {number}  - Size in GB
 
@@ -349,7 +376,7 @@ export class VolumeData {
     ======================================================================== */
     static ConvertFromBytesToGB(bytes, base) {
         if ((bytes === undefined) || (typeof(bytes) !== 'number')) {
-            throw new TypeError(`'bytes' must be a number.`);
+            throw new TypeError('\'bytes\' must be a number.');
         }
         let convFactor = BYTES_TO_GB_BASE2;
         if (base !== undefined) {
@@ -366,6 +393,7 @@ export class VolumeData {
         return (bytes / convFactor);
     }
 
+    // eslint-disable-next-line indent
  /* ========================================================================
     Description:    Helper to convert from 1k Blocks to bytes
 
@@ -378,7 +406,7 @@ export class VolumeData {
     ======================================================================== */
     static ConvertFrom1KBlockaToBytes(blocks) {
         if ((blocks === undefined) || (typeof(blocks) !== 'number')) {
-            throw new TypeError(`'blocks' must be a number.`);
+            throw new TypeError('\'blocks\' must be a number.');
         }
         if (blocks < 0) {
             throw new RangeError(`'blocks' must be a positive number. (${blocks})`);
@@ -387,3 +415,4 @@ export class VolumeData {
         return (blocks * BLOCK_1K_TO_BYTES);
     }
 }
+export default VolumeData;
