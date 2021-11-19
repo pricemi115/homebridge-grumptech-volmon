@@ -12,7 +12,7 @@ import EventEmitter from 'events';
 // Internal dependencies.
 // eslint-disable-next-line no-unused-vars
 import { VOLUME_TYPES, VolumeData, CONVERSION_BASES } from './volumeData';
-import { VolumeWatcher as _volumeWatcher, VOLUME_CHANGE_DETECTION_EVENTS as _VOLUME_CHANGE_DETECTION_EVENTS } from './volumeWatchers';
+import { VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS } from './volumeWatchers';
 
 // External dependencies and imports.
 // eslint-disable-next-line camelcase
@@ -174,6 +174,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
         this._CB__ResetCheck                = this._on_reset_check.bind(this);
         this._DECOUPLE_Start                = this.Start.bind(this);
         this._CB__VolumeWatcherChange       = this._handleVolumeWatcherChangeDetected.bind(this);
+        this._CB__VolumeWatcherAdded        = this._handleVolumeWatcherAdded.bind(this);
 
         // Set the polling period
         this.Period = pollingPeriod;
@@ -186,8 +187,12 @@ export class VolumeInterrogatorBase extends EventEmitter {
             watcherConfig.push({ target: folder, recursive: false, ignoreAccess: false });
         }
         // Create volume watchers and register for change notifications.
-        this._volWatcher = new _volumeWatcher({ watch_list: watcherConfig });
-        this._volWatcher.on(_VOLUME_CHANGE_DETECTION_EVENTS.EVENT_CHANGE_DETECTED, this._CB__VolumeWatcherChange);
+        this._volWatcher = new _volumeWatcher();
+        this._volWatcher.on(_VOLUME_WATCHER_EVENTS.EVENT_CHANGE_DETECTED,  this._CB__VolumeWatcherChange);
+        this._volWatcher.on(_VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, this._CB__VolumeWatcherAdded);
+        // Add watches for the locations of interest.
+        // Note: This is asynchronous and will be happening after the constructor completes.
+        this._volWatcher.AddWatches(watcherConfig);
     }
 
     // eslint-disable-next-line indent
@@ -532,6 +537,22 @@ export class VolumeInterrogatorBase extends EventEmitter {
                 this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
             }
         }, eventType, fileName);
+    }
+
+    // eslint-disable-next-line indent
+ /* ========================================================================
+    Description:  Event handler for file system change detections.
+                  Called when the contents of the watched folder(s) change(s).
+
+    @param { object }  [result]         - Result of the request to add a watcher.
+    @param { string }  [result.target]  - Target of the watch
+    @param { boolean } [result.success] - Status of the add operation.
+    ======================================================================== */
+    // eslint-disable-next-line class-methods-use-this
+    _handleVolumeWatcherAdded(result) {
+        if (result !== undefined) {
+            _debug_process(`AddWatch Results: target:${result.target} status:${result.success}`);
+        }
     }
 
     // eslint-disable-next-line indent
