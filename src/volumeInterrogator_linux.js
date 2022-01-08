@@ -7,9 +7,9 @@
    ========================================================================== */
 
 // Internal dependencies.
-import { VolumeInterrogatorBase as _VolumeInterrogatorBase } from './volumeInterrogatorBase';
-import { VOLUME_TYPES, VolumeData } from './volumeData';
-import { SpawnHelper } from './spawnHelper';
+import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase';
+import {VOLUME_TYPES, VolumeData} from './volumeData';
+import {SpawnHelper} from './spawnHelper';
 
 // External dependencies and imports.
 const _os               = require('os');
@@ -81,7 +81,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const diskUsage = new SpawnHelper();
         diskUsage.on('complete', this._CB__display_free_disk_space_complete);
-        diskUsage.Spawn({ command: 'df', arguments: ['--block-size=512', '--portability', '--print-type', '--exclude-type=tmpfs', '--exclude-type=devtmpfs'] });
+        diskUsage.Spawn({command: 'df', arguments: ['--block-size=512', '--portability', '--print-type', '--exclude-type=tmpfs', '--exclude-type=devtmpfs']});
     }
 
     // eslint-disable-next-line indent
@@ -114,7 +114,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
     ======================================================================== */
     // eslint-disable-next-line class-methods-use-this
     get _watchFolders() {
-        const { username } = _os.userInfo();
+        const {username} = _os.userInfo();
         _debug_process(`Username: ${username}`);
 
         return ([`/media/${username}`, '/mnt']);
@@ -233,7 +233,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
 
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit('ready', { results: [] });
+            this.emit('ready', {results: []});
         }
     }
 }

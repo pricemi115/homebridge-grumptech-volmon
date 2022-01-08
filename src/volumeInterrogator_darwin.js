@@ -7,9 +7,9 @@
    ========================================================================== */
 
 // Internal dependencies.
-import { VolumeInterrogatorBase as _VolumeInterrogatorBase } from './volumeInterrogatorBase';
-import { VOLUME_TYPES, VolumeData } from './volumeData';
-import { SpawnHelper } from './spawnHelper';
+import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase';
+import {VOLUME_TYPES, VolumeData} from './volumeData';
+import {SpawnHelper} from './spawnHelper';
 
 // External dependencies and imports.
 // eslint-disable-next-line camelcase
@@ -86,7 +86,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const lsVolumes = new SpawnHelper();
         lsVolumes.on('complete', this._CB__visible_volumes);
-        lsVolumes.Spawn({ command: 'ls', arguments: ['/Volumes'] });
+        lsVolumes.Spawn({command: 'ls', arguments: ['/Volumes']});
     }
 
     // eslint-disable-next-line indent
@@ -159,7 +159,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
             // Spawn a 'lsvfs' to determine the number and types of known file systems.
             const diskutilList = new SpawnHelper();
             diskutilList.on('complete', this._CB__list_known_virtual_filesystems_complete);
-            diskutilList.Spawn({ command: 'lsvfs' });
+            diskutilList.Spawn({command: 'lsvfs'});
         }
         else {
             // Clear the check in progress.
@@ -168,7 +168,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
 
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit('ready', { results: [] });
+            this.emit('ready', {results: []});
         }
     }
 
@@ -216,7 +216,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
                     // Does this file system have any volumes?
                     const fsCount = Number.parseInt(fields[INDEX_FILE_SYSTEM_COUNT], 10);
                     if (fsCount > 0) {
-                        const newFS = { type: fields[INDEX_FILE_SYSTEM_TYPE].toLowerCase(), count: fsCount, flags: fields[INDEX_FILE_SYSTEM_FLAGS].toLowerCase() };
+                        const newFS = {type: fields[INDEX_FILE_SYSTEM_TYPE].toLowerCase(), count: fsCount, flags: fields[INDEX_FILE_SYSTEM_FLAGS].toLowerCase()};
 
                         // Sanity. Ensure this file system type is not already in the pending list.
                         const existingFSIndex = this._pendingFileSystems.findIndex((item) => {
@@ -231,7 +231,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
                             _debug_process(`Spawn df for fs type '${newFS.type}'.`);
                             const diskUsage = new SpawnHelper();
                             diskUsage.on('complete', this._CB__display_free_disk_space_complete);
-                            diskUsage.Spawn({ command: 'df', arguments: ['-a', '-b', '-T', newFS.type], token: newFS });
+                            diskUsage.Spawn({command: 'df', arguments: ['-a', '-b', '-T', newFS.type], token: newFS});
                         }
                         else {
                             // Replace the existing item with this one
@@ -254,7 +254,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
 
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit('ready', { results: [] });
+            this.emit('ready', {results: []});
         }
     }
 
@@ -374,7 +374,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
                     _debug_process(`Initiating 'diskutil info' for DiskId '${volData.DeviceNode}'`);
                     const diskutilInfo = new SpawnHelper();
                     diskutilInfo.on('complete', this._CB_process_diskUtil_info_complete);
-                    diskutilInfo.Spawn({ command: 'diskutil', arguments: ['info', '-plist', volData.DeviceNode], token: volData });
+                    diskutilInfo.Spawn({command: 'diskutil', arguments: ['info', '-plist', volData.DeviceNode], token: volData});
 
                     // Add this volume to the list of pending volumes.
                     this._pendingVolumes.push(volData);
@@ -388,7 +388,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
 
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit('ready', { results: [] });
+            this.emit('ready', {results: []});
         }
     }
 
@@ -583,7 +583,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         if (errorEncountered) {
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit('ready', { results: [] });
+            this.emit('ready', {results: []});
         }
     }
 

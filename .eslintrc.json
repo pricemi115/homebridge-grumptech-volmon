@@ -4,7 +4,7 @@
         "node": true
     },
     "extends": [
-        "airbnb-base",
+        "google",
         "plugin:jsdoc/recommended"
     ],
     "parserOptions": {

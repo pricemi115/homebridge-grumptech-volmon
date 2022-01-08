@@ -11,8 +11,8 @@ import EventEmitter from 'events';
 
 // Internal dependencies.
 // eslint-disable-next-line no-unused-vars
-import { VOLUME_TYPES, VolumeData, CONVERSION_BASES } from './volumeData';
-import { VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS } from './volumeWatchers';
+import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData';
+import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers';
 
 // External dependencies and imports.
 // eslint-disable-next-line camelcase
@@ -184,7 +184,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
         // Compose the configuration for the volume watcher.
         const watcherConfig = [];
         for (const folder of watchFolders) {
-            watcherConfig.push({ target: folder, recursive: false, ignoreAccess: false });
+            watcherConfig.push({target: folder, recursive: false, ignoreAccess: false});
         }
         // Create volume watchers and register for change notifications.
         this._volWatcher = new _volumeWatcher();
@@ -345,7 +345,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
         if (issueReady) {
             // Fire the ready event with no data.
             // This willl provide the client an opportunity to reset
-            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, { results: [] });
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results: []});
         }
     }
 
@@ -444,7 +444,7 @@ export class VolumeInterrogatorBase extends EventEmitter {
         this._checkInProgress = this._isCheckInProgress;
         if (wasCheckInProgress && !this._checkInProgress) {
             // Fire Ready event
-            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, { results: this._theVolumes });
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results: this._theVolumes});
 
             _debug_process('Ready event.');
             for (const volume of this._theVolumes) {

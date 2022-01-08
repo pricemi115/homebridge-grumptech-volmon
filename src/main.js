@@ -4,8 +4,8 @@
    Copyright:          Jan 2021
    ========================================================================== */
 
-// eslint-disable-next-line no-unused-vars, import/first
-import { version as PLUGIN_VER, config_info as CONFIG_INFO } from '../package.json';
+// eslint-disable-next-line no-unused-vars
+import {version as PLUGIN_VER, config_info as CONFIG_INFO} from '../package.json';
 /*
  * IMPORTANT NOTICE
  *
@@ -50,9 +50,9 @@ import {
 */
 
 // Internal dependencies
-import { VolumeInterrogator_darwin as _VolInterrogatorDarwin } from './volumeInterrogator_darwin';
-import { VolumeInterrogator_linux  as _VolInterrogatorLinux } from './volumeInterrogator_linux';
-import { VolumeData } from './volumeData';
+import {VolumeInterrogator_darwin as _VolInterrogatorDarwin} from './volumeInterrogator_darwin';
+import {VolumeInterrogator_linux  as _VolInterrogatorLinux} from './volumeInterrogator_linux';
+import {VolumeData} from './volumeData';
 
 // External dependencies and imports.
 const _debug = require('debug')('homebridge');
@@ -222,8 +222,8 @@ class VolumeInterrogatorPlatform {
 
         /* Bind Handlers */
         this._bindDoInitialization          = this._doInitialization.bind(this);
-        this._bindDestructorNormal          = this._destructor.bind(this, { cleanup: true });
-        this._bindDestructorAbnormal        = this._destructor.bind(this, { exit: true });
+        this._bindDestructorNormal          = this._destructor.bind(this, {cleanup: true});
+        this._bindDestructorAbnormal        = this._destructor.bind(this, {exit: true});
         this._CB_VolumeIterrrogatorScanning = this._handleVolumeInterrogatorScanning.bind(this);
         this._CB_VolumeIterrrogatorReady    = this._handleVolumeInterrogatorReady.bind(this);
 
@@ -351,8 +351,8 @@ class VolumeInterrogatorPlatform {
             // Create accessory persisted settings
             accessoryControls.context.SETTINGS = {
                 SwitchStates: [
-                    { id: FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, state: true },
-                    { id: FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid,  state: false },
+                    {id: FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid, state: true},
+                    {id: FIXED_ACCESSORY_INFO.CONTROLS.service_list.PURGE_OFFLINE.uuid,  state: false},
                 ],
             };
 
@@ -366,7 +366,7 @@ class VolumeInterrogatorPlatform {
             }
 
             // Update the accessory information.
-            this._updateAccessoryInfo(accessoryControls, { model: FIXED_ACCESSORY_INFO.CONTROLS.model, serialnum: FIXED_ACCESSORY_INFO.CONTROLS.serial_num });
+            this._updateAccessoryInfo(accessoryControls, {model: FIXED_ACCESSORY_INFO.CONTROLS.model, serialnum: FIXED_ACCESSORY_INFO.CONTROLS.serial_num});
 
             // configure this accessory.
             this._configureAccessory(accessoryControls);
@@ -673,10 +673,10 @@ class VolumeInterrogatorPlatform {
                 const id = `${service.displayName}.${service.subtype}`;
                 // Register for the "get" event notification.
                 // eslint-disable-next-line object-shorthand
-                charOn.on('get', this._handleOnGet.bind(this, { accessory: accessory, service_id: id }));
+                charOn.on('get', this._handleOnGet.bind(this, {accessory: accessory, service_id: id}));
                 // Register for the "set" event notification.
                 // eslint-disable-next-line object-shorthand
-                charOn.on('set', this._handleOnSet.bind(this, { accessory: accessory, service_id: id }));
+                charOn.on('set', this._handleOnSet.bind(this, {accessory: accessory, service_id: id}));
             }
         }
 
@@ -720,10 +720,10 @@ class VolumeInterrogatorPlatform {
                 const id = `${service.displayName}.${service.subtype}`;
                 // Register for the "get" event notification.
                 // eslint-disable-next-line object-shorthand
-                charOn.off('get', this._handleOnGet.bind(this, { accessory: accessory, service_id: id }));
+                charOn.off('get', this._handleOnGet.bind(this, {accessory: accessory, service_id: id}));
                 // Register for the "get" event notification.
                 // eslint-disable-next-line object-shorthand
-                charOn.off('set', this._handleOnSet.bind(this, { accessory: accessory, service_id: id }));
+                charOn.off('set', this._handleOnSet.bind(this, {accessory: accessory, service_id: id}));
             }
         }
 
@@ -794,7 +794,7 @@ class VolumeInterrogatorPlatform {
         }
 
         // Update the accessory information
-        this._updateAccessoryInfo(accessory, { model: theModel, serialnum: theSerialNumber });
+        this._updateAccessoryInfo(accessory, {model: theModel, serialnum: theSerialNumber});
     }
 
     // eslint-disable-next-line indent
