@@ -21,6 +21,7 @@
         "operator-linebreak": ["error", "after"],
         "no-lone-blocks": "off",
         "no-restricted-syntax": "off",
-        "max-len": ["error", {"code":200}]
+        "max-len": ["error", {"code":200}],
+        "valid-jsdoc": [ "error", {"prefer": {"return":"returns"} } ]
     }
 }
