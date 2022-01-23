@@ -1,42 +1,80 @@
-/* ==========================================================================
-   File:               volumeData.js
-   Class:              Volume Data
-   Description:        Provides read/write access to data metrics of interest.
-   Copyright:          Dec 2020
-   ========================================================================== */
+/**
+ * @description Provides read/write access to data metrics of interest.
+ * @copyright December 2020
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeDataModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ */
 
 // External dependencies and imports.
-const _debug = require('debug')('vol_data');
+import _debugModule from 'debug';
+
+/**
+ * @description Debugging function pointer for runtime related diagnostics.
+ * @private
+ */
+const _debug = new _debugModule('vol_data');
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console
 _debug.log = console.log.bind(console);
 
 // Helpful constants and conversion factors.
+/**
+ * @description Factor for converting from bytes to gigabytes (base-2)
+ * @type {number}
+ * @private
+ */
 const BYTES_TO_GB_BASE2     = (1024.0 * 1024.0 * 1024.0);
+/**
+ * @description Factor for converting from bytes to gigabytes (base-10)
+ * @type {number}
+ * @private
+ */
 const BYTES_TO_GB_BASE10    = (1000.0 * 1000.0 * 1000.0);
+/**
+ * @description Factor for converting from kilobytes to bytes (base-2)
+ * @type {number}
+ * @private
+ */
 const BLOCK_1K_TO_BYTES     = 1024.0;
 
-/*  ========================================================================
-    Description:    Enumeration of supported file systems
-    ======================================================================== */
+/**
+ * @description Enumeration of volume types (file systems).
+ * @readonly
+ * @enum {string}
+ * @property {string} TYPE_UNKNOWN - Unknown volume type
+ * @property {string} TYPE_HFS_PLUS - HGS Plus volume (legacy Apple file system)
+ * @property {string} TYPE_APFS - APFS vvolume (current Apple file system)
+ * @property {string} TYPE_UDF - Universal Disk Format (ISO, etc)
+ * @property {string} TYPE_MSDOS - Legacy volume (Typically used for EFI & FAT32)
+ * @property {string} TYPE_NTFS - Windows volume
+ * @property {string} TYPE_SMBFS - Server Message Block volume (Remote File Share)
+ * @property {string} TYPE_EXT4 - Linux volume
+ * @property {string} TYPE_VFAT - Linux volume
+ */
 export const VOLUME_TYPES = {
     /* eslint-disable key-spacing */
     TYPE_UNKNOWN  : 'unknown',
     TYPE_HFS_PLUS : 'hfs',
     TYPE_APFS     : 'apfs',
-    TYPE_UDF      : 'udf',       /* Universal Disk Format (ISO, etc) */
-    TYPE_MSDOS    : 'msdos',     /* Typically used for EFI & FAT32 */
+    TYPE_UDF      : 'udf',
+    TYPE_MSDOS    : 'msdos',
     TYPE_NTFS     : 'ntfs',
     TYPE_SMBFS    : 'smbfs',
-    TYPE_EXT4     : 'ext4',     /* Typically seen on linux */
-    TYPE_VFAT     : 'vfat',     /* Typically seen on linux */
+    TYPE_EXT4     : 'ext4',
+    TYPE_VFAT     : 'vfat',
     /* eslint-enable key-spacing */
 };
 
-/*  ========================================================================
-    Description:    Enumeration of supported conversion factors
-    ======================================================================== */
+/**
+ * @description Enumeration of supported conversion factors
+ * @readonly
+ * @enum {number}
+ * @property {number} BASE_2- Two's complement conversion factor.
+ * @property {number} BASE_10 - Base 10 conversion factor.
+ */
 export const CONVERSION_BASES = {
     /* eslint-disable key-spacing */
     BASE_2  : 2,
@@ -49,35 +87,29 @@ export const CONVERSION_BASES = {
    Description:        Provides data of interest for volumes.
    Copyright:          Dec 2020
    ========================================================================== */
+/**
+ * @description Provides data of interest for volumes.
+ */
 export class VolumeData {
-/*  ========================================================================
-    Description:    Constructor
-
-    @param {object} [data] - The settings to use for creating the object.
-                             All fields are optional.
-    @param {string} [data.name]                       - Name of the volume.
-    @param {string} [data.disk_id]                    - Disk identifier of the volume.
-    @param {VOLUME_TYPES | string} [data.volume_type] - File system type of the volume.
-    @param {string} [data.mount_point]                - Mount point of the volume.
-    @param {string} [data.device_node]                - Device node of the volume.
-    @param {string} [data.volume_uuid]                - Unique identifier of the volume.
-    @param {number} [data.capacity_bytes]             - Total size (in bytes) of the volume.
-    @param {number} [data.free_space_bytes]           - Remaining space (in bytes) of the volume.
-    @param {number} [data.used_space_bytes]           - Actively used space (in bytes) of the
-                                                        volume.
-    @param {boolean} [data.visible]                   - Flag indicating that the volume is visible
-                                                        to the user.
-                                                        (Shown in /Volumes)
-    @param {boolean} [data.shown]                     - Flag indicating that the volume should be
-                                                        shown.
-    @param {boolean} [data.low_space_alert]           - Flag indicating that the low space alert
-                                                        threshold has been exceeded.
-
-    @return {object}  - Instance of the SpawnHelper class.
-
-    @throws {TypeError}  - thrown if the configuration is not undefined.
-    @throws {RangeError} - thrown if the configuration parameters are out of bounds.
-    ======================================================================== */
+    /**
+     * @description Constructor
+     * @class
+     * @param {object} [data] - The settings to use for creating the object.
+     * @param {string} [data.name] - Name of the volume.
+     * @param {string} [data.disk_id] - Disk identifier of the volume.
+     * @param {VOLUME_TYPES | string} [data.volume_type] - File system type of the volume.
+     * @param {string} [data.mount_point] - Mount point of the volume.
+     * @param {string} [data.device_node] - Device node of the volume.
+     * @param {string} [data.volume_uuid] - Unique identifier of the volume.
+     * @param {number} [data.capacity_bytes] - Total size (in bytes) of the volume.
+     * @param {number} [data.free_space_bytes] - Remaining space (in bytes) of the volume.
+     * @param {number} [data.used_space_bytes] - Actively used space (in bytes) of the volume.
+     * @param {boolean} [data.visible] - Flag indicating that the volume is visible to the user.
+     * @param {boolean} [data.shown] - Flag indicating that the volume should be shown.
+     * @param {boolean} [data.low_space_alert] - Flag indicating that the low space alert threshold has been exceeded.
+     * @throws {TypeError}  - thrown if the configuration item is not the expected type.
+     * @throws {RangeError} - thrown if the configuration parameters are out of bounds.
+     */
     constructor(data) {
         // Initialize default values
         let name;
