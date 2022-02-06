@@ -82,11 +82,6 @@ export const CONVERSION_BASES = {
     /* eslint-enable key-spacing */
 };
 
-/* ==========================================================================
-   Class:              VolumeData
-   Description:        Provides data of interest for volumes.
-   Copyright:          Dec 2020
-   ========================================================================== */
 /**
  * @description Provides data of interest for volumes.
  */
@@ -225,159 +220,124 @@ export class VolumeData {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for the name of the volume.
-
-    @return {string} - Name of the volume
-    ======================================================================== */
+    /**
+     * @description Read-only property accessor for the name of the volume
+     * @returns {string} - Name of the volume
+     */
     get Name() {
         return (this._name);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for the disk identifier of the volume.
-
-    @return {string} - Disk identifier of the volume
-    ======================================================================== */
+    /**
+     * @description Read-only property accessor for the disk identifier of the volume.
+     * @returns {string} - Disk identifier of the volume
+     */
     get DiskId() {
         return (this._disk_identifier);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for the file system of the volume.
-
-    @return {VOLUME_TYPE(string)} - File system of the volume
-    ======================================================================== */
+    /**
+     * @description Read-only property accessor for the file system of the volume.
+     * @returns {VOLUME_TYPES} - File system of the volume
+     */
     get VolumeType() {
         return (this._volume_type);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for the mount point of the volume.
-
-    @return {string} - Mount point of the volume. Undefined if not mounted.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor for the mount point of the volume.
+     * @returns {string} - Mount point of the volume. Undefined if not mounted.
+     */
     get MountPoint() {
         return (this._mount_point);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for the device node of the volume.
-
-    @return {string} - Device node of the volume.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor for the device node of the volume.
+     * @returns {string} - Device node of the volume.
+     */
     get DeviceNode() {
         return (this._device_node);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for the UUID of the volume.
-
-    @return {string} - Unique identifier of the volume.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor for the UUID of the volume.
+     * @returns {string} - Unique identifier of the volume.
+     */
     get VolumeUUID() {
         return (this._volume_uuid);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for size (in bytes) of the volume.
-
-    @return {number} - Size (in bytes) of the volume.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor for the size (in bytes) of the volume.
+     * @returns {number} - Size (in bytes) of the volume.
+     */
     get Size() {
         return (this._capacity_bytes);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for free space (in bytes) of the volume.
-
-    @return {number} - Free space (in bytes) of the volume.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor for free space (in bytes) of the volume.
+     * @returns {number} - Free space (in bytes) of the volume.
+     */
     get FreeSpace() {
         return (this._free_space_bytes);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor for used space (in bytes) of the volume.
-
-    @return {number} - Used space (in bytes) of the volume
-
-    @remarks - Excludes purgable space. Example APFS Snapshots.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor for used space (in bytes) of the volume.
+     * @returns {number} - Used space (in bytes) of the volume. Excludes purgable space. Example APFS Snapshots.
+     */
     get UsedSpace() {
         return (this._used_space_bytes);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor indicating if the volume is mounted.
-
-    @return {bool} - true if the volume is mounted.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor indicating if the volume is mounted.
+     * @returns {boolean} - true if the volume is mounted.
+     */
     get IsMounted() {
         return ((this._mount_point !== undefined) &&
                 (this._mount_point.length > 0));
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor indicating if the volume is visible
-                 to the user (as determined by the contents of /Volumes).
-
-    @return {bool} - true if the volume is visible.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor indicating if the volume is visible to the user.
+     * @returns {boolean} - true if the volume is visible.
+     */
     get IsVisible() {
         return (this._visible);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor indicating if the low space alert
-                 threshold has been exceeded.
-
-    @return {bool} - true if the low space threshold has been exceeded.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor indicating if the low space alert threshold has been exceeded.
+     * @returns {boolean} - true if the low space threshold has been exceeded.
+     */
     get LowSpaceAlert() {
         return (this._low_space_alert);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor indicating the percentage of free space.
-
-    @return {number} - percentage of space remaining (0...100)
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor indicating the percentage of free space.
+     * @returns {number} - percentage of space remaining (0...100)
+     */
     get PercentFree() {
         return ((this.FreeSpace / this.Size) * 100.0);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read-Only Property accessor indicating is the volume should be shown.
-
-    @return {boolean} - true if the volume should be shown.
-    ======================================================================== */
+    /**
+     * @description Read-Only Property accessor indicating is the volume should be shown.
+     * @returns {boolean} - true if the volume should be shown.
+     */
     get IsShown() {
         return (this._shown);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper to determine if the supplied object is equivalent to this one.
-
-    @param {object} [compareTarget] - Object used as the target or the comparison.
-
-    @return {bool} - true if the supplied object is a match. false otherwise.
-    ======================================================================== */
+    /**
+     * @description Helper to determine if the supplied object is equivalent to this one.
+     * @param {object} compareTarget - Object used as the target or the comparison.
+     * @returns {boolean} -  true if the supplied object is a match. false otherwise.
+     */
     IsMatch(compareTarget) {
         /* eslint-disable indent, space-in-parens */
                           // Ensure 'compareTarget' is indeed an instance of VolumeData.
@@ -393,19 +353,15 @@ export class VolumeData {
         return (result);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Helper to convert from bytes to GB
-
-    @param {number}                     [bytes] - Size in bytes to be converted
-    @param {number | CONVERSION_BASES } [base] - Base to use for the conversion.
-                                                 (Optional. Default=CONVERSION_BASES.BASE_2)
-
-    @return {number}  - Size in GB
-
-    @throws {TypeError}  - thrown if the bytes or base is not a number
-    @throws {RangeError} - thrown if the base is not valid.
-    ======================================================================== */
+    /**
+     * @description Helper to convert from bytes to GB
+     * @param {number} bytes - Size in bytes to be converted
+     * @param {number | CONVERSION_BASES} [base] - Base to use for the conversion.
+                                                 (Default=CONVERSION_BASES.BASE_2)
+     * @returns {number} - Size in GB
+     * @throws {TypeError}  - thrown if the bytes or base is not a number
+     * @throws {RangeError} - thrown if the base is not valid.
+     */
     static ConvertFromBytesToGB(bytes, base) {
         if ((bytes === undefined) || (typeof(bytes) !== 'number')) {
             throw new TypeError('\'bytes\' must be a number.');
@@ -425,17 +381,13 @@ export class VolumeData {
         return (bytes / convFactor);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Helper to convert from 1k Blocks to bytes
-
-    @param {number} [blocks] - Number of 1k blocks.
-
-    @return {number}  - Size in bytes
-
-    @throws {TypeError}  - thrown if the blocks is not a number
-    @throws {RangeError} - thrown if the blocks <= 0
-    ======================================================================== */
+    /**
+     * @description Helper to convert from 1k Blocks to bytes
+     * @param {number} blocks - Number of 1k blocks.
+     * @returns {number} - Size in bytes
+     * @throws {TypeError}  - thrown if the blocks is not a number
+     * @throws {RangeError} - thrown if the blocks <= 0
+     */
     static ConvertFrom1KBlockaToBytes(blocks) {
         if ((blocks === undefined) || (typeof(blocks) !== 'number')) {
             throw new TypeError('\'blocks\' must be a number.');

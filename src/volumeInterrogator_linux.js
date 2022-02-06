@@ -1,22 +1,40 @@
-/* ==========================================================================
-   File:               volumeInterrogator_darwin.js
-   Class:              Volume Interrogator for Linux
-   Description:        Controls the collection of volume specific information
-                       and attributes to be published to homekit.
-   Copyright:          Nov 2021
-   ========================================================================== */
-
+/**
+ * @description Controls the collection of volume specific information and attributes to be published to homekit.
+ * @copyright December 2020
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeInterrogatorLinuxModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ * @requires os
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/events.html#events}
+ * @requires os
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/os.html}
+ */
 // Internal dependencies.
 import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase';
 import {VOLUME_TYPES, VolumeData} from './volumeData';
 import {SpawnHelper} from './spawnHelper';
 
 // External dependencies and imports.
-const _os               = require('os');
-// eslint-disable-next-line camelcase
-const _debug_process    = require('debug')('vi_process');
-// eslint-disable-next-line camelcase
-const _debug_config     = require('debug')('vi_config');
+import _debugModule from 'debug';
+import _osModule    from 'os';
+
+/**
+ * @description Reference to the operating system-related methods and properties.
+ * @private
+ */
+const _os = new _osModule();
+
+/**
+ * @private
+ * @description Debugging function pointer for runtime related diagnostics.
+ */
+const _debug_process = new _debugModule('vi_process');  // eslint-disable-line camelcase
+/**
+ * @private
+ * @description Debugging function pointer for configuration related diagnostics.
+ */
+const _debug_config = new _debugModule('vi_process');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -25,32 +43,28 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const BLOCKS512_TO_BYTES                = 512;
-const REGEX_WHITE_SPACE                 = /\s+/;
+/**
+ * @description Conversion factor for 512byte blocks
+ * @private
+ */
+const BLOCKS512_TO_BYTES    = 512;
+/**
+ * @description Regular expression pattern for white space.
+ * @private
+ */
+const REGEX_WHITE_SPACE     = /\s+/;
 
-/* ==========================================================================
-   Class:              VolumeInterrogator_linux
-   Description:        Manager for interrogating volumes on the linux-based systems.
-   Copyright:          Nov 2021
-
-   @event 'ready' => function({object})
-   @event_param {<VolumeData>}  [results]  - Array of volume data results.
-   Event emmitted when the (periodic) interrogation is completes.
-
-   @event 'scanning' => function({object})
-   Event emmitted when a refresh/rescan is initiated.
-   ========================================================================== */
-// eslint-disable-next-line camelcase
-export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
-/* ========================================================================
-    Description:    Constructor
-
-    @param {object}     [config] - The settings to use for creating the object.
-
-    @return {object}  - Instance of the volumeInterrogator_darwin class.
-
-    @throws {Error}   - If the platform operating system is not compatible.
-    ======================================================================== */
+/**
+ * @description Derived class for linux-based volume interrogation
+ * @augments _VolumeInterrogatorBase
+ */
+export class VolumeInterrogator_linux extends _VolumeInterrogatorBase { // eslint-disable-line camelcase
+    /**
+     * @description Constructor
+     * @class
+     * @param {object} [config] - The settings to use for creating the object.
+     * @throws {Error}  - thrown if the operating system is not supported.
+     */
     constructor(config) {
         // Sanity - ensure the Operating System is supported.
         const operatingSystem = process.platform;
@@ -64,16 +78,14 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
 
         this._dfSpawnInProgress = false;
 
-        this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
+        this._CB__display_free_disk_space_complete = this._on_df_complete.bind(this);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to initiate an interrogation of the
-                 system volumes on darwin operating systems.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to initiate an interrogation of the system volumes on darwin operating systems.
+     * @returns {void}
+     */
     _initiateInterrogation() {
         // Set Check-in-Progress.
         this._dfSpawnInProgress = true;
@@ -81,38 +93,34 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const diskUsage = new SpawnHelper();
         diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+        // eslint-disable-next-line new-cap
         diskUsage.Spawn({command: 'df', arguments: ['--block-size=512', '--portability', '--print-type', '--exclude-type=tmpfs', '--exclude-type=devtmpfs']});
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to reset an interrogation.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to reset an interrogation.
+     * @returns {void}
+     */
     _doReset() {
         // Clear Check-in-Progress.
         this._dfSpawnInProgress = false;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-Only Property used to determine if a check is in progress.
-
-    @return {boolean} - true if a check is in progress.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Read-Only Property used to determine if a check is in progress.
+     * @returns {boolean} - true if a check is in progress.
+     */
     get _isCheckInProgress() {
         return this._dfSpawnInProgress;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-only property used to get an array of watch folders
-                    used to initiate an interrogation.
-
-    @return {[string]} - Array of folders to be watched for changes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description Read-only property used to get an array of watch folders used to initiate an interrogation.
+     * @returns {string[]} - Array of folders to be watched for changes.
+     */
     get _watchFolders() {
         const {username} = _os.userInfo();
         _debug_process(`Username: ${username}`);
@@ -120,22 +128,16 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase {
         return ([`/media/${username}`, '/mnt']);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spawned
-                                                               process was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to
-                                                               assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that
-                                                               provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - Flag indicating if the spawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_df_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config(response.result.toString());

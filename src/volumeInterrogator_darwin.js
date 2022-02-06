@@ -1,10 +1,13 @@
-/* ==========================================================================
-   File:               volumeInterrogator_darwin.js
-   Class:              Volume Interrogator for OSX/macOS (darwin)
-   Description:        Controls the collection of volume specific information
-                       and attributes to be published to homekit.
-   Copyright:          Oct 2021
-   ========================================================================== */
+/**
+ * @description Controls the collection of volume specific information and attributes to be published to homekit.
+ * @copyright December 2020
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeInterrogatorDarwinModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ * @requires plist
+ * @see {@link https://github.com/TooTallNate/plist.js#readme}
+ */
 
 // Internal dependencies.
 import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase';
@@ -12,11 +15,24 @@ import {VOLUME_TYPES, VolumeData} from './volumeData';
 import {SpawnHelper} from './spawnHelper';
 
 // External dependencies and imports.
-// eslint-disable-next-line camelcase
-const _debug_process    = require('debug')('vi_process');
-// eslint-disable-next-line camelcase
-const _debug_config     = require('debug')('vi_config');
-const _plist            = require('plist');
+import _debugModule from 'debug';
+import _plistModule from 'plist';
+
+/**
+ * @private
+ * @description Debugging function pointer for runtime related diagnostics.
+ */
+const _debug_process = new _debugModule('vi_process');  // eslint-disable-line camelcase
+/**
+ * @private
+ * @description Debugging function pointer for configuration related diagnostics.
+ */
+const _debug_config = new _debugModule('vi_process');  // eslint-disable-line camelcase
+/**
+ * @private
+ * @description Property List helpers.
+ */
+const _plist = new _plistModule('plist');
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -25,32 +41,29 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const BLOCKS512_TO_BYTES                = 512;
-const REGEX_WHITE_SPACE                 = /\s+/;
+// Helpful constants and conversion factors.
+/**
+ * @description Conversion factor for 512byte blocks
+ * @private
+ */
+const BLOCKS512_TO_BYTES    = 512;
+/**
+ * @description Regular expression pattern for white space.
+ * @private
+ */
+const REGEX_WHITE_SPACE     = /\s+/;
 
-/* ==========================================================================
-   Class:              VolumeInterrogator_darwin
-   Description:        Manager for interrogating volumes on the OSX/macOS systems.
-   Copyright:          Oct 2021
-
-   @event 'ready' => function({object})
-   @event_param {<VolumeData>}  [results]  - Array of volume data results.
-   Event emmitted when the (periodic) interrogation is completes.
-
-   @event 'scanning' => function({object})
-   Event emmitted when a refresh/rescan is initiated.
-   ========================================================================== */
-// eslint-disable-next-line camelcase
-export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
-/*  ========================================================================
-    Description:    Constructor
-
-    @param {object}     [config] - The settings to use for creating the object.
-
-    @return {object}  - Instance of the volumeInterrogator_darwin class.
-
-    @throws {Error}   - If the platform operating system is not compatible.
-    ======================================================================== */
+/**
+ * @description Derived class for darwin-based (OSX/macOS) volume interrogation
+ * @augments _VolumeInterrogatorBase
+ */
+export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // eslint-disable-line camelcase
+    /**
+     * @description Constructor
+     * @class
+     * @param {object} [config] - The settings to use for creating the object.
+     * @throws {Error}  - thrown if the operating system is not supported.
+     */
     constructor(config) {
         // Sanity - ensure the Operating System is supported.
         const operatingSystem = process.platform;
@@ -75,38 +88,35 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to initiate an interrogation of the
-                 system volumes on darwin operating systems.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to initiate an interrogation of the system volumes on darwin operating systems.
+     * @returns {void}
+     */
     _initiateInterrogation() {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const lsVolumes = new SpawnHelper();
         lsVolumes.on('complete', this._CB__visible_volumes);
+        // eslint-disable-next-line new-cap
         lsVolumes.Spawn({command: 'ls', arguments: ['/Volumes']});
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to reset an interrogation.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to reset an interrogation.
+     * @returns {void}
+     */
     _doReset() {
         this._pendingFileSystems    = [];
         this._theVisibleVolumeNames = [];
         this._pendingVolumes        = [];
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-Only Property used to determine if a check is in progress.
-
-    @return {boolean} - true if a check is in progress.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Read-Only Property used to determine if a check is in progress.
+     * @returns {boolean} - true if a check is in progress.
+     */
     get _isCheckInProgress() {
         _debug_process(`_isCheckInProgress: Pending Volume Count - ${this._pendingVolumes.length}`);
 
@@ -116,32 +126,25 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         return checkInProgress;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-only property used to get an array of watch folders
-                    used to initiate an interrogation.
-
-    @return {[string]} - Array of folders to be watched for changes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description Read-only property used to get an array of watch folders used to initiate an interrogation.
+     * @returns {string[]} - Array of folders to be watched for changes.
+     */
     get _watchFolders() {
         return (['/Volumes']);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_process_visible_volumes(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config(response.result.toString());
@@ -159,6 +162,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
             // Spawn a 'lsvfs' to determine the number and types of known file systems.
             const diskutilList = new SpawnHelper();
             diskutilList.on('complete', this._CB__list_known_virtual_filesystems_complete);
+            // eslint-disable-next-line new-cap
             diskutilList.Spawn({command: 'lsvfs'});
         }
         else {
@@ -172,20 +176,16 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_lsvfs_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config(response.result.toString());
@@ -231,6 +231,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
                             _debug_process(`Spawn df for fs type '${newFS.type}'.`);
                             const diskUsage = new SpawnHelper();
                             diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+                            // eslint-disable-next-line new-cap
                             diskUsage.Spawn({command: 'df', arguments: ['-a', '-b', '-T', newFS.type], token: newFS});
                         }
                         else {
@@ -258,20 +259,16 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_df_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config(response.result.toString());
@@ -374,6 +371,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
                     _debug_process(`Initiating 'diskutil info' for DiskId '${volData.DeviceNode}'`);
                     const diskutilInfo = new SpawnHelper();
                     diskutilInfo.on('complete', this._CB_process_diskUtil_info_complete);
+                    // eslint-disable-next-line new-cap
                     diskutilInfo.Spawn({command: 'diskutil', arguments: ['info', '-plist', volData.DeviceNode], token: volData});
 
                     // Add this volume to the list of pending volumes.
@@ -392,20 +390,16 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_process_diskutil_info_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config(response.result.toString());
@@ -587,20 +581,16 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_process_disk_utilization_stats_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
 
@@ -619,8 +609,10 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
             const fields = line.split('\t');
             // Verify that there are 2 fields. These are the size and the volume name (mount point)
             if (fields.length === 2) {
+                // eslint-disable-next-line new-cap
                 const usedBytes     = VolumeData.ConvertFrom1KBlockaToBytes(Number.parseInt(fields[0], 10));
                 const volumeName    = fields[1].trim();
+                // eslint-disable-next-line new-cap
                 _debug_process(`du results: Name:${volumeName} Used:${VolumeData.ConvertFromBytesToGB(usedBytes)} raw:${Number.parseInt(fields[0], 10)}`);
 
                 // Verify that we were looking for this mount point.
@@ -684,18 +676,14 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper for extracting the disk identifiers from the data provided
-                  by 'diskutil list' for HFS+ volumes.
-
-    @param { object } [disks] - list of disk data provided by 'diskutil list' for non-APFS disks .
-
-    @return { [string] } - Array of disk identifiers.
-
-    @throws {TypeError} - thrown for enteries that are not specific to Partitions
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description  Helper for extracting the disk identifiers from the data provided by 'diskutil list' for HFS+ volumes.
+     * @param {object} disks - list of disk data provided by 'diskutil list' for non-APFS disks.
+     * @returns {string[]} - Array of disk identifiers.
+     * @throws {TypeError} - thrown for enteries that are not specific to Partitions or if the input is not an array
+     * @todo - Not used at present time.
+     */
     _partitionDiskIdentifiers(disks) {
         if ((disks === undefined) || (!Array.isArray(disks))) {
             throw new TypeError('disk must be an array');
@@ -728,18 +716,14 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {
         return diskIdentifiers;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper for extracting the disk identifiers from the data provided
-                  by 'diskutil list' for AFPS volumes.
-
-    @param { object } [containers] - list of AFPS container data provided by 'diskutil list'
-
-    @return { [string] } - Array of disk identifiers.
-
-    @throws {TypeError} - thrown for enteries that are not specific to AFPS volumes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description Helper for extracting the disk identifiers from the data provided by 'diskutil list' for AFPS volumes.
+     * @param {object[]} containers - list of AFPS container data provided by 'diskutil list'
+     * @returns {string[]} - Array of disk identifiers.
+     * @throws {TypeError} - thrown for enteries that are not specific to Partitions or if the input is not an array
+     * @todo - Not used at present time.
+     */
     _apfsDiskIdentifiers(containers) {
         if ((containers === undefined) || (!Array.isArray(containers))) {
             throw new TypeError('containers must be an array');

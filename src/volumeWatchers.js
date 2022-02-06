@@ -1,24 +1,53 @@
-/* ==========================================================================
-   File:               volumeWatchers.js
-   Class:              Volume Watcher for changes to files/folders.
-   Description:        Watches files and folders for changes.
-   Copyright:          Nov 2021
-   ========================================================================== */
+/* eslint-disable new-cap */
+/**
+ * @description Watches files and folders for changes.
+ * @copyright Nov 2021
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeWatcherModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ * @requires events
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/events.html#events}
+ * @requires fs
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/fs.html#file-system}
+ */
 
 // External dependencies and imports.
-import { access as _fsPromiseAccess } from 'fs/promises';
-import { constants as _fsConstants, watch as _fsWatch } from 'fs';
-import EventEmitter       from 'events';
+import {access as _fsPromiseAccess} from 'fs/promises';
+import {constants as _fsConstants, watch as _fsWatch} from 'fs';
+import EventEmitter from 'events';
+import _debugModule from 'debug';
+
+// External dependencies and imports.
+/**
+ * @description Debugging function pointer for runtime related diagnostics.
+ * @private
+ */
 // eslint-disable-next-line camelcase
-const _debug_process    = require('debug')('vi_process');
-// eslint-disable-next-line camelcase, no-unused-vars
-const _debug_config     = require('debug')('vi_config');
+const _debug_process = new _debugModule('vi_process');
 
 // Helpful constants and conversion factors.
+/**
+ * @description Flag indicating the identification of an invalid timeout.
+ * @private
+ */
 const INVALID_TIMEOUT_ID = -1;
+/**
+ * @description Time, in milliseconds, for rescanning for changes.
+ * @private
+ * @todo Remove this if not being used.
+ */
 const RESCAN_PERIOD_MS   = 60000/* milliseconds */;
 
-// Volume Change Detection Bitmask Definition
+/**
+ * @description Enumeration of the types of volume change detection.
+ * @private
+ * @readonly
+ * @enum {number}
+ * @property {number} Add- Volume added
+ * @property {number} Delete - Volume deleted
+ * @property {number} Modify - Volume modified
+ */
 export const VOLUME_CHANGE_DETECTION_BITMASK_DEF = {
     /* eslint-disable key-spacing */
     Add    : 0x1,
@@ -27,7 +56,14 @@ export const VOLUME_CHANGE_DETECTION_BITMASK_DEF = {
     /* eslint-enable key-spacing */
 };
 
-// Published events
+/**
+ * @description Enumeration of published events.
+ * @readonly
+ * @private
+ * @enum {string}
+ * @property {string} EVENT_CHANGE_DETECTED - Identification for the event published when a change is detected.
+ * @property {string} EVENT_WATCH_ADD_RESULT - Identification for the event published when a watch item is added to the watcher.
+ */
 export const VOLUME_WATCHER_EVENTS = {
     /* eslint-disable key-spacing */
     EVENT_CHANGE_DETECTED   : 'change_detected',
@@ -35,20 +71,28 @@ export const VOLUME_WATCHER_EVENTS = {
     /* eslint-enable key-spacing */
 };
 
-/* ==========================================================================
-   Class:              VolumeWatcher
-   Description:        Monitors the file system for changes to files/folders.
-   Copyright:          Nov 2021
-
-   @event 'change_detected'     => function({object})
-   @event 'watch_add_result'    => function({string, boolean})
-    ========================================================================== */
+/**
+ * @description Change detected notification
+ * @event module:VolumeWatcherModule#event:change_detected
+ * @type {VOLUME_CHANGE_DETECTION_BITMASK_DEF} eventType - Detected change type.
+ * @type {string} fileName - Name of the file system object initiiating the change.
+ */
+/**
+ * @description Watch added result notification
+ * @event module:VolumeWatcherModule#event:watch_add_result
+ * @type {object} e - Event notification payload. {target: watchItem.target, success: watchOk}
+ * @param {string} e.target - Name of the watch item that was addded.
+ * @param {boolean} e.success - Flag indicating if the watch item was added successfully.
+ */
+/**
+ * @description Monitors file system objects for changes.
+ * @augments EventEmitter
+ */
 export class VolumeWatcher extends EventEmitter {
-/*  ========================================================================
-    Description:    Constructor
-
-    @return {object}  - Instance of the VolumeWatcher class.
-    ======================================================================== */
+    /**
+     * @description Constructor
+     * @class
+     */
     constructor() {
         // Initialize the base class.
         super();
@@ -63,10 +107,10 @@ export class VolumeWatcher extends EventEmitter {
         this._CB__VolumeWatcherChange = this._handleVolumeWatcherChangeDetected.bind(this);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Destuctor
-    ======================================================================== */
+    /**
+     * @description Destructor
+     * @returns {void}
+     */
     Terminate() {
         // Cleanup the volume watcher list.
         this._watchers.forEach((value, key) => {
@@ -80,24 +124,15 @@ export class VolumeWatcher extends EventEmitter {
         this.removeAllListeners(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Add or replace file system objects to be monitored
-
-    @param { [object] } [watchList]                - Array of objects containing the watch information.
-    @param { string  }  [watchList[n].target]      - Path of the target to be watched.
-    @param { boolena }  [watchList[n].recursive]   - (Optional) Flag indicating that the target should be
-                                                      recursed for change monitoring (if a directory)
-                                                      ** Note: Not supported on all operating systems.
-    @param { boolena }  [watchList[n].ignoreAccess]- (Optional) Flag indicating that the access to the target
-                                                      should be ignored.
-
-    @return { Promise } - A promise that when resolved will indicate if the watch targets were added.
-
-    #throw { TypeError } - Thrown if 'watchList' does is not an array of objects.
-
-    @remarks - Raises the 'watch_add_result' event as each item is processed.
-    ======================================================================== */
+    /**
+     * @description Add or replace file system objects to be monitored
+     * @param {object[]} watchList - Array of objects containing watch information.
+     * @param {string} watchList[].target - Path of the target to be watched.
+     * @param {boolean} [watchList[].recursive] - Flag indicating that the target should be recursed for change monitoring (if a directory)
+     * @param {boolean} [watchList[].ignoreAccess] - Flag indicating that the access to the target should be ignored.
+     * @returns {Promise} - A promise that when resolved will indicate if the watch targets were added.
+     * @throws {TypeError} - Thrown if 'watchList' does is not an array of objects.
+     */
     async AddWatches(watchList) {
         // Validate the arguments
         if ((watchList === undefined)  ||
@@ -177,7 +212,7 @@ export class VolumeWatcher extends EventEmitter {
                         }
 
                         // Initiate the watch.
-                        const watcher = _fsWatch(watchItem.target, { persistent: true, recursive: recurse, encoding: 'utf8' }, this._CB__VolumeWatcherChange);
+                        const watcher = _fsWatch(watchItem.target, {persistent: true, recursive: recurse, encoding: 'utf8'}, this._CB__VolumeWatcherChange);
                         // Update the map of watchers.
                         this._watchers.set(watchItem.target, watcher);
                     }
@@ -187,7 +222,7 @@ export class VolumeWatcher extends EventEmitter {
                     }
 
                     // Notify clients
-                    this.emit(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, { target: watchItem.target, success: watchOk });
+                    this.emit(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, {target: watchItem.target, success: watchOk});
                 }
 
                 resolve(success);
@@ -197,14 +232,11 @@ export class VolumeWatcher extends EventEmitter {
         return thePromise;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Delete a watch
-
-    @param { string }  [target] - Path of the watch to be removed.
-
-    @return { boolean } - true if watchItem was deleted.
-    ======================================================================== */
+    /**
+     * @description Delete a watch
+     * @param {string} target - Oatg ti tge watch to be removed.
+     * @returns {boolean} - trye if the watch item was deleted.
+     */
     DeleteWatch(target) {
         let success = false;
 
@@ -220,12 +252,10 @@ export class VolumeWatcher extends EventEmitter {
         return success;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Provide a list of the watch targets
-
-    @return { [string]] } - Array of the watch targets
-    ======================================================================== */
+    /**
+     * @description Provide a list of the watch targets
+     * @returns {string[]} - Array of the watch targets
+     */
     ListWatches() {
         const targets = [];
 
@@ -238,14 +268,13 @@ export class VolumeWatcher extends EventEmitter {
         return targets;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Check to see if the current process has access to the specified target.
-
-    @param { string }  [target]     - File system target.
-    @param { enum }    [accessMode] - Mode for the access being sought.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @async
+     * @description Check to see if the current process has access to the specified target.
+     * @param {string} target - File system target.
+     * @param {number} accessMode - Mode for the access being sought.
+     * @returns {Promise<object>} Promise to validate the status of the item specified.
+     */
     async ValidateAccess(target, accessMode) {
         // Validate the arguments.
         if ((target === undefined) || (target === null) ||
@@ -261,10 +290,10 @@ export class VolumeWatcher extends EventEmitter {
             (async (loc, mode) => {
                 try {
                     await _fsPromiseAccess(loc, mode);
-                    resolve({ target: loc, success: true });
+                    resolve({target: loc, success: true});
                 }
                 catch {
-                    resolve({ target: loc, success: false });
+                    resolve({target: loc, success: false});
                 }
             })(target, accessMode);
         });
@@ -272,13 +301,13 @@ export class VolumeWatcher extends EventEmitter {
         return thePromise;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-
-    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
-    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for file system change detections.
+     * @param {string} eventType - Type of change detected ('rename' or 'change')
+     * @param {string | Buffer} fileName - Name of the file or directory with the change.
+     * @returns {void}
+     */
     _handleVolumeWatcherChangeDetected(eventType, fileName) {
         // Decouple the automatic refresh.
         setImmediate((eType, fName) => {
