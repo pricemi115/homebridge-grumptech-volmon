@@ -4,7 +4,7 @@ import nodePolyfills  from 'rollup-plugin-node-polyfills';
 import json           from '@rollup/plugin-json';
 
 export default {
-    external: ['homebridge', 'fs', 'fs/promises'],
+    external: ['homebridge', 'fs', 'fs/promises', 'debug'],
     input: 'src/main.js',
     output: [
         {
