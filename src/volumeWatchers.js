@@ -37,6 +37,7 @@ const INVALID_TIMEOUT_ID = -1;
  * @private
  * @todo Remove this if not being used.
  */
+// eslint-disable-next-line no-unused-vars
 const RESCAN_PERIOD_MS   = 60000/* milliseconds */;
 
 /**

@@ -1,8 +1,11 @@
-/* ==========================================================================
-   File:               main.js
-   Description:        Homebridge integration for Volume Monitor
-   Copyright:          Jan 2021
-   ========================================================================== */
+/**
+ * @description Homebridge integration for Volume Monitor
+ * @copyright 2021
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module SpawnHelperModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ */
 
 // eslint-disable-next-line no-unused-vars
 import {version as PLUGIN_VER, config_info as CONFIG_INFO} from '../package.json';
@@ -55,23 +58,49 @@ import {VolumeInterrogator_linux  as _VolInterrogatorLinux} from './volumeInterr
 import {VolumeData} from './volumeData';
 
 // External dependencies and imports.
-const _debug = require('debug')('homebridge');
+import _debugModule from 'debug';
+import {Service} from 'homebridge';
+
+/**
+ * @private
+ * @description Debugging function pointer for runtime related diagnostics.
+ */
+const _debug = new _debugModule('homebridge');
 
 // Configuration constants.
+/**
+ * @description Plugin name
+ * @private
+ */
 const PLUGIN_NAME   = CONFIG_INFO.plugin;
+/**
+ * @description Platform name
+ * @private
+ */
 const PLATFORM_NAME = CONFIG_INFO.platform;
 
 // Internal Constants
 // History:
 // unspecified: Initial Release
 //          v2: Purge Offline and better UUID management.
+/**
+ * @description Version history of the plugin.
+ * @private
+ */
 const ACCESSORY_VERSION = 2;
 
+/**
+ * @description Enumeration of service types.
+ * @private
+ */
 const FIXED_ACCESSORY_SERVICE_TYPES = {
     Switch: 0,
 };
 
-// Listing of fixed (dedicated) accessories.
+/**
+ * @description Listing of fixed (dedicated) accessories.
+ * @private
+ */
 const FIXED_ACCESSORY_INFO = {
     CONTROLS: {
         uuid: '2CF5A6C7-8041-4805-8582-821B19589D60',
@@ -88,9 +117,15 @@ const FIXED_ACCESSORY_INFO = {
     },
 };
 
-// Host Operating System
+/**
+ * @description Host Operating System
+ * @private
+ */
 const HOST_OPERATING_SYSTEM = process.platform;
-// Supported operating systems.
+/**
+ * @description Enumeration of supported operating systems.
+ * @private
+ */
 const SUPPORTED_OPERATING_SYSTEMS = {
     OS_DARWIN: 'darwin',
     // eslint-disable-next-line key-spacing
@@ -98,27 +133,30 @@ const SUPPORTED_OPERATING_SYSTEMS = {
 };
 
 // Accessory must be created from PlatformAccessory Constructor
+/**
+ * @description Platform accessory reference
+ * @private
+ */
 let _PlatformAccessory;
 // Service and Characteristic are from hap-nodejs
+/**
+ * @description Reference to the NodeJS Homekit Applicaiton Platform.
+ * @private
+ */
 let _hap;
 
-/* ==========================================================================
-   Class:              VolumeInterrogatorPlatform
-   Description:        Homebridge platform for managing the Volume Interrogator
-   Copyright:          Jan 2021
-   ========================================================================== */
+/**
+ * @description Homebridge platform for managing the Volume Interrogator
+ * @private
+ */
 class VolumeInterrogatorPlatform {
-/*  ========================================================================
-    Description:    Constructor
-
-    @param {object} [log]      - Object for logging in the Homebridge Context
-    @param {object} [config]   - Object for the platform configuration (from config.json)
-    @param {object} [api]      - Object for the Homebridge API.
-
-    @return {object}  - Instance of VolumeInterrogatorPlatform
-
-    @throws {<Exception Type>}  - <Exception Description>
-    ======================================================================== */
+    /**
+     * @description Constructor
+     * @param {object} log - Regerence to the log for logging in the Homebridge Context
+     * @param {object} config - Reference to the platform configuration (from config.json)
+     * @param {object} api - Reference to the Homebridge API
+     * @throws {TypeError} - thrown if the configuration is invalid.
+     */
     constructor(log, config, api) {
         /* Cache the arguments. */
         this._log     = log;
@@ -254,14 +292,14 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
-/*  ========================================================================
-    Description: Destructor
-
-    @param {object} [options]  - Typically containing a "cleanup" or "exit" member.
-    @param {object} [err]      - The source of the event trigger.
-    ======================================================================== */
-    // eslint-disable-next-line no-unused-vars
+    /**
+     * @description Destructor
+     * @param {object} options - Typically containing a "cleanup" or "exit" member.
+     * @param {object} err - The source of the event trigger.
+     * @returns {void}
+     * @async
+     * @private
+     */
     async _destructor(options, err) {
         // Is there an indication that the system is either exiting or needs to
         // be cleaned up?
@@ -271,6 +309,7 @@ class VolumeInterrogatorPlatform {
                 this._log.debug('Terminating the volume interrogator.');
                 this._volumeInterrogator.removeListener('scanning', this._CB_VolumeIterrrogatorScanning);
                 this._volumeInterrogator.removeListener('ready',    this._CB_VolumeIterrrogatorReady);
+                // eslint-disable-next-line new-cap
                 await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
             }
@@ -279,16 +318,14 @@ class VolumeInterrogatorPlatform {
         delete this;
     }
 
-    // eslint-disable-next-line indent
-/*  ========================================================================
-    Description: Event handler when the system has loaded the platform.
-
-    @throws {TypeError}  - thrown if the 'polling_interval' configuration item is not a number.
-    @throws {RangeError} - thrown if the 'polling_interval' configuration item is outside the
-                           allowed bounds.
-
-    @remarks:     Opportunity to initialize the system and publish accessories.
-    ======================================================================== */
+    /**
+     * @description Event handler when the system has loaded the platform.
+     * @returns {void}
+     * @throws {TypeError} - thrown if the 'polling_interval' configuration item is not a number.
+     * @throws {RangeError} - thrown if the 'polling_interval' configuration item is outside the allowed bounds.
+     * @async
+     * @private
+     */
     async _doInitialization() {
         this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
 
@@ -376,17 +413,17 @@ class VolumeInterrogatorPlatform {
         }
 
         // Start interrogation.
+        // eslint-disable-next-line new-cap
         this._volumeInterrogator.Start();
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Homebridge API invoked after restoring cached accessorues from disk.
-
-    @param {PlatformAccessory} [accessory] - Accessory to be configured.
-
-    @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
-    ======================================================================== */
+    /**
+     * @description Homebridge API invoked after restoring cached accessorues from disk.
+     * @param {_PlatformAccessory} accessory - Accessory to be configured.
+     * @returns {void}
+     * @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
+     * @private
+     */
     configureAccessory(accessory) {
         // Validate the argument(s)
         if ((accessory === undefined) ||
@@ -414,10 +451,11 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the Volume Interrogator 'scanning' event.
-    ======================================================================== */
+    /**
+     * @description Event handler for the Volume Interrogator 'scanning' event.
+     * @returns {void}
+     * @private
+     */
     _handleVolumeInterrogatorScanning() {
         // Decouple from the event.
         setImmediate(() => {
@@ -445,15 +483,13 @@ class VolumeInterrogatorPlatform {
         });
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the Volume Interrogator 'ready' event.
-
-    @param {object} [theData] - object containing a 'results' item which is an array of volume
-                                data results.
-
-    @throws {TypeError} - Thrown when 'results' is not an Array of VolumeData objects.
-    ======================================================================== */
+    /**
+     * @description Event handler for the Volume Interrogator 'ready' event.
+     * @param {object} theData - container of a 'results' item which is an array of volume data results.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'results' is not an Array of VolumeData objects.
+     * @private
+     */
     _handleVolumeInterrogatorReady(theData) {
         // Decouple from the event.
         setImmediate((data) => {
@@ -474,7 +510,7 @@ class VolumeInterrogatorPlatform {
             // Update the volumes data.
             for (const result of data.results) {
                 if (result.IsMounted) {
-                    // eslint-disable-next-line max-len
+                    // eslint-disable-next-line max-len, new-cap
                     this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tShown:${result.IsShown}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace / result.Size) * 100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
                 }
 
@@ -569,16 +605,15 @@ class VolumeInterrogatorPlatform {
         }, theData);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Create and register an accessory for the volume name.
-
-    @param {string} [name] - name of the volume for the accessory.
-
-    @throws {TypeError} - Thrown when 'name' is not a string.
-    @throws {RangeError} - Thrown when 'name' length is 0
-    @throws {Error} - Thrown when an accessory with 'name' is already registered.
-    ======================================================================== */
+    /**
+     * @description Creates and registers an accessory for the volume name.
+     * @param {string} name - name of the volume for the accessory.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'name' is not a string.
+     * @throws {RangeError} - Thrown when 'name' length is 0
+     * @throws {Error} - Thrown when an accessory with 'name' is already registered.
+     * @private
+     */
     _addBatteryServiceAccessory(name) {
         // Validate arguments
         if ((name === undefined) || (typeof(name) !== 'string')) {
@@ -615,16 +650,14 @@ class VolumeInterrogatorPlatform {
         this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Internal function to perform accessory configuration and
-                 internal 'registration' (appending to our list)
-
-    @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
-
-    @remarks:     Opportunity to setup event handlers for characteristics
-                  and update values (as needed).
-    ======================================================================== */
+    /**
+     * @description Performs accessory configuration and internal 'registration' (appending to our list).
+     *              Opportunity to setup event handlers for characteristics and update values (as needed).
+     * @param {_PlatformAccessory} accessory - Accessory to be configured/registered
+     * @returns {void}
+     * @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
+     * @private
+     */
     _configureAccessory(accessory) {
         if ((accessory === undefined) ||
             (!(accessory instanceof _PlatformAccessory))) {
@@ -688,15 +721,14 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Remove/destroy an accessory
-
-    @param {object} [accessory] - accessory to be removed.
-
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
-    @throws {RangeError} - Thrown when a 'accessory' is not registered.
-    ======================================================================== */
+    /**
+     * @description Remove/destroy an accessory
+     * @param {_PlatformAccessory} accessory - accessory to be removed.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
+     * @throws {RangeError} - Thrown when a 'accessory' is not registered.
+     * @private
+     */
     _removeAccessory(accessory) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
@@ -733,14 +765,13 @@ class VolumeInterrogatorPlatform {
         this._accessories.delete(accessory.displayName);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Update an accessory
-
-    @param {object} [accessory] - accessory to be updated.
-
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
-    ======================================================================== */
+    /**
+     * @description Update an accessory
+     * @param {_PlatformAccessory} accessory - accessory to be updated.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
+     * @private
+     */
     _updateBatteryServiceAccessory(accessory) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
@@ -797,21 +828,18 @@ class VolumeInterrogatorPlatform {
         this._updateAccessoryInfo(accessory, {model: theModel, serialnum: theSerialNumber});
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Update an accessory
-
-    @param {object} [accessory] - accessory to be updated.
-
-    @param {object} [info]                      - accessory information.
-    @param {string | Error} [info.model]        - accessory model number
-    @param {string | Error} [info.serialnum]    - accessory serial number.
-
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
-    @throws {TypeError} - Thrown when 'info' is not undefined, does not have the 'model' or
-                          'serialnum' properties or the properties are not of the expected type.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Update common information for an accessory
+     * @param {_PlatformAccessory} accessory - accessory to be updated.
+     * @param {object} info - accessory information.
+     * @param {string | Error} info.model - accessory model number
+     * @param {string | Error} info.serialnum - accessory serial number.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
+     * @throws {TypeError} - Thrown when 'info' is not undefined, does not have the 'model' or
+     *                       'serialnum' properties or the properties are not of the expected type.
+     * @private
+     */
     _updateAccessoryInfo(accessory, info) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
@@ -837,25 +865,19 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the "get" event for the Switch.On characteristic.
-
-    @param {object} [event_info] - accessory and id of the switch service being querried.
-    @param {object} [event_info.accessory] - Platform Accessory
-    @param {string} [event_info.service_id]- UUID of the Switch service being qeurried.
-
-    @param {function} [callback] - Function callback for homebridge.
-
-    @throws {TypeError} - Thrown when 'event_info' is not an object.
-    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of
-                          _PlatformAccessory.
-    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
-    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to
-                           'event_info.accessory'
-    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a
-                          Switch service.
-    ======================================================================== */
+    /**
+     * @description Event handler for the "get" event for the Switch.On characteristic.
+     * @param {object} eventInfo - accessory and id of the switch service being querried.
+     * @param {_PlatformAccessory} eventInfo.accessory - Reference to the platform accessory being querried
+     * @param {string} eventInfo.service_id - UUID of the Switch service being qeurried.
+     * @param {Function} callback - Function callback for homebridge.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'event_info' is not an object.
+     * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+     * @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+     * @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+     * @private
+     */
     _handleOnGet(eventInfo, callback) {
         // Validate arguments
         if ((eventInfo === undefined) || (typeof(eventInfo) !== 'object') ||
@@ -902,25 +924,21 @@ class VolumeInterrogatorPlatform {
         callback(status, result);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the "set" event for the Switch.On characteristic.
-
-    @param {object} [event_info] - accessory and id of the switch service being set.
-    @param {object} [event_info.accessory] - Platform Accessory
-    @param {string} [event_info.service_id]- UUID of the Switch service being set.
-    @param {bool} [value]        - new/rewuested state of the switch
-    @param {function} [callback] - Function callback for homebridge.
-
-    @throws {TypeError} - Thrown when 'event_info' is not an object.
-    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of
-                          _PlatformAccessory.
-    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
-    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to
-                           'event_info.accessory'
-    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a
-                          Switch service.
-    ======================================================================== */
+    /**
+     * @description Event handler for the "set" event for the Switch.On characteristic.
+     * @param {object} eventInfo - accessory and id of the switch service being querried.
+     * @param {_PlatformAccessory} eventInfo.accessory - Reference to the platform accessory being querried
+     * @param {string} eventInfo.service_id - UUID of the Switch service being qeurried.
+     * @param {boolean} value - new/rewuested state of the switch
+     * @param {Function} callback - Function callback for homebridge.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'event_info' is not an object.
+     * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+     * @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+     * @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+     * @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+     * @private
+     */
     _handleOnSet(eventInfo, value, callback) {
         // Validate arguments
         if ((eventInfo === undefined) || (typeof(eventInfo) !== 'object') ||
@@ -997,6 +1015,7 @@ class VolumeInterrogatorPlatform {
                     // If the switch was turned on, then intiate a volume refresh.
                     // eslint-disable-next-line no-lonely-if
                     if (value) {
+                        // eslint-disable-next-line new-cap
                         this._volumeInterrogator.Start();
                     }
                 }
@@ -1016,25 +1035,19 @@ class VolumeInterrogatorPlatform {
         callback(status);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Get the value of the Service.Switch.On characteristic value
-
-    @param {object} [switchService] - Switch Service
-
-    @return - the value of the On characteristic (true or false)
-
-    @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
-    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of
-                          _PlatformAccessory.
-    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
-    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to
-                           'event_info.accessory'
-    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a
-                          Switch service.
-    @throws {Error}     - Thrown when the On characteristic cannot be found on the service.
-    ======================================================================== */
     // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Get the value of the Service.Switch.On characteristic value
+     * @param {Service} switchService Switch Service
+     * @returns {boolean} the value of the On characteristic (true or false)
+     * @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
+     * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+     * @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+     * @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+     * @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+     * @throws {Error}  - Thrown when the On characteristic cannot be found on the service.
+     * @private
+     */
     _getAccessorySwitchState(switchService) {
         // Validate arguments
         if ((switchService === undefined) || !(switchService instanceof _hap.Service.Switch)) {
@@ -1053,18 +1066,13 @@ class VolumeInterrogatorPlatform {
         return result;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper to specify the HAP Service Type from the
-                 FIXED_ACCESSORY_SERICE_TYPES enumeration.
-
-    @param {enum:FIXED_ACCESSORY_SERVICE_TYPES} [service_type] - Type of the service to get.
-
-    @return - the HAP Service type.
-
-    @throws {TypeError} - Thrown if 'service_type' is not a FIXED_ACCESSORY_SERVICE_TYPES value.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Helper to specify the HAP Service Type from the FIXED_ACCESSORY_SERICE_TYPES enumeration.
+     * @param {FIXED_ACCESSORY_SERVICE_TYPES} serviceType - Type of the service to get.
+     * @returns {object} - the HAP Service type.
+     * @throws {TypeError} - Thrown if 'service_type' is not a FIXED_ACCESSORY_SERVICE_TYPES value.
+     * @private
+     */
     _getAccessoryServiceType(serviceType) {
         // Validate arguments
         if ((serviceType === undefined) || (typeof(serviceType) !== 'number') ||
@@ -1093,14 +1101,11 @@ class VolumeInterrogatorPlatform {
     }
 }
 
-/* Default Export Function for integrating with Homebridge */
-/* ========================================================================
-   Description: Exported default function for Homebridge integration.
-
-   Parameters:  homebridge: reference to the Homebridge API.
-
-   Return:      None
-   ======================================================================== */
+/**
+ * @description Exported default function for Homebridge integration.
+ * @param {object} homebridgeAPI - reference to the Homebridge API.
+ * @returns {void}
+ */
 export default (homebridgeAPI) => {
     _debug(`homebridge API version: v${homebridgeAPI.version}`);
 

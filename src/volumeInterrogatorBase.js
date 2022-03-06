@@ -17,22 +17,10 @@ import _debugModule from 'debug';
 import _osModule    from 'os';
 
 // Internal dependencies.
-/**
- * @description Named imports from the Volume Data module.
- * @private
- */
 // eslint-disable-next-line no-unused-vars
 import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData';
-/**
- * @description Named imports from the Volune Watchers module.
- * @private
- */
 import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers';
-/**
- * @description Spawn helper. Needed for documentation only.
- * @private
- */
-import SpawnHelper from './spawnHelper';
+import {SpawnHelper} from './spawnHelper';
 
 // External dependencies and imports.
 /**
