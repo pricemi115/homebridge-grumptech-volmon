@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>VolumeInterrogator_linux - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/pricemi115/homebridge-grumptech-volmon" target="_blank" >GrumpTech</a></h2><h3>Modules</h3><ul><li><a href="module-SpawnHelperModule.html">SpawnHelperModule</a></li><li><a href="module-VolumeDataModule.html">VolumeDataModule</a><ul class='members'><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.CONVERSION_BASES">CONVERSION_BASES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.VOLUME_TYPES">VOLUME_TYPES</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.html">VolumeInterrogatorBaseModule</a></li><li><a href="module-VolumeInterrogatorDarwinModule.html">VolumeInterrogatorDarwinModule</a></li><li><a href="module-VolumeInterrogatorLinuxModule.html">VolumeInterrogatorLinuxModule</a></li><li><a href="module-VolumeMonitorModule.html">VolumeMonitorModule</a></li><li><a href="module-VolumeWatcherModule.html">VolumeWatcherModule</a></li></ul><h3>Events</h3><ul><li><a href="module-SpawnHelperModule.html#event:event:complete">complete</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:ready">ready</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:scanning">scanning</a></li><li><a href="module-VolumeWatcherModule.html#event:event:change_detected">change_detected</a></li><li><a href="module-VolumeWatcherModule.html#event:event:watch_add_result">watch_add_result</a></li></ul><h3>Classes</h3><ul><li><a href="module-SpawnHelperModule.SpawnHelper.html">SpawnHelper</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#Spawn">Spawn</a></li></ul></li><li><a href="module-VolumeDataModule.VolumeData.html">VolumeData</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFrom1KBlockaToBytes">ConvertFrom1KBlockaToBytes</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFromBytesToGB">ConvertFromBytesToGB</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#IsMatch">IsMatch</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html">VolumeInterrogatorBase</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#._validateVolumeExclusionMask">_validateVolumeExclusionMask</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_handleVolumeWatcherAdded">_handleVolumeWatcherAdded</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Start">Start</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Stop">Stop</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Terminate">Terminate</a></li></ul></li><li><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html">VolumeInterrogator_darwin</a></li><li><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html">VolumeInterrogator_linux</a></li><li><a href="module-VolumeWatcherModule.VolumeWatcher.html">VolumeWatcher</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#AddWatches">AddWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#DeleteWatch">DeleteWatch</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ListWatches">ListWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#Terminate">Terminate</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ValidateAccess">ValidateAccess</a></li></ul></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-license.html">license</a></li><li><a href="tutorial-security.html">security</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">VolumeInterrogator_linux</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+            <span class="ancestors"><a href="module-VolumeInterrogatorLinuxModule.html">VolumeInterrogatorLinuxModule</a>.</span>
+        
+        VolumeInterrogator_linux
+        </h2>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+
+    <h4 class="name" id="VolumeInterrogator_linux"><span class="type-signature"></span>new VolumeInterrogator_linux<span class="signature">(config<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeInterrogator_linux.js.html">volumeInterrogator_linux.js</a>, <a href="volumeInterrogator_linux.js.html#line61">line 61</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Derived class for linux-based volume interrogation</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The settings to use for creating the object.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Throws:</h5>
+
+        
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the operating system is not supported.</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">Error</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+
+    
+
+
+
+
+
+        
+        </div>
+    
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li>_VolumeInterrogatorBase</li>
+    </ul>
+
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+<script src="scripts/collapse.js" defer></script>
+
+
+</body>
+</html>

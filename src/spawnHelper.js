@@ -34,7 +34,7 @@ _debug.log = console.log.bind(console);
 /**
  * @description Task Completed notification
  * @event module:SpawnHelperModule#event:complete
- * @type {object} e - Event notification payload.
+ * @type {object}
  * @param {boolean} e.valid - Flag indicating if the spawned task completed successfully.
  * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
  * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
@@ -202,7 +202,7 @@ export class SpawnHelper extends EventEmitter {
      * @param {string} request.command - Spawn request command.
      * @param {string[]} [request.arguments] - Spawn arguments.
      * @param {string[]} [request.options] - Spawn options.
-     * @param {string[]} [request.token] - Spawn token used for special handling when the process completes.
+     * @param {object} [request.token] - Spawn token used for special handling when the process completes.
      * @returns {void}
      * @throws {Error} - Thrown if a spawned process is already in progress.
      * @throws {TypeError} - Thrown if the configuration data do not meet expectations.

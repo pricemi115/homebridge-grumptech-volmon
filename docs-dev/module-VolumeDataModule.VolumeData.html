@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>VolumeData - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/pricemi115/homebridge-grumptech-volmon" target="_blank" >GrumpTech</a></h2><h3>Modules</h3><ul><li><a href="module-SpawnHelperModule.html">SpawnHelperModule</a></li><li><a href="module-VolumeDataModule.html">VolumeDataModule</a><ul class='members'><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.CONVERSION_BASES">CONVERSION_BASES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.VOLUME_TYPES">VOLUME_TYPES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#~_debug">_debug</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#~BLOCK_1K_TO_BYTES">BLOCK_1K_TO_BYTES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#~BYTES_TO_GB_BASE2">BYTES_TO_GB_BASE2</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#~BYTES_TO_GB_BASE10">BYTES_TO_GB_BASE10</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.html">VolumeInterrogatorBaseModule</a></li><li><a href="module-VolumeInterrogatorDarwinModule.html">VolumeInterrogatorDarwinModule</a></li><li><a href="module-VolumeInterrogatorLinuxModule.html">VolumeInterrogatorLinuxModule</a></li><li><a href="module-VolumeMonitorModule.html">VolumeMonitorModule</a></li><li><a href="module-VolumeWatcherModule.html">VolumeWatcherModule</a><ul class='members'><li data-type='member' style='display: none;'><a href="module-VolumeWatcherModule.html#.VOLUME_CHANGE_DETECTION_BITMASK_DEF">VOLUME_CHANGE_DETECTION_BITMASK_DEF</a></li><li data-type='member' style='display: none;'><a href="module-VolumeWatcherModule.html#.VOLUME_WATCHER_EVENTS">VOLUME_WATCHER_EVENTS</a></li><li data-type='member' style='display: none;'><a href="module-VolumeWatcherModule.html#~_debug_process">_debug_process</a></li><li data-type='member' style='display: none;'><a href="module-VolumeWatcherModule.html#~INVALID_TIMEOUT_ID">INVALID_TIMEOUT_ID</a></li><li data-type='member' style='display: none;'><a href="module-VolumeWatcherModule.html#~RESCAN_PERIOD_MS">RESCAN_PERIOD_MS</a></li></ul></li></ul><h3>Events</h3><ul><li><a href="module-SpawnHelperModule.html#event:event:complete">complete</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:ready">ready</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:scanning">scanning</a></li><li><a href="module-VolumeWatcherModule.html#event:event:change_detected">change_detected</a></li><li><a href="module-VolumeWatcherModule.html#event:event:watch_add_result">watch_add_result</a></li></ul><h3>Classes</h3><ul><li><a href="module-SpawnHelperModule.SpawnHelper.html">SpawnHelper</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#_process_close">_process_close</a></li><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#_process_error">_process_error</a></li><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#_process_message">_process_message</a></li><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#_process_stderror_data">_process_stderror_data</a></li><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#_process_stdout_data">_process_stdout_data</a></li><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#Spawn">Spawn</a></li></ul></li><li><a href="module-VolumeDataModule.VolumeData.html">VolumeData</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFrom1KBlockaToBytes">ConvertFrom1KBlockaToBytes</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFromBytesToGB">ConvertFromBytesToGB</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#IsMatch">IsMatch</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html">VolumeInterrogatorBase</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#._validateVolumeCustomization">_validateVolumeCustomization</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#._validateVolumeExclusionMask">_validateVolumeExclusionMask</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_determineLowSpaceAlert">_determineLowSpaceAlert</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_doReset">_doReset</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_handleVolumeWatcherAdded">_handleVolumeWatcherAdded</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_handleVolumeWatcherChangeDetected">_handleVolumeWatcherChangeDetected</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_initiateInterrogation">_initiateInterrogation</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_isVolumeShown">_isVolumeShown</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_on_initiateCheck">_on_initiateCheck</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_on_reset_check">_on_reset_check</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_updateCheckInProgress">_updateCheckInProgress</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Start">Start</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Stop">Stop</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Terminate">Terminate</a></li></ul></li><li><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html">VolumeInterrogator_darwin</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_apfsDiskIdentifiers">_apfsDiskIdentifiers</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_doReset">_doReset</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_initiateInterrogation">_initiateInterrogation</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_on_df_complete">_on_df_complete</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_on_lsvfs_complete">_on_lsvfs_complete</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_on_process_disk_utilization_stats_complete">_on_process_disk_utilization_stats_complete</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_on_process_diskutil_info_complete">_on_process_diskutil_info_complete</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_on_process_visible_volumes">_on_process_visible_volumes</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html#_partitionDiskIdentifiers">_partitionDiskIdentifiers</a></li></ul></li><li><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html">VolumeInterrogator_linux</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html#_doReset">_doReset</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html#_initiateInterrogation">_initiateInterrogation</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html#_on_df_complete">_on_df_complete</a></li></ul></li><li><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html">VolumeInterrogatorPlatform</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_addBatteryServiceAccessory">_addBatteryServiceAccessory</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_configureAccessory">_configureAccessory</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_destructor">_destructor</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_doInitialization">_doInitialization</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_getAccessoryServiceType">_getAccessoryServiceType</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_getAccessorySwitchState">_getAccessorySwitchState</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_handleOnGet">_handleOnGet</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_handleOnSet">_handleOnSet</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_handleVolumeInterrogatorReady">_handleVolumeInterrogatorReady</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_handleVolumeInterrogatorScanning">_handleVolumeInterrogatorScanning</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_removeAccessory">_removeAccessory</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_updateAccessoryInfo">_updateAccessoryInfo</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#_updateBatteryServiceAccessory">_updateBatteryServiceAccessory</a></li><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule-VolumeInterrogatorPlatform.html#configureAccessory">configureAccessory</a></li></ul></li><li><a href="module-VolumeWatcherModule.VolumeWatcher.html">VolumeWatcher</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#_handleVolumeWatcherChangeDetected">_handleVolumeWatcherChangeDetected</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#AddWatches">AddWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#DeleteWatch">DeleteWatch</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ListWatches">ListWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#Terminate">Terminate</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ValidateAccess">ValidateAccess</a></li></ul></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-license.html">license</a></li><li><a href="tutorial-security.html">security</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">VolumeData</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+            <span class="ancestors"><a href="module-VolumeDataModule.html">VolumeDataModule</a>.</span>
+        
+        VolumeData
+        </h2>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+
+    <h4 class="name" id="VolumeData"><span class="type-signature"></span>new VolumeData<span class="signature">(data<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line88">line 88</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Provides data of interest for volumes.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The settings to use for creating the object.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Name of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>disk_id</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Disk identifier of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>volume_type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">VOLUME_TYPES</span>
+|
+
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>File system type of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mount_point</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Mount point of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>device_node</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Device node of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>volume_uuid</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Unique identifier of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>capacity_bytes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Total size (in bytes) of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>free_space_bytes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Remaining space (in bytes) of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>used_space_bytes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Actively used space (in bytes) of the volume.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>visible</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Flag indicating that the volume is visible to the user.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>shown</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Flag indicating that the volume should be shown.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>low_space_alert</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Flag indicating that the low space alert threshold has been exceeded.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Throws:</h5>
+<ul>
+        <li>
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the configuration item is not the expected type.</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">TypeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+</li>
+    
+        <li>
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the configuration parameters are out of bounds.</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">RangeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+</li>
+    </ul>
+
+
+
+
+
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="DeviceNode"><span class="type-signature"></span>DeviceNode<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line259">line 259</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor for the device node of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="DiskId"><span class="type-signature"></span>DiskId<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line235">line 235</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-only property accessor for the disk identifier of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="FreeSpace"><span class="type-signature"></span>FreeSpace<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line283">line 283</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor for free space (in bytes) of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="IsMounted"><span class="type-signature"></span>IsMounted<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line299">line 299</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor indicating if the volume is mounted.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="IsShown"><span class="type-signature"></span>IsShown<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line332">line 332</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor indicating is the volume should be shown.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="IsVisible"><span class="type-signature"></span>IsVisible<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line308">line 308</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor indicating if the volume is visible to the user.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="LowSpaceAlert"><span class="type-signature"></span>LowSpaceAlert<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line316">line 316</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor indicating if the low space alert threshold has been exceeded.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="MountPoint"><span class="type-signature"></span>MountPoint<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line251">line 251</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor for the mount point of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="Name"><span class="type-signature"></span>Name<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line227">line 227</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-only property accessor for the name of the volume</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="PercentFree"><span class="type-signature"></span>PercentFree<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line324">line 324</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor indicating the percentage of free space.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="Size"><span class="type-signature"></span>Size<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line275">line 275</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor for the size (in bytes) of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="UsedSpace"><span class="type-signature"></span>UsedSpace<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line291">line 291</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor for used space (in bytes) of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="VolumeType"><span class="type-signature"></span>VolumeType<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line243">line 243</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-only property accessor for the file system of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="VolumeUUID"><span class="type-signature"></span>VolumeUUID<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line267">line 267</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Read-Only Property accessor for the UUID of the volume.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".ConvertFrom1KBlockaToBytes"><span class="type-signature">(static) </span>ConvertFrom1KBlockaToBytes<span class="signature">(blocks)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line391">line 391</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Helper to convert from 1k Blocks to bytes</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>blocks</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Number of 1k blocks.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Throws:</h5>
+<ul>
+        <li>
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the blocks is not a number</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">TypeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+</li>
+    
+        <li>
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the blocks &lt;= 0</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">RangeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+</li>
+    </ul>
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <ul>
+<li>Size in bytes</li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".ConvertFromBytesToGB"><span class="type-signature">(static) </span>ConvertFromBytesToGB<span class="signature">(bytes, base<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {number}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line365">line 365</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Helper to convert from bytes to GB</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>bytes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Size in bytes to be converted</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>base</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+|
+
+<span class="param-type">CONVERSION_BASES</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Base to use for the conversion.
+(Default=CONVERSION_BASES.BASE_2)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Throws:</h5>
+<ul>
+        <li>
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the bytes or base is not a number</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">TypeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+</li>
+    
+        <li>
+
+<dl>
+    <dt>
+        <div class="param-desc usertext">
+        <ul>
+<li>thrown if the base is not valid.</li>
+</ul>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl class="param-type">
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">RangeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+</li>
+    </ul>
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <ul>
+<li>Size in GB</li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="IsMatch"><span class="type-signature"></span>IsMatch<span class="signature">(compareTarget)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="volumeData.js.html">volumeData.js</a>, <a href="volumeData.js.html#line341">line 341</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Helper to determine if the supplied object is equivalent to this one.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>compareTarget</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Object used as the target or the comparison.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <ul>
+<li>true if the supplied object is a match. false otherwise.</li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+<script src="scripts/collapse.js" defer></script>
+
+
+</body>
+</html>

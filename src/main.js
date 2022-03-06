@@ -2,7 +2,7 @@
  * @description Homebridge integration for Volume Monitor
  * @copyright 2021
  * @author Mike Price <dev.grumptech@gmail.com>
- * @module SpawnHelperModule
+ * @module VolumeMonitorModule
  * @requires debug
  * @see {@link https://github.com/debug-js/debug#readme}
  */
@@ -35,7 +35,7 @@ import {version as PLUGIN_VER, config_info as CONFIG_INFO} from '../package.json
  * the `hap` property of the api object, which can be acquired for example in the initializer
  * function. This reference can be stored and used to access all exported varia bles and classes
  * from HAP-NodeJS.
- *
+ */
 /*
 import {
     API,
@@ -49,6 +49,7 @@ import {
     PlatformAccessory,
     PlatformAccessoryEvent,
     PlatformConfig,
+    Service,
   } from "homebridge";
 */
 
@@ -59,7 +60,6 @@ import {VolumeData} from './volumeData';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
-import {Service} from 'homebridge';
 
 /**
  * @private
@@ -1038,7 +1038,7 @@ class VolumeInterrogatorPlatform {
     // eslint-disable-next-line class-methods-use-this
     /**
      * @description Get the value of the Service.Switch.On characteristic value
-     * @param {Service} switchService Switch Service
+     * @param {object} switchService Switch Service (hap.Service)
      * @returns {boolean} the value of the On characteristic (true or false)
      * @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
      * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.

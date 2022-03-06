@@ -75,13 +75,13 @@ export const VOLUME_WATCHER_EVENTS = {
 /**
  * @description Change detected notification
  * @event module:VolumeWatcherModule#event:change_detected
- * @type {VOLUME_CHANGE_DETECTION_BITMASK_DEF} eventType - Detected change type.
- * @type {string} fileName - Name of the file system object initiiating the change.
+ * @type {VOLUME_CHANGE_DETECTION_BITMASK_DEF}
+ * @type {string}
  */
 /**
  * @description Watch added result notification
  * @event module:VolumeWatcherModule#event:watch_add_result
- * @type {object} e - Event notification payload. {target: watchItem.target, success: watchOk}
+ * @type {object}
  * @param {string} e.target - Name of the watch item that was addded.
  * @param {boolean} e.success - Flag indicating if the watch item was added successfully.
  */

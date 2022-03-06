@@ -5,10 +5,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var _debugModule = require('debug');
 var promises = require('fs/promises');
 var fs = require('fs');
+var _plistModule = require('plist');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 var _debugModule__default = /*#__PURE__*/_interopDefaultLegacy(_debugModule);
+var _plistModule__default = /*#__PURE__*/_interopDefaultLegacy(_plistModule);
 
 var config_info = {
 	remarks: [
@@ -666,7 +668,7 @@ const VOLUME_TYPES = {
  * @description Enumeration of supported conversion factors
  * @readonly
  * @enum {number}
- * @property {number} BASE_2- Two's complement conversion factor.
+ * @property {number} BASE_2 - Two's complement conversion factor.
  * @property {number} BASE_10 - Base 10 conversion factor.
  */
 const CONVERSION_BASES = {
@@ -994,21 +996,31 @@ class VolumeData {
     }
 }
 
-/* ==========================================================================
-   File:               volumeWatchers.js
-   Class:              Volume Watcher for changes to files/folders.
-   Description:        Watches files and folders for changes.
-   Copyright:          Nov 2021
-   ========================================================================== */
+/* eslint-disable new-cap */
+
+// External dependencies and imports.
+/**
+ * @description Debugging function pointer for runtime related diagnostics.
+ * @private
+ */
 // eslint-disable-next-line camelcase
-const _debug_process$3    = require('debug')('vi_process');
-// eslint-disable-next-line camelcase, no-unused-vars
-require('debug')('vi_config');
+const _debug_process$3 = new _debugModule__default["default"]('vi_process');
 
 // Helpful constants and conversion factors.
+/**
+ * @description Flag indicating the identification of an invalid timeout.
+ * @private
+ */
 const INVALID_TIMEOUT_ID$1 = -1;
 
-// Published events
+/**
+ * @description Enumeration of published events.
+ * @readonly
+ * @private
+ * @enum {string}
+ * @property {string} EVENT_CHANGE_DETECTED - Identification for the event published when a change is detected.
+ * @property {string} EVENT_WATCH_ADD_RESULT - Identification for the event published when a watch item is added to the watcher.
+ */
 const VOLUME_WATCHER_EVENTS = {
     /* eslint-disable key-spacing */
     EVENT_CHANGE_DETECTED   : 'change_detected',
@@ -1016,20 +1028,28 @@ const VOLUME_WATCHER_EVENTS = {
     /* eslint-enable key-spacing */
 };
 
-/* ==========================================================================
-   Class:              VolumeWatcher
-   Description:        Monitors the file system for changes to files/folders.
-   Copyright:          Nov 2021
-
-   @event 'change_detected'     => function({object})
-   @event 'watch_add_result'    => function({string, boolean})
-    ========================================================================== */
+/**
+ * @description Change detected notification
+ * @event module:VolumeWatcherModule#event:change_detected
+ * @type {VOLUME_CHANGE_DETECTION_BITMASK_DEF}
+ * @type {string}
+ */
+/**
+ * @description Watch added result notification
+ * @event module:VolumeWatcherModule#event:watch_add_result
+ * @type {object}
+ * @param {string} e.target - Name of the watch item that was addded.
+ * @param {boolean} e.success - Flag indicating if the watch item was added successfully.
+ */
+/**
+ * @description Monitors file system objects for changes.
+ * @augments EventEmitter
+ */
 class VolumeWatcher extends EventEmitter {
-/*  ========================================================================
-    Description:    Constructor
-
-    @return {object}  - Instance of the VolumeWatcher class.
-    ======================================================================== */
+    /**
+     * @description Constructor
+     * @class
+     */
     constructor() {
         // Initialize the base class.
         super();
@@ -1044,10 +1064,10 @@ class VolumeWatcher extends EventEmitter {
         this._CB__VolumeWatcherChange = this._handleVolumeWatcherChangeDetected.bind(this);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Destuctor
-    ======================================================================== */
+    /**
+     * @description Destructor
+     * @returns {void}
+     */
     Terminate() {
         // Cleanup the volume watcher list.
         this._watchers.forEach((value, key) => {
@@ -1061,24 +1081,15 @@ class VolumeWatcher extends EventEmitter {
         this.removeAllListeners(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Add or replace file system objects to be monitored
-
-    @param { [object] } [watchList]                - Array of objects containing the watch information.
-    @param { string  }  [watchList[n].target]      - Path of the target to be watched.
-    @param { boolena }  [watchList[n].recursive]   - (Optional) Flag indicating that the target should be
-                                                      recursed for change monitoring (if a directory)
-                                                      ** Note: Not supported on all operating systems.
-    @param { boolena }  [watchList[n].ignoreAccess]- (Optional) Flag indicating that the access to the target
-                                                      should be ignored.
-
-    @return { Promise } - A promise that when resolved will indicate if the watch targets were added.
-
-    #throw { TypeError } - Thrown if 'watchList' does is not an array of objects.
-
-    @remarks - Raises the 'watch_add_result' event as each item is processed.
-    ======================================================================== */
+    /**
+     * @description Add or replace file system objects to be monitored
+     * @param {object[]} watchList - Array of objects containing watch information.
+     * @param {string} watchList[].target - Path of the target to be watched.
+     * @param {boolean} [watchList[].recursive] - Flag indicating that the target should be recursed for change monitoring (if a directory)
+     * @param {boolean} [watchList[].ignoreAccess] - Flag indicating that the access to the target should be ignored.
+     * @returns {Promise} - A promise that when resolved will indicate if the watch targets were added.
+     * @throws {TypeError} - Thrown if 'watchList' does is not an array of objects.
+     */
     async AddWatches(watchList) {
         // Validate the arguments
         if ((watchList === undefined)  ||
@@ -1158,7 +1169,7 @@ class VolumeWatcher extends EventEmitter {
                         }
 
                         // Initiate the watch.
-                        const watcher = fs.watch(watchItem.target, { persistent: true, recursive: recurse, encoding: 'utf8' }, this._CB__VolumeWatcherChange);
+                        const watcher = fs.watch(watchItem.target, {persistent: true, recursive: recurse, encoding: 'utf8'}, this._CB__VolumeWatcherChange);
                         // Update the map of watchers.
                         this._watchers.set(watchItem.target, watcher);
                     }
@@ -1168,7 +1179,7 @@ class VolumeWatcher extends EventEmitter {
                     }
 
                     // Notify clients
-                    this.emit(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, { target: watchItem.target, success: watchOk });
+                    this.emit(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, {target: watchItem.target, success: watchOk});
                 }
 
                 resolve(success);
@@ -1178,14 +1189,11 @@ class VolumeWatcher extends EventEmitter {
         return thePromise;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Delete a watch
-
-    @param { string }  [target] - Path of the watch to be removed.
-
-    @return { boolean } - true if watchItem was deleted.
-    ======================================================================== */
+    /**
+     * @description Delete a watch
+     * @param {string} target - Oatg ti tge watch to be removed.
+     * @returns {boolean} - trye if the watch item was deleted.
+     */
     DeleteWatch(target) {
         let success = false;
 
@@ -1201,12 +1209,10 @@ class VolumeWatcher extends EventEmitter {
         return success;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Provide a list of the watch targets
-
-    @return { [string]] } - Array of the watch targets
-    ======================================================================== */
+    /**
+     * @description Provide a list of the watch targets
+     * @returns {string[]} - Array of the watch targets
+     */
     ListWatches() {
         const targets = [];
 
@@ -1219,14 +1225,13 @@ class VolumeWatcher extends EventEmitter {
         return targets;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Check to see if the current process has access to the specified target.
-
-    @param { string }  [target]     - File system target.
-    @param { enum }    [accessMode] - Mode for the access being sought.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @async
+     * @description Check to see if the current process has access to the specified target.
+     * @param {string} target - File system target.
+     * @param {number} accessMode - Mode for the access being sought.
+     * @returns {Promise<object>} Promise to validate the status of the item specified.
+     */
     async ValidateAccess(target, accessMode) {
         // Validate the arguments.
         if ((target === undefined) || (target === null) ||
@@ -1242,10 +1247,10 @@ class VolumeWatcher extends EventEmitter {
             (async (loc, mode) => {
                 try {
                     await promises.access(loc, mode);
-                    resolve({ target: loc, success: true });
+                    resolve({target: loc, success: true});
                 }
                 catch {
-                    resolve({ target: loc, success: false });
+                    resolve({target: loc, success: false});
                 }
             })(target, accessMode);
         });
@@ -1253,13 +1258,13 @@ class VolumeWatcher extends EventEmitter {
         return thePromise;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-
-    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
-    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for file system change detections.
+     * @param {string} eventType - Type of change detected ('rename' or 'change')
+     * @param {string | Buffer} fileName - Name of the file or directory with the change.
+     * @returns {void}
+     */
     _handleVolumeWatcherChangeDetected(eventType, fileName) {
         // Decouple the automatic refresh.
         setImmediate((eType, fName) => {
@@ -1268,758 +1273,6 @@ class VolumeWatcher extends EventEmitter {
             // For simplicity, forward the event onto out clients.
             this.emit(VOLUME_WATCHER_EVENTS.EVENT_CHANGE_DETECTED, eType, fName);
         }, eventType, fileName);
-    }
-}
-
-/**
- * @description Controls the collection of volume specific information and attributes to be published to homekit.
- * @copyright December 2020
- * @author Mike Price <dev.grumptech@gmail.com>
- * @module VolumeInterrogatorBaseModule
- * @requires debug
- * @see {@link https://github.com/debug-js/debug#readme}
- * @requires events
- * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/events.html#events}
- */
-
-// External dependencies and imports.
-/**
- * @description Debugging function pointer for runtime related diagnostics.
- * @private
- */
-// eslint-disable-next-line camelcase
-const _debug_process$2    = new _debugModule__default["default"]('vi_process');
-/**
- * @description Debugging function pointer for configuration related diagnostics.
- * @private
- */
-// eslint-disable-next-line camelcase
-const _debug_config$2     = new _debugModule__default["default"]('vi_config');
-/**
- * @description Reference to the operating system functionality.
- * @private
- */
-const _os$1               = new _osModule();
-
-// Bind debug to console.log
-// eslint-disable-next-line no-console, camelcase
-_debug_process$2.log = console.log.bind(console);
-// eslint-disable-next-line no-console, camelcase
-_debug_config$2.log  = console.log.bind(console);
-
-// Helpful constants and conversion factors.
-/**
- * @description Default period, in hours, for checking for changes in mounted volumes.
- * @private
- */
-const DEFAULT_PERIOD_HR                 = 6.0;
-/**
- * @description Minimum period, in hours, for checking for changes in mounted volumes.
- * @private
- */
-const MIN_PERIOD_HR                     = (5.0 / 60.0);     // Once every 5 minutes.
-/**
- * @description Maximum period, in hours, for checking for changes in mounted volumes.
- * @private
- */
-const MAX_PERIOD_HR                     = (31.0 * 24.0);    // Once per month.
-/**
- * @description Factor for converting from hours to milliseconds.
- * @private
- */
-const CONVERT_HR_TO_MS                  = (60.0 * 60.0 * 1000.0);
-/**
- * @description Flag indicating the identification of an invalid timeout.
- * @private
- */
-const INVALID_TIMEOUT_ID                = -1;
-/**
- * @description Timeout, in milliseconds, for retrying to detect volume changes.
- * @private
- */
-const RETRY_TIMEOUT_MS                  = 250/* milliseconds */;
-/**
- * @description Default threshold, in percent, for determining when free space is low.
- * @private
- */
-const DEFAULT_LOW_SPACE_THRESHOLD       = 15.0;
-/**
- * @description Minimum threshold, in percent, for detecting low free space.
- * @private
- */
-const MIN_LOW_SPACE_THRESHOLD           = 0.0;
-/**
- * @description Maximum threshold, in percent, for detecting low free space.
- * @private
- */
-const MAX_LOW_SPACE_THRESHOLD           = 100.0;
-/**
- * @description Maximum time, in milliseconds, for a volume detection to be initiated.
- * @private
- */
-const MAX_RETRY_INIT_CHECK_TIME         = 120000;
-/**
- * @description Time, in milliseconds, that must have elapsed since starting the operating system before starting volume detection.
- * @private
- */
-const MIN_OS_UPTIME_TO_START_MS         = 600000/* milliseconds */;
-/**
- * @description Time, in milliseconds, used to rescan for volume changes.
- * @private
- */
-const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000/* milliseconds */;
-
-/**
- * @description Enumeration of the methods for identifying volumes.
- * @private
- * @readonly
- * @enum {string}
- * @property {string} Name- Identify volume by name
- * @property {string} SerialNumber - Identify volume by serial number.
- */
-const VOLUME_IDENTIFICATION_METHODS = {
-    /* eslint-disable key-spacing */
-    Name         : 'name',
-    SerialNumber : 'serial_num',
-    /* eslint-enable key-spacing */
-};
-
-/**
- * @description Enumeration of published events.
- * @readonly
- * @private
- * @enum {string}
- * @property {string} EVENT_SCANNING - Identification for the event published when scanning begins.
- * @property {string} EVENT_READY - Identification for the event published when scanning completes.
- */
-const VOLUME_INTERROGATOR_BASE_EVENTS = {
-    /* eslint-disable key-spacing */
-    EVENT_SCANNING : 'scanning',
-    EVENT_READY    : 'ready',
-    /* eslint-enable key-spacing */
-};
-
-/* ==========================================================================
-   Class:              VolumeInterrogator
-   Description:        Manager for interrogating volumes on the system
-   Copyright:          Dec 2020
-
-   @event 'ready' => function({object})
-   @event_param {<VolumeData>}  [results]  - Array of volume data results.
-   Event emmitted when the (periodic) interrogation is completes.
-
-   @event 'scanning' => function({object})
-   Event emmitted when a refresh/rescan is initiated.
-   ========================================================================== */
-/**
- * @description Scanning initiated notification
- * @event module:VolumeInterrogatorBaseModule#event:scanning
- */
-/**
- * @description Volume detection ready notification
- * @event module:VolumeInterrogatorBaseModule#event:ready
- * @type {object} e - Event notification payload.
- * @param {VolumeData} e.results - Flag indicating if the spawned task completed successfully.
- * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
- * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
- */
-/**
- * @description Base class for volume interrogation (operating system agnostic).
- */
-class VolumeInterrogatorBase extends EventEmitter {
-    /**
-     * @description Constructor
-     * @class
-     * @param {object} [config] - The settings to use for creating the object.
-     * @param {number} [config.period_hr] -The time (in hours) for periodically interrogating the system.
-     * @param {number} [config.default_alarm_threshold] - The default low space threshold, in percent.
-     * @param {object[]} [config.volume_customizations] - Array of objects for per-volume customizations.
-     * @param {VOLUME_IDENTIFICATION_METHODS} [config.volume_customizations.volume_id_method] - The method for identifying the volume.
-     * @param {string} [config.volume_customizations.volume_name] - The name of the volume (required when `config.volume_customizations.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
-     * @param {string} [config.volume_customizations.volume_serial_num] - The serial number of the volume
-     *                                                                    (required when `config.volume_customizations.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
-     * @param {boolean} [config.volume_customizations.volume_low_space_alarm_active] - The flag indicating if the low space alarm is active or not.
-     * @param {number} [config.volume_customizations.volume_alarm_threshold] - The  low space threshold, in percent
-     *                                                                         (required when `config.volume_customizations.volume_low_space_alarm_active === true`)
-     * @throws {TypeError}  - thrown if the configuration item is not the expected type.
-     * @throws {RangeError} - thrown if the configuration parameters are out of bounds.
-     */
-    constructor(config) {
-        let pollingPeriod           = DEFAULT_PERIOD_HR;
-        let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
-        const volumeCustomizations  = [];
-        const exclusionMasks        = [];
-
-        if (config !== undefined) {
-            // Polling Period (hours)
-            if (Object.prototype.hasOwnProperty.call(config, 'period_hr')) {
-                if ((typeof(config.period_hr) === 'number') &&
-                    (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
-                    pollingPeriod = config.period_hr;
-                }
-                else if (typeof(config.period_hr) !== 'number') {
-                    throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-                }
-                else {
-                    throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-                }
-            }
-            // Default Alarm Threshold (percent)
-            if (Object.prototype.hasOwnProperty.call(config, 'default_alarm_threshold')) {
-                if ((typeof(config.period_hr) === 'number') &&
-                    (config.default_alarm_threshold >= MIN_LOW_SPACE_THRESHOLD) &&
-                    (config.default_alarm_threshold <= MAX_LOW_SPACE_THRESHOLD)) {
-                    defaultAlarmThreshold = config.default_alarm_threshold;
-                }
-                else if (typeof(config.period_hr) !== 'number') {
-                    throw new TypeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
-                }
-                else {
-                    throw new RangeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
-                }
-            }
-            // Exclusion Masks
-            if (Object.prototype.hasOwnProperty.call(config, 'exclusion_masks')) {
-                if (Array.isArray(config.exclusion_masks)) {
-                    for (const mask of config.exclusion_masks) {
-                        if (VolumeInterrogatorBase._validateVolumeExclusionMask(mask)) {
-                            exclusionMasks.push(mask);
-                        }
-                        else {
-                            throw new TypeError('\'config.volume_customizations\' item is not valid.');
-                        }
-                    }
-                }
-                else {
-                    throw new TypeError('\'config.volume_customizations\' must be an array.');
-                }
-            }
-            // Enable Volume Customizations
-            if (Object.prototype.hasOwnProperty.call(config, 'volume_customizations')) {
-                if (Array.isArray(config.volume_customizations)) {
-                    for (const item of config.volume_customizations) {
-                        if (VolumeInterrogatorBase._validateVolumeCustomization(item)) {
-                            volumeCustomizations.push(item);
-                        }
-                        else {
-                            throw new TypeError('\'config.volume_customizations\' item is not valid.');
-                        }
-                    }
-                }
-                else {
-                    throw new TypeError('\'config.volume_customizations\' must be an array.');
-                }
-            }
-        }
-
-        // Initialize the base class.
-        super();
-
-        // Initialize data members.
-        this._timeoutID                     = INVALID_TIMEOUT_ID;
-        this._deferInitCheckTimeoutID       = INVALID_TIMEOUT_ID;
-        this._decoupledStartTimeoutID       = INVALID_TIMEOUT_ID;
-        this._checkInProgress               = false;
-        this._period_hr                     = DEFAULT_PERIOD_HR;
-        this._theVolumes                    = [];
-        this._defaultAlarmThreshold         = defaultAlarmThreshold;
-        this._volumeCustomizations          = volumeCustomizations;
-        this._exclusionMasks                = exclusionMasks;
-
-        // Callbacks bound to this object.
-        this._CB__initiateCheck             = this._on_initiateCheck.bind(this);
-        this._CB__ResetCheck                = this._on_reset_check.bind(this);
-        this._DECOUPLE_Start                = this.Start.bind(this);
-        this._CB__VolumeWatcherChange       = this._handleVolumeWatcherChangeDetected.bind(this);
-        this._CB__VolumeWatcherAdded        = this._handleVolumeWatcherAdded.bind(this);
-
-        // Set the polling period
-        this.Period = pollingPeriod;
-
-        // Get the list of watch folders.
-        const watchFolders = this._watchFolders;
-        // Compose the configuration for the volume watcher.
-        const watcherConfig = [];
-        for (const folder of watchFolders) {
-            watcherConfig.push({target: folder, recursive: false, ignoreAccess: false});
-        }
-        // Create volume watchers and register for change notifications.
-        this._volWatcher = new VolumeWatcher();
-        this._volWatcher.on(VOLUME_WATCHER_EVENTS.EVENT_CHANGE_DETECTED,  this._CB__VolumeWatcherChange);
-        this._volWatcher.on(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, this._CB__VolumeWatcherAdded);
-        // Add watches for the locations of interest.
-        // Note: This is asynchronous and will be happening after the constructor completes.
-        this._volWatcher.AddWatches(watcherConfig);
-    }
-
-    /**
-     * @description Destructor
-     * @returns {void}
-     */
-    Terminate() {
-        this.Stop();
-
-        // Cleanup the volume watcher
-        this._volWatcher.Terminate();
-
-        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
-        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY);
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read Property accessor for the polling period (hours)
-
-    @return {number} - Polling period in hours.
-    ======================================================================== */
-    get Period() {
-        return this._period_hr;
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Write Property accessor for the polling period (hours)
-
-    @param {number} [periodHR] - Polling period in hours.
-
-    @throws {TypeError}  - thrown if 'periodHR' is not a number.
-    @throws {RangeError} - thrown if 'periodHR' outside the allowed bounds.
-    ======================================================================== */
-    set Period(periodHR) {
-        if ((periodHR === undefined) || (typeof(periodHR) !== 'number')) {
-            throw new TypeError(`'period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-        }
-        if ((periodHR < MIN_PERIOD_HR) && (periodHR > MAX_PERIOD_HR)) {
-            throw new RangeError(`'period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
-        }
-
-        // Update the polling period
-        this._period_hr = periodHR;
-
-        // Manage the timeout
-        this.Stop();
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read Property accessor for the minimum polling period (hours)
-
-    @return {number} - Minimum polling period in hours.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    get MinimumPeriod() {
-        return MIN_PERIOD_HR;
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Read Property accessor for the maximum polling period (hours)
-
-    @return {number} - Maximum polling period in hours.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    get MaximumPeriod() {
-        return MAX_PERIOD_HR;
-    }
-
-    // eslint-disable-next-line indent
-  /* ========================================================================
-    Description: Read Property accessor for indicating if the checking of volume data is active
-
-    @return {boolean} - true if active.
-    ======================================================================== */
-    get Active() {
-        return (this._timeoutID !== INVALID_TIMEOUT_ID);
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Start/Restart the interrogation process.
-    ======================================================================== */
-    Start() {
-        // Clear the decoupled start timer, if active.
-        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._decoupledStartTimeoutID);
-        }
-
-        // Stop the interrogation in case it is running.
-        this.Stop();
-
-        // Get the current uptime of the operating system
-        const uptime = _os$1.uptime() * 1000.0;
-        // Has the operating system been running long enough?
-        if (uptime < MIN_OS_UPTIME_TO_START_MS) {
-            // No. So defer the start for a bit.
-            this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, (MIN_OS_UPTIME_TO_START_MS - uptime));
-        }
-        else {
-            // Perform a check now.
-            this._on_initiateCheck();
-        }
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Stop the interrogation process, if running.
-    ======================================================================== */
-    Stop() {
-        if (this._timeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._timeoutID);
-            this._timeoutID = INVALID_TIMEOUT_ID;
-        }
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to reset an ongoing check.
-
-    @param {boolean} [issueReady] - Flag indicating if a Ready event should be emitted.
-
-    @remarks: Used to recover from unexpected errors.
-    ======================================================================== */
-    _on_reset_check(issueReady) {
-        if ((issueReady === undefined) || (typeof(issueReady) !== 'boolean')) {
-            throw new TypeError('issueReadyEvent is not a boolean.');
-        }
-
-        // Mark that the check is no longer in progress.
-        this._checkInProgress = false;
-
-        // Reset the timer id, now that it has tripped.
-        this._deferInitCheckTimeoutID = INVALID_TIMEOUT_ID;
-
-        // Clear the previously known volune data.
-        this._theVolumes = [];
-
-        // Perform operating system specific reset actions.
-        this._doReset();
-
-        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._decoupledStartTimeoutID);
-            this._decoupledStartTimeoutID = INVALID_TIMEOUT_ID;
-        }
-
-        if (issueReady) {
-            // Fire the ready event with no data.
-            // This willl provide the client an opportunity to reset
-            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results: []});
-        }
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to initiate an interrogation of the
-                 system volumes.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
-    _on_initiateCheck() {
-        // Is there a current volume check underway?
-        const isPriorCheckInProgress = this._checkInProgress;
-
-        _debug_process$2(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
-
-        if (!this._checkInProgress) {
-            // Alert interested clients that the scan was initiated.
-            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
-
-            // Mark that the check is in progress.
-            this._checkInProgress = true;
-
-            // Clear the previously known volune data.
-            this._theVolumes = [];
-
-            // Perform operating system specific reset actions.
-            this._doReset();
-
-            // Let the interrogation begin.
-            this._initiateInterrogation();
-        }
-        else if (this._deferInitCheckTimeoutID === INVALID_TIMEOUT_ID) {
-            this._deferInitCheckTimeoutID = setTimeout(this._CB__ResetCheck, MAX_RETRY_INIT_CHECK_TIME, true);
-        }
-
-        // Compute the number of milliseconds for the timeout.
-        // Note: If there was a check in progress when we got here, try again in a little bit,
-        //       do not wait for the full timeout.
-        const theDelay = (isPriorCheckInProgress ? RETRY_TIMEOUT_MS : (this._period_hr * CONVERT_HR_TO_MS));
-        // Queue another check
-        this._timeoutID = setTimeout(this._CB__initiateCheck, theDelay);
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Abstract method used to initiate interrogation on derived classes.
-
-    @throws {Error} - Always thrown. Should only be invoked on derived classes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    _initiateInterrogation() {
-        throw new Error('Abstract Method _initiateInterrogation() invoked!');
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Abstract method used to reset an interrogation.
-
-    @throws {Error} - Always thrown. Should only be invoked on derived classes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    _doReset() {
-        throw new Error('Abstract Method _doReset() invoked!');
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Abstract property used to determine if a check is in progress.
-
-    @throws {Error} - Always thrown. Should only be invoked on derived classes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    get _isCheckInProgress() {
-        throw new Error('Abstract Property _checkInProgress() invoked!');
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Abstract property used to get an array of watch folders
-                    used to initiate an interrogation.
-
-    @throws {Error} - Always thrown. Should only be invoked on derived classes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    get _watchFolders() {
-        throw new Error('Abstract Property _watchFolders() invoked!');
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper for managing the "in progress" flag and 'ready' event
-    ======================================================================== */
-    _updateCheckInProgress() {
-        const wasCheckInProgress = this._checkInProgress;
-        this._checkInProgress = this._isCheckInProgress;
-        if (wasCheckInProgress && !this._checkInProgress) {
-            // Fire Ready event
-            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results: this._theVolumes});
-
-            _debug_process$2('Ready event.');
-            for (const volume of this._theVolumes) {
-                _debug_process$2(`Volume Name: ${volume.Name}`);
-                _debug_process$2(`\tVisible:    ${volume.IsVisible}`);
-                _debug_process$2(`\tShown:      ${volume.IsShown}`);
-                _debug_process$2(`\tMountPoint: ${volume.MountPoint}`);
-                _debug_process$2(`\tDevNode:    ${volume.DeviceNode}`);
-                _debug_process$2(`\tCapacity:   ${VolumeData.ConvertFromBytesToGB(volume.Size).toFixed(4)} GB`);
-                _debug_process$2(`\tFree:       ${VolumeData.ConvertFromBytesToGB(volume.FreeSpace).toFixed(4)} GB`);
-                _debug_process$2(`\tUsed:       ${VolumeData.ConvertFromBytesToGB(volume.UsedSpace).toFixed(4)} GB`);
-                _debug_process$2(`\t% Used:     ${((volume.UsedSpace / volume.Size) * 100.0).toFixed(2)}%`);
-            }
-        }
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper to compute the alert for a specific volume.
-
-    @param { string } [volumeName]          - Name of the volume
-    @param { string } [volumeUUID]          - Unique Identifier (serial number) of the volume
-    @param { number}  [volumePercentFree]   - Percentage of free space (0...100)
-
-    @throws {TypeError} - thrown for invalid arguments
-    @throws {RangeError} - thrown when 'volumePercentFree' is outside the range of 0...100
-    ======================================================================== */
-    _determineLowSpaceAlert(volumeName, volumeUUID, volumePercentFree) {
-        // Validate arguments
-        if ((volumeName === undefined) || (typeof(volumeName) !== 'string') || (volumeName.length <= 0)) {
-            throw new TypeError('\'volumeName\' must be a non-zero length string');
-        }
-        if ((volumeUUID === undefined) || (typeof(volumeUUID) !== 'string') || (volumeUUID.length <= 0)) {
-            throw new TypeError('\'volumeUUID\' must be a non-zero length string');
-        }
-        if ((volumePercentFree === undefined) || (typeof(volumePercentFree) !== 'number')) {
-            throw new TypeError('\'volumePercentFree\' must be a number');
-        }
-        else if ((volumePercentFree < MIN_LOW_SPACE_THRESHOLD) || (volumePercentFree > MAX_LOW_SPACE_THRESHOLD)) {
-            throw new RangeError(`'volumePercentFree' must be in the range of ${MIN_LOW_SPACE_THRESHOLD}...${MAX_LOW_SPACE_THRESHOLD}. ${volumePercentFree}`);
-        }
-
-        // Determine the default alert state.
-        let alert = (volumePercentFree < this._defaultAlarmThreshold);
-
-        // Does this volume have a customization?
-        const volCustomizations = this._volumeCustomizations.filter((item) => {
-            const match = (((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
-                             (item.volume_name.toLowerCase() === volumeName.toLowerCase())) ||
-                            ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
-                             (item.volume_serial_num.toLowerCase() === volumeUUID.toLowerCase())));
-            return match;
-        });
-        if ((volCustomizations !== undefined) && (volCustomizations.length > 0)) {
-            // There is at least one customization.
-
-            // Filter for the matching customizations that indicate an alert.
-            const trippedAlerts = volCustomizations.filter((item) => {
-                const alertTripped = ((item.volume_low_space_alarm_active) &&
-                                      (volumePercentFree < item.volume_alarm_threshold));
-
-                return alertTripped;
-            });
-
-            // If any alerts were set, then indicate that.
-            alert = (trippedAlerts.length > 0);
-        }
-
-        return alert;
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-                  Called when the contents of the watched folder(s) change(s).
-
-    @param { string }           [eventType] - Type of change detected ('rename' or 'change')
-    @param { string | Buffer }  [fileName]  - Name of the file or directory with the change.
-    ======================================================================== */
-    _handleVolumeWatcherChangeDetected(eventType, fileName) {
-        // Decouple the automatic refresh.
-        setImmediate((eType, fName) => {
-            _debug_process$2(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
-            // Initiate a re-scan (decoupled from the notification event), if active (even if there
-            // is a scan already in progress.)
-            if (this.Active) {
-                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-                    clearTimeout(this._decoupledStartTimeoutID);
-                }
-                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
-            }
-        }, eventType, fileName);
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Event handler for file system change detections.
-                  Called when the contents of the watched folder(s) change(s).
-
-    @param { object }  [result]         - Result of the request to add a watcher.
-    @param { string }  [result.target]  - Target of the watch
-    @param { boolean } [result.success] - Status of the add operation.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
-    _handleVolumeWatcherAdded(result) {
-        if (result !== undefined) {
-            _debug_process$2(`AddWatch Results: target:${result.target} status:${result.success}`);
-        }
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper to determine if the volume should be shown or not.
-
-    @param { string } [mountPoint] - Mount Point of the volume
-
-    #return { boolena } - True if shown. False otherwise.
-
-    @throws { TypeError } - thrown if mountPoint is not a non-null string.
-    ======================================================================== */
-    _isVolumeShown(mountPoint) {
-        if ((mountPoint === undefined) ||
-            (typeof(mountPoint) !== 'string') || (mountPoint.length <= 0)) {
-            throw new TypeError(`_isVolumeShown. mountPoint is not valid. ${mountPoint}`);
-        }
-
-        let isShown = true;
-        for (const mask of this._exclusionMasks) {
-            _debug_process$2(`Evaluating exclusion mask '${mask}' for mount point '${mountPoint}'`);
-            const reMask = new RegExp(mask);
-            const matches = mountPoint.match(reMask);
-            _debug_process$2(matches);
-            isShown = isShown && (matches === null);
-        }
-
-        return isShown;
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper to evaluate the validity of the custom configuration settings.
-
-    @param { object }   [custom_config]                        - Custom per-volume configuration
-                                                                 settings.
-    @param { string }   [config.volume_id_method]              - The method for identifying the
-                                                                 volume.
-    @param { string }   [config.volume_name]                   - The name of the volume.
-                                                                 (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
-    @param { string }   [config.volume_serial_num]             - The serial number of the volume.
-                                                                 (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
-    @param { boolean }  [config.volume_low_space_alarm_active] - The flag indicating if the low
-                                                                 space alarm is active or not.
-    @param { number }   [config.volume_alarm_threshold]        - The  low space threshold, in percent.
-                                                                 (required when `config.volume_low_space_alarm_active === true`)
-
-    @return {boolean} - `true` if the configuration is valid. `false` otherwise.
-    ======================================================================== */
-    static _validateVolumeCustomization(customConfig) {
-        // Initial sanoty check.
-        let valid = (customConfig !== undefined);
-
-        if (valid) {
-            // Volume Id Method
-            if ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_id_method')) ||
-                (typeof(customConfig.volume_id_method) !== 'string')                      ||
-                (Object.values(VOLUME_IDENTIFICATION_METHODS).indexOf(customConfig.volume_id_method) < 0)) {
-                valid = false;
-            }
-            // Volume Name
-            if (valid &&
-                (customConfig.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
-                ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_name')) ||
-                 (typeof(customConfig.volume_name) !== 'string')                      ||
-                 (customConfig.volume_name.length <= 0))) {
-                valid = false;
-            }
-            // Volume Serial Number
-            if (valid &&
-                (customConfig.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
-                ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_serial_num')) ||
-                 (typeof(customConfig.volume_serial_num) !== 'string')                      ||
-                 (customConfig.volume_serial_num.length <= 0))) {
-                valid = false;
-            }
-            // Low Space Alarm Active
-            if ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_low_space_alarm_active')) ||
-                (typeof(customConfig.volume_low_space_alarm_active) !== 'boolean')) {
-                valid = false;
-            }
-            // Low Space Alarm Threshold
-            if (valid &&
-                customConfig.volume_low_space_alarm_active &&
-                ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_alarm_threshold')) ||
-                 (typeof(customConfig.volume_alarm_threshold) !== 'number')                      ||
-                 (customConfig.volume_alarm_threshold <= MIN_LOW_SPACE_THRESHOLD)                ||
-                 (customConfig.volume_alarm_threshold >= MAX_LOW_SPACE_THRESHOLD))) {
-                valid = false;
-            }
-        }
-
-        return valid;
-    }
-
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper to evaluate the validity of the volume exclusion configuration.
-
-    @param { object }   [mask_config]                          - Volume exclusion mask.
-
-    @return {boolean} - `true` if the exclusion mask is valid. `false` otherwise.
-    ======================================================================== */
-    static _validateVolumeExclusionMask(maskConfig) {
-        let valid = (maskConfig !== undefined);
-
-        if (valid) {
-            valid = (typeof(maskConfig) === 'string');
-        }
-        return valid;
     }
 }
 
@@ -2056,7 +1309,7 @@ _debug$1.log = console.log.bind(console);
 /**
  * @description Task Completed notification
  * @event module:SpawnHelperModule#event:complete
- * @type {object} e - Event notification payload.
+ * @type {object}
  * @param {boolean} e.valid - Flag indicating if the spawned task completed successfully.
  * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
  * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
@@ -2224,7 +1477,7 @@ class SpawnHelper extends EventEmitter {
      * @param {string} request.command - Spawn request command.
      * @param {string[]} [request.arguments] - Spawn arguments.
      * @param {string[]} [request.options] - Spawn options.
-     * @param {string[]} [request.token] - Spawn token used for special handling when the process completes.
+     * @param {object} [request.token] - Spawn token used for special handling when the process completes.
      * @returns {void}
      * @throws {Error} - Thrown if a spawned process is already in progress.
      * @throws {TypeError} - Thrown if the configuration data do not meet expectations.
@@ -2408,20 +1661,751 @@ class SpawnHelper extends EventEmitter {
     }
 }
 
-/* ==========================================================================
-   File:               volumeInterrogator_darwin.js
-   Class:              Volume Interrogator for OSX/macOS (darwin)
-   Description:        Controls the collection of volume specific information
-                       and attributes to be published to homekit.
-   Copyright:          Oct 2021
-   ========================================================================== */
+/**
+ * @description Controls the collection of volume specific information and attributes to be published to homekit.
+ * @copyright December 2020
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeInterrogatorBaseModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ * @requires events
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/events.html#events}
+ * @requires os
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/os.html}
+ */
 
 // External dependencies and imports.
+/**
+ * @description Debugging function pointer for runtime related diagnostics.
+ * @private
+ */
 // eslint-disable-next-line camelcase
-const _debug_process$1    = require('debug')('vi_process');
+const _debug_process$2    = new _debugModule__default["default"]('vi_process');
+/**
+ * @description Debugging function pointer for configuration related diagnostics.
+ * @private
+ */
 // eslint-disable-next-line camelcase
-const _debug_config$1     = require('debug')('vi_config');
-const _plist            = require('plist');
+const _debug_config$2     = new _debugModule__default["default"]('vi_config');
+/**
+ * @description Reference to the operating system functionality.
+ * @private
+ */
+const _os$1               = new _osModule();
+
+// Bind debug to console.log
+// eslint-disable-next-line no-console, camelcase
+_debug_process$2.log = console.log.bind(console);
+// eslint-disable-next-line no-console, camelcase
+_debug_config$2.log  = console.log.bind(console);
+
+// Helpful constants and conversion factors.
+/**
+ * @description Default period, in hours, for checking for changes in mounted volumes.
+ * @private
+ */
+const DEFAULT_PERIOD_HR                 = 6.0;
+/**
+ * @description Minimum period, in hours, for checking for changes in mounted volumes.
+ * @private
+ */
+const MIN_PERIOD_HR                     = (5.0 / 60.0);     // Once every 5 minutes.
+/**
+ * @description Maximum period, in hours, for checking for changes in mounted volumes.
+ * @private
+ */
+const MAX_PERIOD_HR                     = (31.0 * 24.0);    // Once per month.
+/**
+ * @description Factor for converting from hours to milliseconds.
+ * @private
+ */
+const CONVERT_HR_TO_MS                  = (60.0 * 60.0 * 1000.0);
+/**
+ * @description Flag indicating the identification of an invalid timeout.
+ * @private
+ */
+const INVALID_TIMEOUT_ID                = -1;
+/**
+ * @description Timeout, in milliseconds, for retrying to detect volume changes.
+ * @private
+ */
+const RETRY_TIMEOUT_MS                  = 250/* milliseconds */;
+/**
+ * @description Default threshold, in percent, for determining when free space is low.
+ * @private
+ */
+const DEFAULT_LOW_SPACE_THRESHOLD       = 15.0;
+/**
+ * @description Minimum threshold, in percent, for detecting low free space.
+ * @private
+ */
+const MIN_LOW_SPACE_THRESHOLD           = 0.0;
+/**
+ * @description Maximum threshold, in percent, for detecting low free space.
+ * @private
+ */
+const MAX_LOW_SPACE_THRESHOLD           = 100.0;
+/**
+ * @description Maximum time, in milliseconds, for a volume detection to be initiated.
+ * @private
+ */
+const MAX_RETRY_INIT_CHECK_TIME         = 120000;
+/**
+ * @description Time, in milliseconds, that must have elapsed since starting the operating system before starting volume detection.
+ * @private
+ */
+const MIN_OS_UPTIME_TO_START_MS         = 600000/* milliseconds */;
+/**
+ * @description Time, in milliseconds, used to rescan for volume changes.
+ * @private
+ */
+const FS_CHANGED_DETECTION_TIMEOUT_MS   = 1000/* milliseconds */;
+
+/**
+ * @description Enumeration of the methods for identifying volumes.
+ * @private
+ * @readonly
+ * @enum {string}
+ * @property {string} Name- Identify volume by name
+ * @property {string} SerialNumber - Identify volume by serial number.
+ */
+const VOLUME_IDENTIFICATION_METHODS = {
+    /* eslint-disable key-spacing */
+    Name         : 'name',
+    SerialNumber : 'serial_num',
+    /* eslint-enable key-spacing */
+};
+
+/**
+ * @description Enumeration of published events.
+ * @readonly
+ * @private
+ * @enum {string}
+ * @property {string} EVENT_SCANNING - Identification for the event published when scanning begins.
+ * @property {string} EVENT_READY - Identification for the event published when scanning completes.
+ */
+const VOLUME_INTERROGATOR_BASE_EVENTS = {
+    /* eslint-disable key-spacing */
+    EVENT_SCANNING : 'scanning',
+    EVENT_READY    : 'ready',
+    /* eslint-enable key-spacing */
+};
+
+/**
+ * @description Scanning initiated notification
+ * @event module:VolumeInterrogatorBaseModule#event:scanning
+ */
+/**
+ * @description Volume detection ready notification
+ * @event module:VolumeInterrogatorBaseModule#event:ready
+ * @type {object}
+ * @param {VolumeData} e.results - Flag indicating if the spawned task completed successfully.
+ * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
+ * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
+ */
+/**
+ * @description Base class for volume interrogation (operating system agnostic).
+ * @augments EventEmitter
+ */
+class VolumeInterrogatorBase extends EventEmitter {
+    /**
+     * @description Constructor
+     * @class
+     * @param {object} [config] - The settings to use for creating the object.
+     * @param {number} [config.period_hr] -The time (in hours) for periodically interrogating the system.
+     * @param {number} [config.default_alarm_threshold] - The default low space threshold, in percent.
+     * @param {object[]} [config.volume_customizations] - Array of objects for per-volume customizations.
+     * @param {VOLUME_IDENTIFICATION_METHODS} [config.volume_customizations.volume_id_method] - The method for identifying the volume.
+     * @param {string} [config.volume_customizations.volume_name] - The name of the volume (required when `config.volume_customizations.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
+     * @param {string} [config.volume_customizations.volume_serial_num] - The serial number of the volume
+     *                                                                    (required when `config.volume_customizations.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
+     * @param {boolean} [config.volume_customizations.volume_low_space_alarm_active] - The flag indicating if the low space alarm is active or not.
+     * @param {number} [config.volume_customizations.volume_alarm_threshold] - The  low space threshold, in percent
+     *                                                                         (required when `config.volume_customizations.volume_low_space_alarm_active === true`)
+     * @throws {TypeError}  - thrown if the configuration item is not the expected type.
+     * @throws {RangeError} - thrown if the configuration parameters are out of bounds.
+     */
+    constructor(config) {
+        let pollingPeriod           = DEFAULT_PERIOD_HR;
+        let defaultAlarmThreshold   = DEFAULT_LOW_SPACE_THRESHOLD;
+        const volumeCustomizations  = [];
+        const exclusionMasks        = [];
+
+        if (config !== undefined) {
+            // Polling Period (hours)
+            if (Object.prototype.hasOwnProperty.call(config, 'period_hr')) {
+                if ((typeof(config.period_hr) === 'number') &&
+                    (config.period_hr >= MIN_PERIOD_HR) && (config.period_hr <= MAX_PERIOD_HR)) {
+                    pollingPeriod = config.period_hr;
+                }
+                else if (typeof(config.period_hr) !== 'number') {
+                    throw new TypeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+                }
+                else {
+                    throw new RangeError(`'config.period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+                }
+            }
+            // Default Alarm Threshold (percent)
+            if (Object.prototype.hasOwnProperty.call(config, 'default_alarm_threshold')) {
+                if ((typeof(config.period_hr) === 'number') &&
+                    (config.default_alarm_threshold >= MIN_LOW_SPACE_THRESHOLD) &&
+                    (config.default_alarm_threshold <= MAX_LOW_SPACE_THRESHOLD)) {
+                    defaultAlarmThreshold = config.default_alarm_threshold;
+                }
+                else if (typeof(config.period_hr) !== 'number') {
+                    throw new TypeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
+                }
+                else {
+                    throw new RangeError(`'config.default_alarm_threshold' must be a number between ${MIN_LOW_SPACE_THRESHOLD} and ${MAX_LOW_SPACE_THRESHOLD}`);
+                }
+            }
+            // Exclusion Masks
+            if (Object.prototype.hasOwnProperty.call(config, 'exclusion_masks')) {
+                if (Array.isArray(config.exclusion_masks)) {
+                    for (const mask of config.exclusion_masks) {
+                        if (VolumeInterrogatorBase._validateVolumeExclusionMask(mask)) {
+                            exclusionMasks.push(mask);
+                        }
+                        else {
+                            throw new TypeError('\'config.volume_customizations\' item is not valid.');
+                        }
+                    }
+                }
+                else {
+                    throw new TypeError('\'config.volume_customizations\' must be an array.');
+                }
+            }
+            // Enable Volume Customizations
+            if (Object.prototype.hasOwnProperty.call(config, 'volume_customizations')) {
+                if (Array.isArray(config.volume_customizations)) {
+                    for (const item of config.volume_customizations) {
+                        if (VolumeInterrogatorBase._validateVolumeCustomization(item)) {
+                            volumeCustomizations.push(item);
+                        }
+                        else {
+                            throw new TypeError('\'config.volume_customizations\' item is not valid.');
+                        }
+                    }
+                }
+                else {
+                    throw new TypeError('\'config.volume_customizations\' must be an array.');
+                }
+            }
+        }
+
+        // Initialize the base class.
+        super();
+
+        // Initialize data members.
+        this._timeoutID                     = INVALID_TIMEOUT_ID;
+        this._deferInitCheckTimeoutID       = INVALID_TIMEOUT_ID;
+        this._decoupledStartTimeoutID       = INVALID_TIMEOUT_ID;
+        this._checkInProgress               = false;
+        this._period_hr                     = DEFAULT_PERIOD_HR;
+        this._theVolumes                    = [];
+        this._defaultAlarmThreshold         = defaultAlarmThreshold;
+        this._volumeCustomizations          = volumeCustomizations;
+        this._exclusionMasks                = exclusionMasks;
+
+        // Callbacks bound to this object.
+        this._CB__initiateCheck             = this._on_initiateCheck.bind(this);
+        this._CB__ResetCheck                = this._on_reset_check.bind(this);
+        this._DECOUPLE_Start                = this.Start.bind(this);
+        this._CB__VolumeWatcherChange       = this._handleVolumeWatcherChangeDetected.bind(this);
+        this._CB__VolumeWatcherAdded        = this._handleVolumeWatcherAdded.bind(this);
+
+        // Set the polling period
+        this.Period = pollingPeriod;
+
+        // Get the list of watch folders.
+        const watchFolders = this._watchFolders;
+        // Compose the configuration for the volume watcher.
+        const watcherConfig = [];
+        for (const folder of watchFolders) {
+            watcherConfig.push({target: folder, recursive: false, ignoreAccess: false});
+        }
+        // Create volume watchers and register for change notifications.
+        this._volWatcher = new VolumeWatcher();
+        this._volWatcher.on(VOLUME_WATCHER_EVENTS.EVENT_CHANGE_DETECTED,  this._CB__VolumeWatcherChange);
+        this._volWatcher.on(VOLUME_WATCHER_EVENTS.EVENT_WATCH_ADD_RESULT, this._CB__VolumeWatcherAdded);
+        // Add watches for the locations of interest.
+        // Note: This is asynchronous and will be happening after the constructor completes.
+        // eslint-disable-next-line new-cap
+        this._volWatcher.AddWatches(watcherConfig);
+    }
+
+    /**
+     * @description Destructor
+     * @returns {void}
+     */
+    Terminate() {
+        // eslint-disable-next-line new-cap
+        this.Stop();
+
+        // Cleanup the volume watcher
+        // eslint-disable-next-line new-cap
+        this._volWatcher.Terminate();
+
+        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
+        this.removeAllListeners(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY);
+    }
+
+    /**
+     * @description Read Property accessor for the interrogation period.
+     * @returns {number} - Time, in hours, for interrogating for changes.
+     */
+    get Period() {
+        return this._period_hr;
+    }
+
+    /**
+     * @description Write Property accessor for the interrogation period.
+     * @param {number} periodHR - Time, in hours, for interrogating for changes.
+     * @throws {TypeError}  - thrown if 'periodHR' is not a number.
+     * @throws {RangeError} - thrown if 'periodHR' outside the allowed bounds.
+     */
+    set Period(periodHR) {
+        if ((periodHR === undefined) || (typeof(periodHR) !== 'number')) {
+            throw new TypeError(`'period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+        }
+        if ((periodHR < MIN_PERIOD_HR) && (periodHR > MAX_PERIOD_HR)) {
+            throw new RangeError(`'period_hr' must be a number between ${MIN_PERIOD_HR} and ${MAX_PERIOD_HR}`);
+        }
+
+        // Update the polling period
+        this._period_hr = periodHR;
+
+        // Manage the timeout
+        // eslint-disable-next-line new-cap
+        this.Stop();
+    }
+
+    /**
+     * @description Read-Only Property accessor for the minumum period
+     * @returns {number} - Time, in hours, for minimum value of the interrogation period
+     */
+    get MinimumPeriod() {
+        return MIN_PERIOD_HR;
+    }
+
+    /**
+     * @description Read-Only Property accessor for the maximum period
+     * @returns {number} - Time, in hours, for maximum value of the interrogation period
+     */
+    get MaximumPeriod() {
+        return MAX_PERIOD_HR;
+    }
+
+    /**
+     * @description Read-Only Property accessor indicating if the checking of volume data is active.
+     * @returns {boolean} - true if active.
+     */
+    get Active() {
+        return (this._timeoutID !== INVALID_TIMEOUT_ID);
+    }
+
+    /**
+     * @description Starts/Restart the interrogation process.
+     * @returns {void}
+     */
+    Start() {
+        // Clear the decoupled start timer, if active.
+        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._decoupledStartTimeoutID);
+        }
+
+        // Stop the interrogation in case it is running.
+        // eslint-disable-next-line new-cap
+        this.Stop();
+
+        // Get the current uptime of the operating system
+        const uptime = _os$1.uptime() * 1000.0;
+        // Has the operating system been running long enough?
+        if (uptime < MIN_OS_UPTIME_TO_START_MS) {
+            // No. So defer the start for a bit.
+            this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, (MIN_OS_UPTIME_TO_START_MS - uptime));
+        }
+        else {
+            // Perform a check now.
+            this._on_initiateCheck();
+        }
+    }
+
+    /**
+     * @description Stop the interrogation process, if running.
+     * @returns {void}
+     */
+    Stop() {
+        if (this._timeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._timeoutID);
+            this._timeoutID = INVALID_TIMEOUT_ID;
+        }
+    }
+
+    /**
+     * @description Helper function used to reset an ongoing check.
+     * @summary Used to recover from unexpected errors.
+     * @param {boolean} issueReady - Flag indicating if a Ready event should be emitted.
+     * @returns {void}
+     * @private
+     */
+    _on_reset_check(issueReady) {
+        if ((issueReady === undefined) || (typeof(issueReady) !== 'boolean')) {
+            throw new TypeError('issueReadyEvent is not a boolean.');
+        }
+
+        // Mark that the check is no longer in progress.
+        this._checkInProgress = false;
+
+        // Reset the timer id, now that it has tripped.
+        this._deferInitCheckTimeoutID = INVALID_TIMEOUT_ID;
+
+        // Clear the previously known volune data.
+        this._theVolumes = [];
+
+        // Perform operating system specific reset actions.
+        this._doReset();
+
+        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._decoupledStartTimeoutID);
+            this._decoupledStartTimeoutID = INVALID_TIMEOUT_ID;
+        }
+
+        if (issueReady) {
+            // Fire the ready event with no data.
+            // This willl provide the client an opportunity to reset
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results: []});
+        }
+    }
+
+    /**
+     * @description Helper function used to initiate an interrogation of the system volumes.
+     * @summary Called periodically by a timeout timer.
+     * @returns {void}
+     * @private
+     */
+    _on_initiateCheck() {
+        // Is there a current volume check underway?
+        const isPriorCheckInProgress = this._checkInProgress;
+
+        _debug_process$2(`_on_initiateCheck(): Initiating a scan. CheckInProgress=${isPriorCheckInProgress}`);
+
+        if (!this._checkInProgress) {
+            // Alert interested clients that the scan was initiated.
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_SCANNING);
+
+            // Mark that the check is in progress.
+            this._checkInProgress = true;
+
+            // Clear the previously known volune data.
+            this._theVolumes = [];
+
+            // Perform operating system specific reset actions.
+            this._doReset();
+
+            // Let the interrogation begin.
+            this._initiateInterrogation();
+        }
+        else if (this._deferInitCheckTimeoutID === INVALID_TIMEOUT_ID) {
+            this._deferInitCheckTimeoutID = setTimeout(this._CB__ResetCheck, MAX_RETRY_INIT_CHECK_TIME, true);
+        }
+
+        // Compute the number of milliseconds for the timeout.
+        // Note: If there was a check in progress when we got here, try again in a little bit,
+        //       do not wait for the full timeout.
+        const theDelay = (isPriorCheckInProgress ? RETRY_TIMEOUT_MS : (this._period_hr * CONVERT_HR_TO_MS));
+        // Queue another check
+        this._timeoutID = setTimeout(this._CB__initiateCheck, theDelay);
+    }
+
+    /**
+     * @description Abstract method used to initiate interrogation on derived classes.
+     * @returns {void}
+     * @private
+     * @throws {Error} - Always thrown. Should only be invoked on derived classes.
+     */
+    _initiateInterrogation() {
+        throw new Error('Abstract Method _initiateInterrogation() invoked!');
+    }
+
+    /**
+     * @description Abstract method used to reset an interrogation.
+     * @returns {void}
+     * @private
+     * @throws {Error} - Always thrown. Should only be invoked on derived classes.
+     */
+    _doReset() {
+        throw new Error('Abstract Method _doReset() invoked!');
+    }
+
+    /**
+     * @description Abstract property used to determine if a check is in progress.
+     * @returns {void}
+     * @private
+     * @throws {Error} - Always thrown. Should only be invoked on derived classes.
+     */
+    get _isCheckInProgress() {
+        throw new Error('Abstract Property _checkInProgress() invoked!');
+    }
+
+    /**
+     * @description Abstract property used to get an array of watch folders used to initiate an interrogation.
+     * @returns {void}
+     * @private
+     * @throws {Error} - Always thrown. Should only be invoked on derived classes.
+     */
+    get _watchFolders() {
+        throw new Error('Abstract Property _watchFolders() invoked!');
+    }
+
+    /**
+     * @description Helper for managing the "in progress" flag and 'ready' event
+     * @returns {void}
+     * @private
+     */
+    _updateCheckInProgress() {
+        const wasCheckInProgress = this._checkInProgress;
+        this._checkInProgress = this._isCheckInProgress;
+        if (wasCheckInProgress && !this._checkInProgress) {
+            // Fire Ready event
+            this.emit(VOLUME_INTERROGATOR_BASE_EVENTS.EVENT_READY, {results: this._theVolumes});
+
+            _debug_process$2('Ready event.');
+            for (const volume of this._theVolumes) {
+                _debug_process$2(`Volume Name: ${volume.Name}`);
+                _debug_process$2(`\tVisible:    ${volume.IsVisible}`);
+                _debug_process$2(`\tShown:      ${volume.IsShown}`);
+                _debug_process$2(`\tMountPoint: ${volume.MountPoint}`);
+                _debug_process$2(`\tDevNode:    ${volume.DeviceNode}`);
+                // eslint-disable-next-line new-cap
+                _debug_process$2(`\tCapacity:   ${VolumeData.ConvertFromBytesToGB(volume.Size).toFixed(4)} GB`);
+                // eslint-disable-next-line new-cap
+                _debug_process$2(`\tFree:       ${VolumeData.ConvertFromBytesToGB(volume.FreeSpace).toFixed(4)} GB`);
+                // eslint-disable-next-line new-cap
+                _debug_process$2(`\tUsed:       ${VolumeData.ConvertFromBytesToGB(volume.UsedSpace).toFixed(4)} GB`);
+                _debug_process$2(`\t% Used:     ${((volume.UsedSpace / volume.Size) * 100.0).toFixed(2)}%`);
+            }
+        }
+    }
+
+    /**
+     * @description Helper to compute the alert for a specific volume.
+     * @param {string} volumeName - Name of the volume
+     * @param {string} volumeUUID - Unique Identifier (serial number) of the volume
+     * @param {number} volumePercentFree - Percentage of free space (0...100)
+     * @returns {boolean} true if the alert is active
+     * @private
+     * @throws {TypeError} - thrown for invalid arguments
+     * @throws {RangeError} - thrown when 'volumePercentFree' is outside the range of 0...100
+     */
+    _determineLowSpaceAlert(volumeName, volumeUUID, volumePercentFree) {
+        // Validate arguments
+        if ((volumeName === undefined) || (typeof(volumeName) !== 'string') || (volumeName.length <= 0)) {
+            throw new TypeError('\'volumeName\' must be a non-zero length string');
+        }
+        if ((volumeUUID === undefined) || (typeof(volumeUUID) !== 'string') || (volumeUUID.length <= 0)) {
+            throw new TypeError('\'volumeUUID\' must be a non-zero length string');
+        }
+        if ((volumePercentFree === undefined) || (typeof(volumePercentFree) !== 'number')) {
+            throw new TypeError('\'volumePercentFree\' must be a number');
+        }
+        else if ((volumePercentFree < MIN_LOW_SPACE_THRESHOLD) || (volumePercentFree > MAX_LOW_SPACE_THRESHOLD)) {
+            throw new RangeError(`'volumePercentFree' must be in the range of ${MIN_LOW_SPACE_THRESHOLD}...${MAX_LOW_SPACE_THRESHOLD}. ${volumePercentFree}`);
+        }
+
+        // Determine the default alert state.
+        let alert = (volumePercentFree < this._defaultAlarmThreshold);
+
+        // Does this volume have a customization?
+        const volCustomizations = this._volumeCustomizations.filter((item) => {
+            const match = (((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
+                             (item.volume_name.toLowerCase() === volumeName.toLowerCase())) ||
+                            ((item.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
+                             (item.volume_serial_num.toLowerCase() === volumeUUID.toLowerCase())));
+            return match;
+        });
+        if ((volCustomizations !== undefined) && (volCustomizations.length > 0)) {
+            // There is at least one customization.
+
+            // Filter for the matching customizations that indicate an alert.
+            const trippedAlerts = volCustomizations.filter((item) => {
+                const alertTripped = ((item.volume_low_space_alarm_active) &&
+                                      (volumePercentFree < item.volume_alarm_threshold));
+
+                return alertTripped;
+            });
+
+            // If any alerts were set, then indicate that.
+            alert = (trippedAlerts.length > 0);
+        }
+
+        return alert;
+    }
+
+    /**
+     * @description Event handler for file system change detections.
+     *              Called when the contents of the watched folder(s) change(s).
+     * @param {*} eventType - Type of change detected ('rename' or 'change')
+     * @param {*} fileName - Name of the file or directory with the change.
+     * @private
+     * @returns {void}
+     */
+    _handleVolumeWatcherChangeDetected(eventType, fileName) {
+        // Decouple the automatic refresh.
+        setImmediate((eType, fName) => {
+            _debug_process$2(`Volume Watcher Change Detected: type:${eType} name:${fName} active:${this.Active} chkInProgress:${this._checkInProgress}`);
+            // Initiate a re-scan (decoupled from the notification event), if active (even if there
+            // is a scan already in progress.)
+            if (this.Active) {
+                if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+                    clearTimeout(this._decoupledStartTimeoutID);
+                }
+                this._decoupledStartTimeoutID = setTimeout(this._DECOUPLE_Start, FS_CHANGED_DETECTION_TIMEOUT_MS);
+            }
+        }, eventType, fileName);
+    }
+
+    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Event handler for file system change detections.
+     *              Called when the contents of the watched folder(s) change(s).
+     * @param {object} result - Result of the request to add a watcher.
+     * @param {string} result.target - Target of the watch
+     * @param {boolean} result.success - Status of the add operation.
+     * @returns {void}
+     */
+    _handleVolumeWatcherAdded(result) {
+        if (result !== undefined) {
+            _debug_process$2(`AddWatch Results: target:${result.target} status:${result.success}`);
+        }
+    }
+
+    /**
+     * @description Helper to determine if the volume should be shown or not.
+     * @param {string} mountPoint - Mount Point of the volume
+     * @returns {boolean} - true if shown. false otherwise.
+     * @throws { TypeError } - thrown if mountPoint is not a non-null string.
+     * @private
+     */
+    _isVolumeShown(mountPoint) {
+        if ((mountPoint === undefined) ||
+            (typeof(mountPoint) !== 'string') || (mountPoint.length <= 0)) {
+            throw new TypeError(`_isVolumeShown. mountPoint is not valid. ${mountPoint}`);
+        }
+
+        let isShown = true;
+        for (const mask of this._exclusionMasks) {
+            _debug_process$2(`Evaluating exclusion mask '${mask}' for mount point '${mountPoint}'`);
+            const reMask = new RegExp(mask);
+            const matches = mountPoint.match(reMask);
+            _debug_process$2(matches);
+            isShown = isShown && (matches === null);
+        }
+
+        return isShown;
+    }
+
+    /**
+     * @description Helper to evaluate the validity of the custom configuration settings.
+     * @param {object} customConfig - Custom per-volume configuration settings.
+     * @param {string} customConfig.volume_id_method - The method for identifying the volume.
+     * @param {string} customConfig.volume_name - The name of the volume.
+     *                                      (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name`)
+     * @param {string} customConfig.volume_serial_num - The serial number of the volume.
+     *                                            (required when `config.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber`)
+     * @param {boolean} customConfig.volume_low_space_alarm_active - The flag indicating if the low space alarm is active or not.
+     * @param {number} customConfig.volume_alarm_threshold - The low space threshold, in percent.
+     *                                                 (required when `config.volume_low_space_alarm_active === true`)
+     * @returns {boolean} `true` if the configuration is valid. `false` otherwise.
+     * @private
+     */
+    static _validateVolumeCustomization(customConfig) {
+        // Initial sanoty check.
+        let valid = (customConfig !== undefined);
+
+        if (valid) {
+            // Volume Id Method
+            if ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_id_method')) ||
+                (typeof(customConfig.volume_id_method) !== 'string')                      ||
+                (Object.values(VOLUME_IDENTIFICATION_METHODS).indexOf(customConfig.volume_id_method) < 0)) {
+                valid = false;
+            }
+            // Volume Name
+            if (valid &&
+                (customConfig.volume_id_method === VOLUME_IDENTIFICATION_METHODS.Name) &&
+                ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_name')) ||
+                 (typeof(customConfig.volume_name) !== 'string')                      ||
+                 (customConfig.volume_name.length <= 0))) {
+                valid = false;
+            }
+            // Volume Serial Number
+            if (valid &&
+                (customConfig.volume_id_method === VOLUME_IDENTIFICATION_METHODS.SerialNumber) &&
+                ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_serial_num')) ||
+                 (typeof(customConfig.volume_serial_num) !== 'string')                      ||
+                 (customConfig.volume_serial_num.length <= 0))) {
+                valid = false;
+            }
+            // Low Space Alarm Active
+            if ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_low_space_alarm_active')) ||
+                (typeof(customConfig.volume_low_space_alarm_active) !== 'boolean')) {
+                valid = false;
+            }
+            // Low Space Alarm Threshold
+            if (valid &&
+                customConfig.volume_low_space_alarm_active &&
+                ((!Object.prototype.hasOwnProperty.call(customConfig, 'volume_alarm_threshold')) ||
+                 (typeof(customConfig.volume_alarm_threshold) !== 'number')                      ||
+                 (customConfig.volume_alarm_threshold <= MIN_LOW_SPACE_THRESHOLD)                ||
+                 (customConfig.volume_alarm_threshold >= MAX_LOW_SPACE_THRESHOLD))) {
+                valid = false;
+            }
+        }
+
+        return valid;
+    }
+
+    /**
+     * @description Helper to evaluate the validity of the volume exclusion configuration.
+     * @param {object} maskConfig - Volume exclusion mask.
+     * @returns {boolean} - `true` if the exclusion mask is valid. `false` otherwise.
+     */
+    static _validateVolumeExclusionMask(maskConfig) {
+        let valid = (maskConfig !== undefined);
+
+        if (valid) {
+            valid = (typeof(maskConfig) === 'string');
+        }
+        return valid;
+    }
+}
+
+/**
+ * @description Controls the collection of volume specific information and attributes to be published to homekit.
+ * @copyright December 2020
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeInterrogatorDarwinModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ * @requires plist
+ * @see {@link https://github.com/TooTallNate/plist.js#readme}
+ */
+
+/**
+ * @private
+ * @description Debugging function pointer for runtime related diagnostics.
+ */
+const _debug_process$1 = new _debugModule__default["default"]('vi_process');  // eslint-disable-line camelcase
+/**
+ * @private
+ * @description Debugging function pointer for configuration related diagnostics.
+ */
+const _debug_config$1 = new _debugModule__default["default"]('vi_process');  // eslint-disable-line camelcase
+/**
+ * @private
+ * @description Property List helpers.
+ */
+const _plist = new _plistModule__default["default"]('plist');
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -2430,32 +2414,29 @@ _debug_process$1.log = console.log.bind(console);
 _debug_config$1.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const BLOCKS512_TO_BYTES$1                = 512;
-const REGEX_WHITE_SPACE$1                 = /\s+/;
+// Helpful constants and conversion factors.
+/**
+ * @description Conversion factor for 512byte blocks
+ * @private
+ */
+const BLOCKS512_TO_BYTES$1    = 512;
+/**
+ * @description Regular expression pattern for white space.
+ * @private
+ */
+const REGEX_WHITE_SPACE$1     = /\s+/;
 
-/* ==========================================================================
-   Class:              VolumeInterrogator_darwin
-   Description:        Manager for interrogating volumes on the OSX/macOS systems.
-   Copyright:          Oct 2021
-
-   @event 'ready' => function({object})
-   @event_param {<VolumeData>}  [results]  - Array of volume data results.
-   Event emmitted when the (periodic) interrogation is completes.
-
-   @event 'scanning' => function({object})
-   Event emmitted when a refresh/rescan is initiated.
-   ========================================================================== */
-// eslint-disable-next-line camelcase
-class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
-/*  ========================================================================
-    Description:    Constructor
-
-    @param {object}     [config] - The settings to use for creating the object.
-
-    @return {object}  - Instance of the volumeInterrogator_darwin class.
-
-    @throws {Error}   - If the platform operating system is not compatible.
-    ======================================================================== */
+/**
+ * @description Derived class for darwin-based (OSX/macOS) volume interrogation
+ * @augments _VolumeInterrogatorBase
+ */
+class VolumeInterrogator_darwin extends VolumeInterrogatorBase {    // eslint-disable-line camelcase
+    /**
+     * @description Constructor
+     * @class
+     * @param {object} [config] - The settings to use for creating the object.
+     * @throws {Error}  - thrown if the operating system is not supported.
+     */
     constructor(config) {
         // Sanity - ensure the Operating System is supported.
         const operatingSystem = process.platform;
@@ -2480,38 +2461,35 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         this._CB_process_disk_utilization_stats_complete    = this._on_process_disk_utilization_stats_complete.bind(this);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to initiate an interrogation of the
-                 system volumes on darwin operating systems.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to initiate an interrogation of the system volumes on darwin operating systems.
+     * @returns {void}
+     */
     _initiateInterrogation() {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const lsVolumes = new SpawnHelper();
         lsVolumes.on('complete', this._CB__visible_volumes);
+        // eslint-disable-next-line new-cap
         lsVolumes.Spawn({command: 'ls', arguments: ['/Volumes']});
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to reset an interrogation.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to reset an interrogation.
+     * @returns {void}
+     */
     _doReset() {
         this._pendingFileSystems    = [];
         this._theVisibleVolumeNames = [];
         this._pendingVolumes        = [];
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-Only Property used to determine if a check is in progress.
-
-    @return {boolean} - true if a check is in progress.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Read-Only Property used to determine if a check is in progress.
+     * @returns {boolean} - true if a check is in progress.
+     */
     get _isCheckInProgress() {
         _debug_process$1(`_isCheckInProgress: Pending Volume Count - ${this._pendingVolumes.length}`);
 
@@ -2521,32 +2499,25 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         return checkInProgress;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-only property used to get an array of watch folders
-                    used to initiate an interrogation.
-
-    @return {[string]} - Array of folders to be watched for changes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description Read-only property used to get an array of watch folders used to initiate an interrogation.
+     * @returns {string[]} - Array of folders to be watched for changes.
+     */
     get _watchFolders() {
         return (['/Volumes']);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_process_visible_volumes(response) {
         _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config$1(response.result.toString());
@@ -2564,6 +2535,7 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
             // Spawn a 'lsvfs' to determine the number and types of known file systems.
             const diskutilList = new SpawnHelper();
             diskutilList.on('complete', this._CB__list_known_virtual_filesystems_complete);
+            // eslint-disable-next-line new-cap
             diskutilList.Spawn({command: 'lsvfs'});
         }
         else {
@@ -2577,20 +2549,16 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_lsvfs_complete(response) {
         _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config$1(response.result.toString());
@@ -2636,6 +2604,7 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
                             _debug_process$1(`Spawn df for fs type '${newFS.type}'.`);
                             const diskUsage = new SpawnHelper();
                             diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+                            // eslint-disable-next-line new-cap
                             diskUsage.Spawn({command: 'df', arguments: ['-a', '-b', '-T', newFS.type], token: newFS});
                         }
                         else {
@@ -2663,20 +2632,16 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_df_complete(response) {
         _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config$1(response.result.toString());
@@ -2779,6 +2744,7 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
                     _debug_process$1(`Initiating 'diskutil info' for DiskId '${volData.DeviceNode}'`);
                     const diskutilInfo = new SpawnHelper();
                     diskutilInfo.on('complete', this._CB_process_diskUtil_info_complete);
+                    // eslint-disable-next-line new-cap
                     diskutilInfo.Spawn({command: 'diskutil', arguments: ['info', '-plist', volData.DeviceNode], token: volData});
 
                     // Add this volume to the list of pending volumes.
@@ -2797,20 +2763,16 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_process_diskutil_info_complete(response) {
         _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config$1(response.result.toString());
@@ -2992,20 +2954,16 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spoawned process
-                                                               was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_process_disk_utilization_stats_complete(response) {
         _debug_config$1(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
 
@@ -3024,8 +2982,10 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
             const fields = line.split('\t');
             // Verify that there are 2 fields. These are the size and the volume name (mount point)
             if (fields.length === 2) {
+                // eslint-disable-next-line new-cap
                 const usedBytes     = VolumeData.ConvertFrom1KBlockaToBytes(Number.parseInt(fields[0], 10));
                 const volumeName    = fields[1].trim();
+                // eslint-disable-next-line new-cap
                 _debug_process$1(`du results: Name:${volumeName} Used:${VolumeData.ConvertFromBytesToGB(usedBytes)} raw:${Number.parseInt(fields[0], 10)}`);
 
                 // Verify that we were looking for this mount point.
@@ -3089,18 +3049,14 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper for extracting the disk identifiers from the data provided
-                  by 'diskutil list' for HFS+ volumes.
-
-    @param { object } [disks] - list of disk data provided by 'diskutil list' for non-APFS disks .
-
-    @return { [string] } - Array of disk identifiers.
-
-    @throws {TypeError} - thrown for enteries that are not specific to Partitions
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description  Helper for extracting the disk identifiers from the data provided by 'diskutil list' for HFS+ volumes.
+     * @param {object} disks - list of disk data provided by 'diskutil list' for non-APFS disks.
+     * @returns {string[]} - Array of disk identifiers.
+     * @throws {TypeError} - thrown for enteries that are not specific to Partitions or if the input is not an array
+     * @todo - Not used at present time.
+     */
     _partitionDiskIdentifiers(disks) {
         if ((disks === undefined) || (!Array.isArray(disks))) {
             throw new TypeError('disk must be an array');
@@ -3133,18 +3089,14 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
         return diskIdentifiers;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:  Helper for extracting the disk identifiers from the data provided
-                  by 'diskutil list' for AFPS volumes.
-
-    @param { object } [containers] - list of AFPS container data provided by 'diskutil list'
-
-    @return { [string] } - Array of disk identifiers.
-
-    @throws {TypeError} - thrown for enteries that are not specific to AFPS volumes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description Helper for extracting the disk identifiers from the data provided by 'diskutil list' for AFPS volumes.
+     * @param {object[]} containers - list of AFPS container data provided by 'diskutil list'
+     * @returns {string[]} - Array of disk identifiers.
+     * @throws {TypeError} - thrown for enteries that are not specific to Partitions or if the input is not an array
+     * @todo - Not used at present time.
+     */
     _apfsDiskIdentifiers(containers) {
         if ((containers === undefined) || (!Array.isArray(containers))) {
             throw new TypeError('containers must be an array');
@@ -3179,20 +3131,35 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {
     }
 }
 
-/* ==========================================================================
-   File:               volumeInterrogator_darwin.js
-   Class:              Volume Interrogator for Linux
-   Description:        Controls the collection of volume specific information
-                       and attributes to be published to homekit.
-   Copyright:          Nov 2021
-   ========================================================================== */
+/**
+ * @description Controls the collection of volume specific information and attributes to be published to homekit.
+ * @copyright December 2020
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeInterrogatorLinuxModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ * @requires os
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/events.html#events}
+ * @requires os
+ * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/os.html}
+ */
 
-// External dependencies and imports.
-const _os               = require('os');
-// eslint-disable-next-line camelcase
-const _debug_process    = require('debug')('vi_process');
-// eslint-disable-next-line camelcase
-const _debug_config     = require('debug')('vi_config');
+/**
+ * @description Reference to the operating system-related methods and properties.
+ * @private
+ */
+const _os = new _osModule();
+
+/**
+ * @private
+ * @description Debugging function pointer for runtime related diagnostics.
+ */
+const _debug_process = new _debugModule__default["default"]('vi_process');  // eslint-disable-line camelcase
+/**
+ * @private
+ * @description Debugging function pointer for configuration related diagnostics.
+ */
+const _debug_config = new _debugModule__default["default"]('vi_process');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -3201,32 +3168,28 @@ _debug_process.log = console.log.bind(console);
 _debug_config.log  = console.log.bind(console);
 
 // Helpful constants and conversion factors.
-const BLOCKS512_TO_BYTES                = 512;
-const REGEX_WHITE_SPACE                 = /\s+/;
+/**
+ * @description Conversion factor for 512byte blocks
+ * @private
+ */
+const BLOCKS512_TO_BYTES    = 512;
+/**
+ * @description Regular expression pattern for white space.
+ * @private
+ */
+const REGEX_WHITE_SPACE     = /\s+/;
 
-/* ==========================================================================
-   Class:              VolumeInterrogator_linux
-   Description:        Manager for interrogating volumes on the linux-based systems.
-   Copyright:          Nov 2021
-
-   @event 'ready' => function({object})
-   @event_param {<VolumeData>}  [results]  - Array of volume data results.
-   Event emmitted when the (periodic) interrogation is completes.
-
-   @event 'scanning' => function({object})
-   Event emmitted when a refresh/rescan is initiated.
-   ========================================================================== */
-// eslint-disable-next-line camelcase
-class VolumeInterrogator_linux extends VolumeInterrogatorBase {
-/* ========================================================================
-    Description:    Constructor
-
-    @param {object}     [config] - The settings to use for creating the object.
-
-    @return {object}  - Instance of the volumeInterrogator_darwin class.
-
-    @throws {Error}   - If the platform operating system is not compatible.
-    ======================================================================== */
+/**
+ * @description Derived class for linux-based volume interrogation
+ * @augments _VolumeInterrogatorBase
+ */
+class VolumeInterrogator_linux extends VolumeInterrogatorBase { // eslint-disable-line camelcase
+    /**
+     * @description Constructor
+     * @class
+     * @param {object} [config] - The settings to use for creating the object.
+     * @throws {Error}  - thrown if the operating system is not supported.
+     */
     constructor(config) {
         // Sanity - ensure the Operating System is supported.
         const operatingSystem = process.platform;
@@ -3240,16 +3203,14 @@ class VolumeInterrogator_linux extends VolumeInterrogatorBase {
 
         this._dfSpawnInProgress = false;
 
-        this._CB__display_free_disk_space_complete          = this._on_df_complete.bind(this);
+        this._CB__display_free_disk_space_complete = this._on_df_complete.bind(this);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to initiate an interrogation of the
-                 system volumes on darwin operating systems.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to initiate an interrogation of the system volumes on darwin operating systems.
+     * @returns {void}
+     */
     _initiateInterrogation() {
         // Set Check-in-Progress.
         this._dfSpawnInProgress = true;
@@ -3257,38 +3218,34 @@ class VolumeInterrogator_linux extends VolumeInterrogatorBase {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const diskUsage = new SpawnHelper();
         diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+        // eslint-disable-next-line new-cap
         diskUsage.Spawn({command: 'df', arguments: ['--block-size=512', '--portability', '--print-type', '--exclude-type=tmpfs', '--exclude-type=devtmpfs']});
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper function used to reset an interrogation.
-
-    @remarks: Called periodically by a timeout timer.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Helper function used to reset an interrogation.
+     * @returns {void}
+     */
     _doReset() {
         // Clear Check-in-Progress.
         this._dfSpawnInProgress = false;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-Only Property used to determine if a check is in progress.
-
-    @return {boolean} - true if a check is in progress.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Read-Only Property used to determine if a check is in progress.
+     * @returns {boolean} - true if a check is in progress.
+     */
     get _isCheckInProgress() {
         return this._dfSpawnInProgress;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Read-only property used to get an array of watch folders
-                    used to initiate an interrogation.
-
-    @return {[string]} - Array of folders to be watched for changes.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @private
+     * @description Read-only property used to get an array of watch folders used to initiate an interrogation.
+     * @returns {string[]} - Array of folders to be watched for changes.
+     */
     get _watchFolders() {
         const {username} = _os.userInfo();
         _debug_process(`Username: ${username}`);
@@ -3296,22 +3253,16 @@ class VolumeInterrogator_linux extends VolumeInterrogatorBase {
         return ([`/media/${username}`, '/mnt']);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description:    Event handler for the SpawnHelper 'complete' Notification
-
-    @param { object }                      [response]        - Spawn response.
-    @param { bool }                        [response.valid]  - Flag indicating if the spawned
-                                                               process was completed successfully.
-    @param { <Buffer> | <string> | <any> } [response.result] - Result or Error data provided  by
-                                                               the spawned process.
-    @param { <any> }                       [response.token]  - Client specified token intended to
-                                                               assist in processing the result.
-    @param { SpawnHelper }                 [response.source] - Reference to the SpawnHelper that
-                                                               provided the results.
-
-    @throws {Error} - thrown for vaious error conditions.
-    ======================================================================== */
+    /**
+     * @private
+     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @param {object} response - Spawn response.
+     * @param {boolean} response.valid - Flag indicating if the spawned process was completed successfully.
+     * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
+     * @param {*} response.token - Client specified token intended to assist in processing the result.
+     * @param {SpawnHelper} response.source - Reference to the SpawnHelper that provided the results.
+     * @returns {void}
+     */
     _on_df_complete(response) {
         _debug_config(`'${response.source.Command} ${response.source.Arguments}' Spawn Helper Result: valid:${response.valid}`);
         _debug_config(response.result.toString());
@@ -3414,30 +3365,55 @@ class VolumeInterrogator_linux extends VolumeInterrogatorBase {
     }
 }
 
-/* ==========================================================================
-   File:               main.js
-   Description:        Homebridge integration for Volume Monitor
-   Copyright:          Jan 2021
-   ========================================================================== */
+/**
+ * @description Homebridge integration for Volume Monitor
+ * @copyright 2021
+ * @author Mike Price <dev.grumptech@gmail.com>
+ * @module VolumeMonitorModule
+ * @requires debug
+ * @see {@link https://github.com/debug-js/debug#readme}
+ */
 
-// External dependencies and imports.
-const _debug = require('debug')('homebridge');
+/**
+ * @private
+ * @description Debugging function pointer for runtime related diagnostics.
+ */
+const _debug = new _debugModule__default["default"]('homebridge');
 
 // Configuration constants.
+/**
+ * @description Plugin name
+ * @private
+ */
 const PLUGIN_NAME   = config_info.plugin;
+/**
+ * @description Platform name
+ * @private
+ */
 const PLATFORM_NAME = config_info.platform;
 
 // Internal Constants
 // History:
 // unspecified: Initial Release
 //          v2: Purge Offline and better UUID management.
+/**
+ * @description Version history of the plugin.
+ * @private
+ */
 const ACCESSORY_VERSION = 2;
 
+/**
+ * @description Enumeration of service types.
+ * @private
+ */
 const FIXED_ACCESSORY_SERVICE_TYPES = {
     Switch: 0,
 };
 
-// Listing of fixed (dedicated) accessories.
+/**
+ * @description Listing of fixed (dedicated) accessories.
+ * @private
+ */
 const FIXED_ACCESSORY_INFO = {
     CONTROLS: {
         uuid: '2CF5A6C7-8041-4805-8582-821B19589D60',
@@ -3454,9 +3430,15 @@ const FIXED_ACCESSORY_INFO = {
     },
 };
 
-// Host Operating System
+/**
+ * @description Host Operating System
+ * @private
+ */
 const HOST_OPERATING_SYSTEM = process.platform;
-// Supported operating systems.
+/**
+ * @description Enumeration of supported operating systems.
+ * @private
+ */
 const SUPPORTED_OPERATING_SYSTEMS = {
     OS_DARWIN: 'darwin',
     // eslint-disable-next-line key-spacing
@@ -3464,27 +3446,30 @@ const SUPPORTED_OPERATING_SYSTEMS = {
 };
 
 // Accessory must be created from PlatformAccessory Constructor
+/**
+ * @description Platform accessory reference
+ * @private
+ */
 let _PlatformAccessory;
 // Service and Characteristic are from hap-nodejs
+/**
+ * @description Reference to the NodeJS Homekit Applicaiton Platform.
+ * @private
+ */
 let _hap;
 
-/* ==========================================================================
-   Class:              VolumeInterrogatorPlatform
-   Description:        Homebridge platform for managing the Volume Interrogator
-   Copyright:          Jan 2021
-   ========================================================================== */
+/**
+ * @description Homebridge platform for managing the Volume Interrogator
+ * @private
+ */
 class VolumeInterrogatorPlatform {
-/*  ========================================================================
-    Description:    Constructor
-
-    @param {object} [log]      - Object for logging in the Homebridge Context
-    @param {object} [config]   - Object for the platform configuration (from config.json)
-    @param {object} [api]      - Object for the Homebridge API.
-
-    @return {object}  - Instance of VolumeInterrogatorPlatform
-
-    @throws {<Exception Type>}  - <Exception Description>
-    ======================================================================== */
+    /**
+     * @description Constructor
+     * @param {object} log - Regerence to the log for logging in the Homebridge Context
+     * @param {object} config - Reference to the platform configuration (from config.json)
+     * @param {object} api - Reference to the Homebridge API
+     * @throws {TypeError} - thrown if the configuration is invalid.
+     */
     constructor(log, config, api) {
         /* Cache the arguments. */
         this._log     = log;
@@ -3620,14 +3605,14 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
-/*  ========================================================================
-    Description: Destructor
-
-    @param {object} [options]  - Typically containing a "cleanup" or "exit" member.
-    @param {object} [err]      - The source of the event trigger.
-    ======================================================================== */
-    // eslint-disable-next-line no-unused-vars
+    /**
+     * @description Destructor
+     * @param {object} options - Typically containing a "cleanup" or "exit" member.
+     * @param {object} err - The source of the event trigger.
+     * @returns {void}
+     * @async
+     * @private
+     */
     async _destructor(options, err) {
         // Is there an indication that the system is either exiting or needs to
         // be cleaned up?
@@ -3637,6 +3622,7 @@ class VolumeInterrogatorPlatform {
                 this._log.debug('Terminating the volume interrogator.');
                 this._volumeInterrogator.removeListener('scanning', this._CB_VolumeIterrrogatorScanning);
                 this._volumeInterrogator.removeListener('ready',    this._CB_VolumeIterrrogatorReady);
+                // eslint-disable-next-line new-cap
                 await this._volumeInterrogator.Terminate();
                 this._volumeInterrogator = undefined;
             }
@@ -3645,16 +3631,14 @@ class VolumeInterrogatorPlatform {
         delete this;
     }
 
-    // eslint-disable-next-line indent
-/*  ========================================================================
-    Description: Event handler when the system has loaded the platform.
-
-    @throws {TypeError}  - thrown if the 'polling_interval' configuration item is not a number.
-    @throws {RangeError} - thrown if the 'polling_interval' configuration item is outside the
-                           allowed bounds.
-
-    @remarks:     Opportunity to initialize the system and publish accessories.
-    ======================================================================== */
+    /**
+     * @description Event handler when the system has loaded the platform.
+     * @returns {void}
+     * @throws {TypeError} - thrown if the 'polling_interval' configuration item is not a number.
+     * @throws {RangeError} - thrown if the 'polling_interval' configuration item is outside the allowed bounds.
+     * @async
+     * @private
+     */
     async _doInitialization() {
         this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
 
@@ -3742,17 +3726,17 @@ class VolumeInterrogatorPlatform {
         }
 
         // Start interrogation.
+        // eslint-disable-next-line new-cap
         this._volumeInterrogator.Start();
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Homebridge API invoked after restoring cached accessorues from disk.
-
-    @param {PlatformAccessory} [accessory] - Accessory to be configured.
-
-    @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
-    ======================================================================== */
+    /**
+     * @description Homebridge API invoked after restoring cached accessorues from disk.
+     * @param {_PlatformAccessory} accessory - Accessory to be configured.
+     * @returns {void}
+     * @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
+     * @private
+     */
     configureAccessory(accessory) {
         // Validate the argument(s)
         if ((accessory === undefined) ||
@@ -3780,10 +3764,11 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the Volume Interrogator 'scanning' event.
-    ======================================================================== */
+    /**
+     * @description Event handler for the Volume Interrogator 'scanning' event.
+     * @returns {void}
+     * @private
+     */
     _handleVolumeInterrogatorScanning() {
         // Decouple from the event.
         setImmediate(() => {
@@ -3811,15 +3796,13 @@ class VolumeInterrogatorPlatform {
         });
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the Volume Interrogator 'ready' event.
-
-    @param {object} [theData] - object containing a 'results' item which is an array of volume
-                                data results.
-
-    @throws {TypeError} - Thrown when 'results' is not an Array of VolumeData objects.
-    ======================================================================== */
+    /**
+     * @description Event handler for the Volume Interrogator 'ready' event.
+     * @param {object} theData - container of a 'results' item which is an array of volume data results.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'results' is not an Array of VolumeData objects.
+     * @private
+     */
     _handleVolumeInterrogatorReady(theData) {
         // Decouple from the event.
         setImmediate((data) => {
@@ -3840,7 +3823,7 @@ class VolumeInterrogatorPlatform {
             // Update the volumes data.
             for (const result of data.results) {
                 if (result.IsMounted) {
-                    // eslint-disable-next-line max-len
+                    // eslint-disable-next-line max-len, new-cap
                     this._log.debug(`\tName:${result.Name.padEnd(20, ' ')}\tVisible:${result.IsVisible}\tShown:${result.IsShown}\tSize:${VolumeData.ConvertFromBytesToGB(result.Size).toFixed(4)} GB\tUsed:${((result.UsedSpace / result.Size) * 100.0).toFixed(2)}%\tMnt:${result.MountPoint}`);
                 }
 
@@ -3935,16 +3918,15 @@ class VolumeInterrogatorPlatform {
         }, theData);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Create and register an accessory for the volume name.
-
-    @param {string} [name] - name of the volume for the accessory.
-
-    @throws {TypeError} - Thrown when 'name' is not a string.
-    @throws {RangeError} - Thrown when 'name' length is 0
-    @throws {Error} - Thrown when an accessory with 'name' is already registered.
-    ======================================================================== */
+    /**
+     * @description Creates and registers an accessory for the volume name.
+     * @param {string} name - name of the volume for the accessory.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'name' is not a string.
+     * @throws {RangeError} - Thrown when 'name' length is 0
+     * @throws {Error} - Thrown when an accessory with 'name' is already registered.
+     * @private
+     */
     _addBatteryServiceAccessory(name) {
         // Validate arguments
         if ((name === undefined) || (typeof(name) !== 'string')) {
@@ -3981,16 +3963,14 @@ class VolumeInterrogatorPlatform {
         this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Internal function to perform accessory configuration and
-                 internal 'registration' (appending to our list)
-
-    @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
-
-    @remarks:     Opportunity to setup event handlers for characteristics
-                  and update values (as needed).
-    ======================================================================== */
+    /**
+     * @description Performs accessory configuration and internal 'registration' (appending to our list).
+     *              Opportunity to setup event handlers for characteristics and update values (as needed).
+     * @param {_PlatformAccessory} accessory - Accessory to be configured/registered
+     * @returns {void}
+     * @throws {TypeError} - thrown if 'accessory' is not a PlatformAccessory
+     * @private
+     */
     _configureAccessory(accessory) {
         if ((accessory === undefined) ||
             (!(accessory instanceof _PlatformAccessory))) {
@@ -4054,15 +4034,14 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Remove/destroy an accessory
-
-    @param {object} [accessory] - accessory to be removed.
-
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
-    @throws {RangeError} - Thrown when a 'accessory' is not registered.
-    ======================================================================== */
+    /**
+     * @description Remove/destroy an accessory
+     * @param {_PlatformAccessory} accessory - accessory to be removed.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
+     * @throws {RangeError} - Thrown when a 'accessory' is not registered.
+     * @private
+     */
     _removeAccessory(accessory) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
@@ -4099,14 +4078,13 @@ class VolumeInterrogatorPlatform {
         this._accessories.delete(accessory.displayName);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Update an accessory
-
-    @param {object} [accessory] - accessory to be updated.
-
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
-    ======================================================================== */
+    /**
+     * @description Update an accessory
+     * @param {_PlatformAccessory} accessory - accessory to be updated.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
+     * @private
+     */
     _updateBatteryServiceAccessory(accessory) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
@@ -4163,21 +4141,18 @@ class VolumeInterrogatorPlatform {
         this._updateAccessoryInfo(accessory, {model: theModel, serialnum: theSerialNumber});
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Update an accessory
-
-    @param {object} [accessory] - accessory to be updated.
-
-    @param {object} [info]                      - accessory information.
-    @param {string | Error} [info.model]        - accessory model number
-    @param {string | Error} [info.serialnum]    - accessory serial number.
-
-    @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory..
-    @throws {TypeError} - Thrown when 'info' is not undefined, does not have the 'model' or
-                          'serialnum' properties or the properties are not of the expected type.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Update common information for an accessory
+     * @param {_PlatformAccessory} accessory - accessory to be updated.
+     * @param {object} info - accessory information.
+     * @param {string | Error} info.model - accessory model number
+     * @param {string | Error} info.serialnum - accessory serial number.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'accessory' is not an instance of _PlatformAccessory.
+     * @throws {TypeError} - Thrown when 'info' is not undefined, does not have the 'model' or
+     *                       'serialnum' properties or the properties are not of the expected type.
+     * @private
+     */
     _updateAccessoryInfo(accessory, info) {
         // Validate arguments
         if ((accessory === undefined) || !(accessory instanceof _PlatformAccessory)) {
@@ -4203,25 +4178,19 @@ class VolumeInterrogatorPlatform {
         }
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the "get" event for the Switch.On characteristic.
-
-    @param {object} [event_info] - accessory and id of the switch service being querried.
-    @param {object} [event_info.accessory] - Platform Accessory
-    @param {string} [event_info.service_id]- UUID of the Switch service being qeurried.
-
-    @param {function} [callback] - Function callback for homebridge.
-
-    @throws {TypeError} - Thrown when 'event_info' is not an object.
-    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of
-                          _PlatformAccessory.
-    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
-    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to
-                           'event_info.accessory'
-    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a
-                          Switch service.
-    ======================================================================== */
+    /**
+     * @description Event handler for the "get" event for the Switch.On characteristic.
+     * @param {object} eventInfo - accessory and id of the switch service being querried.
+     * @param {_PlatformAccessory} eventInfo.accessory - Reference to the platform accessory being querried
+     * @param {string} eventInfo.service_id - UUID of the Switch service being qeurried.
+     * @param {Function} callback - Function callback for homebridge.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'event_info' is not an object.
+     * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+     * @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+     * @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+     * @private
+     */
     _handleOnGet(eventInfo, callback) {
         // Validate arguments
         if ((eventInfo === undefined) || (typeof(eventInfo) !== 'object') ||
@@ -4268,25 +4237,21 @@ class VolumeInterrogatorPlatform {
         callback(status, result);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Event handler for the "set" event for the Switch.On characteristic.
-
-    @param {object} [event_info] - accessory and id of the switch service being set.
-    @param {object} [event_info.accessory] - Platform Accessory
-    @param {string} [event_info.service_id]- UUID of the Switch service being set.
-    @param {bool} [value]        - new/rewuested state of the switch
-    @param {function} [callback] - Function callback for homebridge.
-
-    @throws {TypeError} - Thrown when 'event_info' is not an object.
-    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of
-                          _PlatformAccessory.
-    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
-    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to
-                           'event_info.accessory'
-    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a
-                          Switch service.
-    ======================================================================== */
+    /**
+     * @description Event handler for the "set" event for the Switch.On characteristic.
+     * @param {object} eventInfo - accessory and id of the switch service being querried.
+     * @param {_PlatformAccessory} eventInfo.accessory - Reference to the platform accessory being querried
+     * @param {string} eventInfo.service_id - UUID of the Switch service being qeurried.
+     * @param {boolean} value - new/rewuested state of the switch
+     * @param {Function} callback - Function callback for homebridge.
+     * @returns {void}
+     * @throws {TypeError} - Thrown when 'event_info' is not an object.
+     * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+     * @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+     * @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+     * @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+     * @private
+     */
     _handleOnSet(eventInfo, value, callback) {
         // Validate arguments
         if ((eventInfo === undefined) || (typeof(eventInfo) !== 'object') ||
@@ -4363,6 +4328,7 @@ class VolumeInterrogatorPlatform {
                     // If the switch was turned on, then intiate a volume refresh.
                     // eslint-disable-next-line no-lonely-if
                     if (value) {
+                        // eslint-disable-next-line new-cap
                         this._volumeInterrogator.Start();
                     }
                 }
@@ -4382,25 +4348,19 @@ class VolumeInterrogatorPlatform {
         callback(status);
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Get the value of the Service.Switch.On characteristic value
-
-    @param {object} [switchService] - Switch Service
-
-    @return - the value of the On characteristic (true or false)
-
-    @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
-    @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of
-                          _PlatformAccessory.
-    @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
-    @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to
-                           'event_info.accessory'
-    @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a
-                          Switch service.
-    @throws {Error}     - Thrown when the On characteristic cannot be found on the service.
-    ======================================================================== */
     // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Get the value of the Service.Switch.On characteristic value
+     * @param {object} switchService Switch Service (hap.Service)
+     * @returns {boolean} the value of the On characteristic (true or false)
+     * @throws {TypeError} - Thrown when 'switchService' is not an instance of a Switch Service.
+     * @throws {TypeError} - Thrown when 'event_info.accessory' is not an instance of _PlatformAccessory.
+     * @throws {TypeError} - Thrown when 'event_info.service_id' is not a valid string.
+     * @throws {RangeError} - Thrown when 'event_info.service_id' does not belong to 'event_info.accessory'
+     * @throws {TypeError} - Thrown when 'event_info.service_id' does not correspond to a Switch service.
+     * @throws {Error}  - Thrown when the On characteristic cannot be found on the service.
+     * @private
+     */
     _getAccessorySwitchState(switchService) {
         // Validate arguments
         if ((switchService === undefined) || !(switchService instanceof _hap.Service.Switch)) {
@@ -4419,18 +4379,13 @@ class VolumeInterrogatorPlatform {
         return result;
     }
 
-    // eslint-disable-next-line indent
- /* ========================================================================
-    Description: Helper to specify the HAP Service Type from the
-                 FIXED_ACCESSORY_SERICE_TYPES enumeration.
-
-    @param {enum:FIXED_ACCESSORY_SERVICE_TYPES} [service_type] - Type of the service to get.
-
-    @return - the HAP Service type.
-
-    @throws {TypeError} - Thrown if 'service_type' is not a FIXED_ACCESSORY_SERVICE_TYPES value.
-    ======================================================================== */
-    // eslint-disable-next-line class-methods-use-this
+    /**
+     * @description Helper to specify the HAP Service Type from the FIXED_ACCESSORY_SERICE_TYPES enumeration.
+     * @param {FIXED_ACCESSORY_SERVICE_TYPES} serviceType - Type of the service to get.
+     * @returns {object} - the HAP Service type.
+     * @throws {TypeError} - Thrown if 'service_type' is not a FIXED_ACCESSORY_SERVICE_TYPES value.
+     * @private
+     */
     _getAccessoryServiceType(serviceType) {
         // Validate arguments
         if ((serviceType === undefined) || (typeof(serviceType) !== 'number') ||
@@ -4457,14 +4412,11 @@ class VolumeInterrogatorPlatform {
     }
 }
 
-/* Default Export Function for integrating with Homebridge */
-/* ========================================================================
-   Description: Exported default function for Homebridge integration.
-
-   Parameters:  homebridge: reference to the Homebridge API.
-
-   Return:      None
-   ======================================================================== */
+/**
+ * @description Exported default function for Homebridge integration.
+ * @param {object} homebridgeAPI - reference to the Homebridge API.
+ * @returns {void}
+ */
 var main = (homebridgeAPI) => {
     _debug(`homebridge API version: v${homebridgeAPI.version}`);
 

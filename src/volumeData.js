@@ -72,7 +72,7 @@ export const VOLUME_TYPES = {
  * @description Enumeration of supported conversion factors
  * @readonly
  * @enum {number}
- * @property {number} BASE_2- Two's complement conversion factor.
+ * @property {number} BASE_2 - Two's complement conversion factor.
  * @property {number} BASE_10 - Base 10 conversion factor.
  */
 export const CONVERSION_BASES = {
