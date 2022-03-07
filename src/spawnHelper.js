@@ -14,13 +14,8 @@
 // External dependencies and imports.
 import EventEmitter from 'events';
 import _debugModule from 'debug';
-import _childProcessModule from 'child_process';
+const {spawn} = require('child_process');
 
-/**
- * @description Function pointer for spawn function.
- * @private
- */
-const _spawn = _childProcessModule.spawn;
 /**
  * @description Debugging function pointer for runtime related diagnostics.
  * @private
@@ -288,7 +283,7 @@ export class SpawnHelper extends EventEmitter {
         this._pending           = true;  // Think positive :)
 
         // Spawn the request
-        const childProcess = _spawn(this._command, this._arguments, this._options);
+        const childProcess = spawn(this._command, this._arguments, this._options);
         // Register for the stdout.data notifications
         childProcess.stdout.on('data', this._CB__process_stdout_data);
         // Register for the stderr.data notifications

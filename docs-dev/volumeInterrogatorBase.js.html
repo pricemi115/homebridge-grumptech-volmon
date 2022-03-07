@@ -60,7 +60,7 @@
 // External dependencies and imports.
 import EventEmitter from 'events';
 import _debugModule from 'debug';
-import _osModule    from 'os';
+const _os = require('os');
 
 // Internal dependencies.
 // eslint-disable-next-line no-unused-vars
@@ -81,11 +81,6 @@ const _debug_process    = new _debugModule('vi_process');
  */
 // eslint-disable-next-line camelcase
 const _debug_config     = new _debugModule('vi_config');
-/**
- * @description Reference to the operating system functionality.
- * @private
- */
-const _os               = new _osModule();
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console, camelcase

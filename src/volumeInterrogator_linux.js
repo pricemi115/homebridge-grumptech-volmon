@@ -17,13 +17,7 @@ import {SpawnHelper} from './spawnHelper';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
-import _osModule    from 'os';
-
-/**
- * @description Reference to the operating system-related methods and properties.
- * @private
- */
-const _os = new _osModule();
+const _os = require('os');
 
 /**
  * @private
@@ -34,7 +28,7 @@ const _debug_process = new _debugModule('vi_process');  // eslint-disable-line c
  * @private
  * @description Debugging function pointer for configuration related diagnostics.
  */
-const _debug_config = new _debugModule('vi_process');  // eslint-disable-line camelcase
+const _debug_config = new _debugModule('vi_config');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console

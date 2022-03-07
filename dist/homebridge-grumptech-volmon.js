@@ -5,12 +5,30 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var _debugModule = require('debug');
 var promises = require('fs/promises');
 var fs = require('fs');
-var _plistModule = require('plist');
+var _plist = require('plist');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
+function _interopNamespace(e) {
+  if (e && e.__esModule) return e;
+  var n = Object.create(null);
+  if (e) {
+    Object.keys(e).forEach(function (k) {
+      if (k !== 'default') {
+        var d = Object.getOwnPropertyDescriptor(e, k);
+        Object.defineProperty(n, k, d.get ? d : {
+          enumerable: true,
+          get: function () { return e[k]; }
+        });
+      }
+    });
+  }
+  n["default"] = e;
+  return Object.freeze(n);
+}
+
 var _debugModule__default = /*#__PURE__*/_interopDefaultLegacy(_debugModule);
-var _plistModule__default = /*#__PURE__*/_interopDefaultLegacy(_plistModule);
+var _plist__namespace = /*#__PURE__*/_interopNamespace(_plist);
 
 var config_info = {
 	remarks: [
@@ -486,116 +504,6 @@ function unwrapListeners(arr) {
   }
   return ret;
 }
-
-var global$1 = (typeof global !== "undefined" ? global :
-  typeof self !== "undefined" ? self :
-  typeof window !== "undefined" ? window : {});
-
-/*
-The MIT License (MIT)
-
-Copyright (c) 2016 CoderPuppy
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-*/
-var _endianness;
-function endianness() {
-  if (typeof _endianness === 'undefined') {
-    var a = new ArrayBuffer(2);
-    var b = new Uint8Array(a);
-    var c = new Uint16Array(a);
-    b[0] = 1;
-    b[1] = 2;
-    if (c[0] === 258) {
-      _endianness = 'BE';
-    } else if (c[0] === 513){
-      _endianness = 'LE';
-    } else {
-      throw new Error('unable to figure out endianess');
-    }
-  }
-  return _endianness;
-}
-
-function hostname() {
-  if (typeof global$1.location !== 'undefined') {
-    return global$1.location.hostname
-  } else return '';
-}
-
-function loadavg() {
-  return [];
-}
-
-function uptime() {
-  return 0;
-}
-
-function freemem() {
-  return Number.MAX_VALUE;
-}
-
-function totalmem() {
-  return Number.MAX_VALUE;
-}
-
-function cpus() {
-  return [];
-}
-
-function type() {
-  return 'Browser';
-}
-
-function release () {
-  if (typeof global$1.navigator !== 'undefined') {
-    return global$1.navigator.appVersion;
-  }
-  return '';
-}
-
-function networkInterfaces(){}
-function getNetworkInterfaces(){}
-
-function tmpDir() {
-  return '/tmp';
-}
-var tmpdir = tmpDir;
-
-var EOL = '\n';
-var _osModule = {
-  EOL: EOL,
-  tmpdir: tmpdir,
-  tmpDir: tmpDir,
-  networkInterfaces:networkInterfaces,
-  getNetworkInterfaces: getNetworkInterfaces,
-  release: release,
-  type: type,
-  cpus: cpus,
-  totalmem: totalmem,
-  freemem: freemem,
-  uptime: uptime,
-  loadavg: loadavg,
-  hostname: hostname,
-  endianness: endianness,
-};
 
 /**
  * @description Provides read/write access to data metrics of interest.
@@ -1276,8 +1184,6 @@ class VolumeWatcher extends EventEmitter {
     }
 }
 
-var _childProcessModule = {};
-
 /**
  * @description Wrapper for managing spawned tasks.
  * @copyright 2020
@@ -1290,12 +1196,8 @@ var _childProcessModule = {};
  * @requires child_process
  * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/child_process.html}
  */
+const {spawn} = require('child_process');
 
-/**
- * @description Function pointer for spawn function.
- * @private
- */
-const _spawn = _childProcessModule.spawn;
 /**
  * @description Debugging function pointer for runtime related diagnostics.
  * @private
@@ -1563,7 +1465,7 @@ class SpawnHelper extends EventEmitter {
         this._pending           = true;  // Think positive :)
 
         // Spawn the request
-        const childProcess = _spawn(this._command, this._arguments, this._options);
+        const childProcess = spawn(this._command, this._arguments, this._options);
         // Register for the stdout.data notifications
         childProcess.stdout.on('data', this._CB__process_stdout_data);
         // Register for the stderr.data notifications
@@ -1673,6 +1575,7 @@ class SpawnHelper extends EventEmitter {
  * @requires os
  * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/os.html}
  */
+const _os$1 = require('os');
 
 // External dependencies and imports.
 /**
@@ -1687,11 +1590,6 @@ const _debug_process$2    = new _debugModule__default["default"]('vi_process');
  */
 // eslint-disable-next-line camelcase
 const _debug_config$2     = new _debugModule__default["default"]('vi_config');
-/**
- * @description Reference to the operating system functionality.
- * @private
- */
-const _os$1               = new _osModule();
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console, camelcase
@@ -2400,12 +2298,7 @@ const _debug_process$1 = new _debugModule__default["default"]('vi_process');  //
  * @private
  * @description Debugging function pointer for configuration related diagnostics.
  */
-const _debug_config$1 = new _debugModule__default["default"]('vi_process');  // eslint-disable-line camelcase
-/**
- * @private
- * @description Property List helpers.
- */
-const _plist = new _plistModule__default["default"]('plist');
+const _debug_config$1 = new _debugModule__default["default"]('vi_config');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -2819,7 +2712,7 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {    // eslint-di
 
                 if (!errorEncountered) {
                     // Attempt to parse the data as a plist.
-                    const config = _plist.parse(response.result.toString());
+                    const config = _plist__namespace.parse(response.result.toString());
 
                     // Determine if the volume should be shown.
                     const  isShown = this._isVolumeShown(response.token.MountPoint);
@@ -3143,12 +3036,7 @@ class VolumeInterrogator_darwin extends VolumeInterrogatorBase {    // eslint-di
  * @requires os
  * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/os.html}
  */
-
-/**
- * @description Reference to the operating system-related methods and properties.
- * @private
- */
-const _os = new _osModule();
+const _os = require('os');
 
 /**
  * @private
@@ -3159,7 +3047,7 @@ const _debug_process = new _debugModule__default["default"]('vi_process');  // e
  * @private
  * @description Debugging function pointer for configuration related diagnostics.
  */
-const _debug_config = new _debugModule__default["default"]('vi_process');  // eslint-disable-line camelcase
+const _debug_config = new _debugModule__default["default"]('vi_config');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
