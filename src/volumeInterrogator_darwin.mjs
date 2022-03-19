@@ -10,24 +10,24 @@
  */
 
 // Internal dependencies.
-import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase';
-import {VOLUME_TYPES, VolumeData} from './volumeData';
-import {SpawnHelper} from './spawnHelper';
+import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase.mjs';
+import {VOLUME_TYPES, VolumeData} from './volumeData.mjs';
+import {SpawnHelper} from './spawnHelper.mjs';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
-import * as _plist from 'plist';
+import _plistModule from 'plist';
 
 /**
  * @private
  * @description Debugging function pointer for runtime related diagnostics.
  */
-const _debug_process = new _debugModule('vi_process');  // eslint-disable-line camelcase
+const _debug_process = _debugModule('vi_process');  // eslint-disable-line camelcase
 /**
  * @private
  * @description Debugging function pointer for configuration related diagnostics.
  */
-const _debug_config = new _debugModule('vi_config');  // eslint-disable-line camelcase
+const _debug_config = _debugModule('vi_config');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -441,7 +441,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
                 if (!errorEncountered) {
                     // Attempt to parse the data as a plist.
-                    const config = _plist.parse(response.result.toString());
+                    const config = _plistModule.parse(response.result.toString());
 
                     // Determine if the volume should be shown.
                     const  isShown = this._isVolumeShown(response.token.MountPoint);

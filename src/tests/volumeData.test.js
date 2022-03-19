@@ -3,7 +3,7 @@
 /* eslint-disable brace-style */
 /* eslint-disable semi */
 /* eslint-disable new-cap */
-import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from '../volumeData';
+import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from '../volumeData.mjs';
 
 describe('Module-level tests', ()=>{
     test('Module VolumeData export expected value', ()=>{

@@ -14,13 +14,13 @@
 // External dependencies and imports.
 import EventEmitter from 'events';
 import _debugModule from 'debug';
-const {spawn} = require('child_process');
+import {spawn as _spawn} from 'child_process';
 
 /**
  * @description Debugging function pointer for runtime related diagnostics.
  * @private
  */
-const _debug = new _debugModule('spawn_helper');
+const _debug = _debugModule('spawn_helper');
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console
@@ -283,7 +283,7 @@ export class SpawnHelper extends EventEmitter {
         this._pending           = true;  // Think positive :)
 
         // Spawn the request
-        const childProcess = spawn(this._command, this._arguments, this._options);
+        const childProcess = _spawn(this._command, this._arguments, this._options);
         // Register for the stdout.data notifications
         childProcess.stdout.on('data', this._CB__process_stdout_data);
         // Register for the stderr.data notifications

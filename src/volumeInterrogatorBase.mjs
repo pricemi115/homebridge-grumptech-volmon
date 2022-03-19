@@ -14,13 +14,13 @@
 // External dependencies and imports.
 import EventEmitter from 'events';
 import _debugModule from 'debug';
-const _os = require('os');
+import {uptime as _upTime} from 'os';
 
 // Internal dependencies.
 // eslint-disable-next-line no-unused-vars
-import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData';
-import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers';
-import {SpawnHelper} from './spawnHelper';
+import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData.mjs';
+import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers.mjs';
+import {SpawnHelper} from './spawnHelper.mjs';
 
 // External dependencies and imports.
 /**
@@ -28,13 +28,13 @@ import {SpawnHelper} from './spawnHelper';
  * @private
  */
 // eslint-disable-next-line camelcase
-const _debug_process    = new _debugModule('vi_process');
+const _debug_process    = _debugModule('vi_process');
 /**
  * @description Debugging function pointer for configuration related diagnostics.
  * @private
  */
 // eslint-disable-next-line camelcase
-const _debug_config     = new _debugModule('vi_config');
+const _debug_config     = _debugModule('vi_config');
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console, camelcase
@@ -362,7 +362,8 @@ export class VolumeInterrogatorBase extends EventEmitter {
         this.Stop();
 
         // Get the current uptime of the operating system
-        const uptime = _os.uptime() * 1000.0;
+        const uptime = _upTime() * 1000.0;
+
         // Has the operating system been running long enough?
         if (uptime < MIN_OS_UPTIME_TO_START_MS) {
             // No. So defer the start for a bit.

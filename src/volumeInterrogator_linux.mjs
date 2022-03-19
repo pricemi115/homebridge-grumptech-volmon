@@ -11,24 +11,24 @@
  * @see {@link https://nodejs.org/dist/latest-v16.x/docs/api/os.html}
  */
 // Internal dependencies.
-import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase';
-import {VOLUME_TYPES, VolumeData} from './volumeData';
-import {SpawnHelper} from './spawnHelper';
+import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase.mjs';
+import {VOLUME_TYPES, VolumeData} from './volumeData.mjs';
+import {SpawnHelper} from './spawnHelper.mjs';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
-const _os = require('os');
+import {userInfo as _userInfo} from 'os';
 
 /**
  * @private
  * @description Debugging function pointer for runtime related diagnostics.
  */
-const _debug_process = new _debugModule('vi_process');  // eslint-disable-line camelcase
+const _debug_process = _debugModule('vi_process');  // eslint-disable-line camelcase
 /**
  * @private
  * @description Debugging function pointer for configuration related diagnostics.
  */
-const _debug_config = new _debugModule('vi_config');  // eslint-disable-line camelcase
+const _debug_config = _debugModule('vi_config');  // eslint-disable-line camelcase
 
 // Bind debug to console.log
 // eslint-disable-next-line camelcase, no-console
@@ -116,7 +116,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase { // eslin
      * @returns {string[]} - Array of folders to be watched for changes.
      */
     get _watchFolders() {
-        const {username} = _os.userInfo();
+        const {username} = _userInfo();
         _debug_process(`Username: ${username}`);
 
         return ([`/media/${username}`, '/mnt']);

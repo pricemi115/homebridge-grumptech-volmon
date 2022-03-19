@@ -7,8 +7,6 @@
  * @see {@link https://github.com/debug-js/debug#readme}
  */
 
-// eslint-disable-next-line no-unused-vars
-import {version as PLUGIN_VER, config_info as CONFIG_INFO} from '../package.json';
 /*
  * IMPORTANT NOTICE
  *
@@ -54,30 +52,32 @@ import {
 */
 
 // Internal dependencies
-import {VolumeInterrogator_darwin as _VolInterrogatorDarwin} from './volumeInterrogator_darwin';
-import {VolumeInterrogator_linux  as _VolInterrogatorLinux} from './volumeInterrogator_linux';
-import {VolumeData} from './volumeData';
+import {VolumeInterrogator_darwin as _VolInterrogatorDarwin} from './volumeInterrogator_darwin.mjs';
+import {VolumeInterrogator_linux  as _VolInterrogatorLinux} from './volumeInterrogator_linux.mjs';
+import {VolumeData} from './volumeData.mjs';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
+import {readFileSync as _readFileSync} from 'fs';
+import {fileURLToPath as _fileURLToPath} from 'url';
+import {join as _join, dirname as _dirname} from 'path';
+
+/**
+ * @description Absolute path to this script file.
+ * @private
+ */
+const __filename = _fileURLToPath(import.meta.url);
+/**
+ * @description Absolute path to the folder of this script file.
+ * @private
+ */
+const __dirname = _dirname(__filename);
 
 /**
  * @private
  * @description Debugging function pointer for runtime related diagnostics.
  */
-const _debug = new _debugModule('homebridge');
-
-// Configuration constants.
-/**
- * @description Plugin name
- * @private
- */
-const PLUGIN_NAME   = CONFIG_INFO.plugin;
-/**
- * @description Platform name
- * @private
- */
-const PLATFORM_NAME = CONFIG_INFO.platform;
+const _debug = _debugModule('homebridge');
 
 // Internal Constants
 // History:
@@ -131,6 +131,11 @@ const SUPPORTED_OPERATING_SYSTEMS = {
     // eslint-disable-next-line key-spacing
     OS_LINUX:  'linux',
 };
+
+/**
+ * @description Package Information
+ */
+let _PackageInfo;
 
 // Accessory must be created from PlatformAccessory Constructor
 /**
@@ -327,7 +332,7 @@ class VolumeInterrogatorPlatform {
      * @private
      */
     async _doInitialization() {
-        this._log(`Homebridge Plug-In ${PLATFORM_NAME} has finished launching.`);
+        this._log(`Homebridge Plug-In ${_PackageInfo.CONFIG_INFO.platform} has finished launching.`);
 
         // Abort if there is no interrogator
         if (this._volumeInterrogator === undefined) {
@@ -409,7 +414,7 @@ class VolumeInterrogatorPlatform {
             this._configureAccessory(accessoryControls);
 
             // register the manual refresh switch
-            this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessoryControls]);
+            this._api.registerPlatformAccessories(_PackageInfo.CONFIG_INFO.plugin, _PackageInfo.CONFIG_INFO.platform, [accessoryControls]);
         }
 
         // Start interrogation.
@@ -647,7 +652,7 @@ class VolumeInterrogatorPlatform {
             this._log.debug('Error when configuring accessory.');
         }
 
-        this._api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this._api.registerPlatformAccessories(_PackageInfo.CONFIG_INFO.plugin, _PackageInfo.CONFIG_INFO.platform, [accessory]);
     }
 
     /**
@@ -760,7 +765,7 @@ class VolumeInterrogatorPlatform {
         }
 
         /* Unregister the accessory */
-        this._api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this._api.unregisterPlatformAccessories(_PackageInfo.CONFIG_INFO.plugin, _PackageInfo.CONFIG_INFO.platform, [accessory]);
         /* remove the accessory from our mapping */
         this._accessories.delete(accessory.displayName);
     }
@@ -1102,12 +1107,29 @@ class VolumeInterrogatorPlatform {
 }
 
 /**
+ * @description Helper to get the information of interest from the package.json file.
+ * @returns {object} Data of interest.
+ */
+function _getPackageInfo() {
+    const packageFilename = _join(__dirname, '../package.json');
+    const rawContents = _readFileSync(packageFilename);
+    const parsedData = JSON.parse(rawContents);
+
+    const pkgInfo = {CONFIG_INFO: parsedData.config_info, PLUGIN_VER: parsedData.version};
+
+    return pkgInfo;
+}
+
+/**
  * @description Exported default function for Homebridge integration.
  * @param {object} homebridgeAPI - reference to the Homebridge API.
  * @returns {void}
  */
 export default (homebridgeAPI) => {
     _debug(`homebridge API version: v${homebridgeAPI.version}`);
+
+    // Get the package information.
+    _PackageInfo = _getPackageInfo();
 
     // Accessory must be created from PlatformAccessory Constructor
     _PlatformAccessory  = homebridgeAPI.platformAccessory;
@@ -1125,6 +1147,6 @@ export default (homebridgeAPI) => {
     _hap                = homebridgeAPI.hap;
 
     // Register the paltform.
-    _debug(`Registering platform: ${PLATFORM_NAME}`);
-    homebridgeAPI.registerPlatform(PLATFORM_NAME, VolumeInterrogatorPlatform);
+    _debug(`Registering platform: ${_PackageInfo.CONFIG_INFO.platform}`);
+    homebridgeAPI.registerPlatform(_PackageInfo.CONFIG_INFO.platform, VolumeInterrogatorPlatform);
 };

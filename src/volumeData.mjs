@@ -14,7 +14,7 @@ import _debugModule from 'debug';
  * @description Debugging function pointer for runtime related diagnostics.
  * @private
  */
-const _debug = new _debugModule('vol_data');
+const _debug = _debugModule('vol_data');
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console
