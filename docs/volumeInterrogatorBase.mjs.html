@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>volumeInterrogatorBase.js - Documentation</title>
+    <title>volumeInterrogatorBase.mjs - Documentation</title>
     
     
     <script src="scripts/prettify/prettify.js"></script>
@@ -29,12 +29,12 @@
     
     <input type="text" id="nav-search" placeholder="Search" />
     
-    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/pricemi115/homebridge-grumptech-volmon" target="_blank" >GrumpTech</a></h2><h3>Modules</h3><ul><li><a href="module-SpawnHelperModule.html">SpawnHelperModule</a></li><li><a href="module-VolumeDataModule.html">VolumeDataModule</a><ul class='members'><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.CONVERSION_BASES">CONVERSION_BASES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.VOLUME_TYPES">VOLUME_TYPES</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.html">VolumeInterrogatorBaseModule</a></li><li><a href="module-VolumeInterrogatorDarwinModule.html">VolumeInterrogatorDarwinModule</a></li><li><a href="module-VolumeInterrogatorLinuxModule.html">VolumeInterrogatorLinuxModule</a></li><li><a href="module-VolumeMonitorModule.html">VolumeMonitorModule</a></li><li><a href="module-VolumeWatcherModule.html">VolumeWatcherModule</a></li></ul><h3>Events</h3><ul><li><a href="module-SpawnHelperModule.html#event:event:complete">complete</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:ready">ready</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:scanning">scanning</a></li><li><a href="module-VolumeWatcherModule.html#event:event:change_detected">change_detected</a></li><li><a href="module-VolumeWatcherModule.html#event:event:watch_add_result">watch_add_result</a></li></ul><h3>Classes</h3><ul><li><a href="module-SpawnHelperModule.SpawnHelper.html">SpawnHelper</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#Spawn">Spawn</a></li></ul></li><li><a href="module-VolumeDataModule.VolumeData.html">VolumeData</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFrom1KBlockaToBytes">ConvertFrom1KBlockaToBytes</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFromBytesToGB">ConvertFromBytesToGB</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#IsMatch">IsMatch</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html">VolumeInterrogatorBase</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#._validateVolumeExclusionMask">_validateVolumeExclusionMask</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_handleVolumeWatcherAdded">_handleVolumeWatcherAdded</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Start">Start</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Stop">Stop</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Terminate">Terminate</a></li></ul></li><li><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html">VolumeInterrogator_darwin</a></li><li><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html">VolumeInterrogator_linux</a></li><li><a href="module-VolumeWatcherModule.VolumeWatcher.html">VolumeWatcher</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#AddWatches">AddWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#DeleteWatch">DeleteWatch</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ListWatches">ListWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#Terminate">Terminate</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ValidateAccess">ValidateAccess</a></li></ul></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-license.html">license</a></li><li><a href="tutorial-security.html">security</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/pricemi115/homebridge-grumptech-volmon" target="_blank" >GrumpTech</a></h2><h3>Modules</h3><ul><li><a href="module-SpawnHelperModule.html">SpawnHelperModule</a></li><li><a href="module-VolumeDataModule.html">VolumeDataModule</a><ul class='members'><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.CONVERSION_BASES">CONVERSION_BASES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.VOLUME_TYPES">VOLUME_TYPES</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.html">VolumeInterrogatorBaseModule</a></li><li><a href="module-VolumeInterrogatorDarwinModule.html">VolumeInterrogatorDarwinModule</a></li><li><a href="module-VolumeInterrogatorLinuxModule.html">VolumeInterrogatorLinuxModule</a></li><li><a href="module-VolumeMonitorModule.html">VolumeMonitorModule</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule.html#~_getPackageInfo">_getPackageInfo</a></li></ul></li><li><a href="module-VolumeWatcherModule.html">VolumeWatcherModule</a></li></ul><h3>Events</h3><ul><li><a href="module-SpawnHelperModule.html#event:event:complete">complete</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:ready">ready</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:scanning">scanning</a></li><li><a href="module-VolumeWatcherModule.html#event:event:change_detected">change_detected</a></li><li><a href="module-VolumeWatcherModule.html#event:event:watch_add_result">watch_add_result</a></li></ul><h3>Classes</h3><ul><li><a href="module-SpawnHelperModule.SpawnHelper.html">SpawnHelper</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#Spawn">Spawn</a></li></ul></li><li><a href="module-VolumeDataModule.VolumeData.html">VolumeData</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFrom1KBlockaToBytes">ConvertFrom1KBlockaToBytes</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFromBytesToGB">ConvertFromBytesToGB</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#IsMatch">IsMatch</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html">VolumeInterrogatorBase</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#._validateVolumeExclusionMask">_validateVolumeExclusionMask</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_handleVolumeWatcherAdded">_handleVolumeWatcherAdded</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Start">Start</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Stop">Stop</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Terminate">Terminate</a></li></ul></li><li><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html">VolumeInterrogator_darwin</a></li><li><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html">VolumeInterrogator_linux</a></li><li><a href="module-VolumeWatcherModule.VolumeWatcher.html">VolumeWatcher</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#AddWatches">AddWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#DeleteWatch">DeleteWatch</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ListWatches">ListWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#Terminate">Terminate</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ValidateAccess">ValidateAccess</a></li></ul></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-license.html">license</a></li><li><a href="tutorial-security.html">security</a></li></ul>
 </nav>
 
 <div id="main">
     
-    <h1 class="page-title">volumeInterrogatorBase.js</h1>
+    <h1 class="page-title">volumeInterrogatorBase.mjs</h1>
     
 
     
@@ -60,13 +60,13 @@
 // External dependencies and imports.
 import EventEmitter from 'events';
 import _debugModule from 'debug';
-const _os = require('os');
+import {uptime as _upTime} from 'os';
 
 // Internal dependencies.
 // eslint-disable-next-line no-unused-vars
-import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData';
-import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers';
-import {SpawnHelper} from './spawnHelper';
+import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData.mjs';
+import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers.mjs';
+import {SpawnHelper} from './spawnHelper.mjs';
 
 // External dependencies and imports.
 /**
@@ -74,13 +74,13 @@ import {SpawnHelper} from './spawnHelper';
  * @private
  */
 // eslint-disable-next-line camelcase
-const _debug_process    = new _debugModule('vi_process');
+const _debug_process    = _debugModule('vi_process');
 /**
  * @description Debugging function pointer for configuration related diagnostics.
  * @private
  */
 // eslint-disable-next-line camelcase
-const _debug_config     = new _debugModule('vi_config');
+const _debug_config     = _debugModule('vi_config');
 
 // Bind debug to console.log
 // eslint-disable-next-line no-console, camelcase
@@ -408,7 +408,8 @@ export class VolumeInterrogatorBase extends EventEmitter {
         this.Stop();
 
         // Get the current uptime of the operating system
-        const uptime = _os.uptime() * 1000.0;
+        const uptime = _upTime() * 1000.0;
+
         // Has the operating system been running long enough?
         if (uptime &lt; MIN_OS_UPTIME_TO_START_MS) {
             // No. So defer the start for a bit.

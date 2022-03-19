@@ -32,6 +32,7 @@ _debug.log = console.log.bind(console);
  * @type {object}
  * @param {boolean} e.valid - Flag indicating if the spawned task completed successfully.
  * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
+ * @param {object} e.token - Token passed to the original Spawn request.
  * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
  */
 /**
