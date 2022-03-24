@@ -75,7 +75,7 @@ export const VOLUME_WATCHER_EVENTS = {
 /**
  * @description Change detected notification
  * @event module:VolumeWatcherModule#event:change_detected
- * @type {VOLUME_CHANGE_DETECTION_BITMASK_DEF}
+ * @type {string}
  * @type {string}
  */
 /**

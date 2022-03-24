@@ -19,7 +19,7 @@ describe('Instance tests', ()=>{
     let spawnHelper;
     beforeEach(()=>{
         spawnHelper = new SpawnHelper();
-    })
+    });
     describe('API & Default tests', ()=> {
         test('IsPending', ()=>{
             expect(spawnHelper).toHaveProperty('IsPending', false);
