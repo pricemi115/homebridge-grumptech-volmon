@@ -1,7 +1,53 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>main.mjs - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/pricemi115/homebridge-grumptech-volmon" target="_blank" >GrumpTech</a></h2><h3>Modules</h3><ul><li><a href="module-SpawnHelperModule.html">SpawnHelperModule</a></li><li><a href="module-VolumeDataModule.html">VolumeDataModule</a><ul class='members'><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.CONVERSION_BASES">CONVERSION_BASES</a></li><li data-type='member' style='display: none;'><a href="module-VolumeDataModule.html#.VOLUME_TYPES">VOLUME_TYPES</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.html">VolumeInterrogatorBaseModule</a></li><li><a href="module-VolumeInterrogatorDarwinModule.html">VolumeInterrogatorDarwinModule</a></li><li><a href="module-VolumeInterrogatorLinuxModule.html">VolumeInterrogatorLinuxModule</a></li><li><a href="module-VolumeMonitorModule.html">VolumeMonitorModule</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeMonitorModule.html#~_getPackageInfo">_getPackageInfo</a></li></ul></li><li><a href="module-VolumeWatcherModule.html">VolumeWatcherModule</a></li></ul><h3>Events</h3><ul><li><a href="module-SpawnHelperModule.html#event:event:complete">complete</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:ready">ready</a></li><li><a href="module-VolumeInterrogatorBaseModule.html#event:event:scanning">scanning</a></li><li><a href="module-VolumeWatcherModule.html#event:event:change_detected">change_detected</a></li><li><a href="module-VolumeWatcherModule.html#event:event:watch_add_result">watch_add_result</a></li></ul><h3>Classes</h3><ul><li><a href="module-SpawnHelperModule.SpawnHelper.html">SpawnHelper</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-SpawnHelperModule.SpawnHelper.html#Spawn">Spawn</a></li></ul></li><li><a href="module-VolumeDataModule.VolumeData.html">VolumeData</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFrom1KBlockaToBytes">ConvertFrom1KBlockaToBytes</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#.ConvertFromBytesToGB">ConvertFromBytesToGB</a></li><li data-type='method' style='display: none;'><a href="module-VolumeDataModule.VolumeData.html#IsMatch">IsMatch</a></li></ul></li><li><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html">VolumeInterrogatorBase</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#._validateVolumeExclusionMask">_validateVolumeExclusionMask</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#_handleVolumeWatcherAdded">_handleVolumeWatcherAdded</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Start">Start</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Stop">Stop</a></li><li data-type='method' style='display: none;'><a href="module-VolumeInterrogatorBaseModule.VolumeInterrogatorBase.html#Terminate">Terminate</a></li></ul></li><li><a href="module-VolumeInterrogatorDarwinModule.VolumeInterrogator_darwin.html">VolumeInterrogator_darwin</a></li><li><a href="module-VolumeInterrogatorLinuxModule.VolumeInterrogator_linux.html">VolumeInterrogator_linux</a></li><li><a href="module-VolumeWatcherModule.VolumeWatcher.html">VolumeWatcher</a><ul class='methods'><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#AddWatches">AddWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#DeleteWatch">DeleteWatch</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ListWatches">ListWatches</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#Terminate">Terminate</a></li><li data-type='method' style='display: none;'><a href="module-VolumeWatcherModule.VolumeWatcher.html#ValidateAccess">ValidateAccess</a></li></ul></li></ul><h3>Tutorials</h3><ul><li><a href="tutorial-license.html">license</a></li><li><a href="tutorial-security.html">security</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">main.mjs</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * @description Homebridge integration for Volume Monitor
  * @copyright 2021
- * @author Mike Price <dev.grumptech@gmail.com>
+ * @author Mike Price &lt;dev.grumptech@gmail.com>
  * @module VolumeMonitorModule
  * @requires debug
  * @see {@link https://github.com/debug-js/debug#readme}
@@ -204,7 +250,7 @@ class VolumeInterrogatorPlatform {
                     let exclusionMasksValid = true;
                     // eslint-disable-next-line no-restricted-syntax
                     for (const mask of theSettings.exclusion_masks) {
-                        exclusionMasksValid = exclusionMasksValid && (typeof(mask) === 'string');
+                        exclusionMasksValid = exclusionMasksValid &amp;&amp; (typeof(mask) === 'string');
                     }
                     if (exclusionMasksValid) {
                         // Set the exclusion masks.
@@ -220,7 +266,7 @@ class VolumeInterrogatorPlatform {
                 if (typeof(theSettings.enable_volume_customizations) === 'boolean') {
                     // Are the volume customizations enabled?
                     if (theSettings.enable_volume_customizations) {
-                        if ((Object.prototype.hasOwnProperty.call(theSettings, 'volume_customizations')) &&
+                        if ((Object.prototype.hasOwnProperty.call(theSettings, 'volume_customizations')) &amp;&amp;
                             (Array.isArray(theSettings.volume_customizations))) {
                             viConfig.volume_customizations = theSettings.volume_customizations;
                         }
@@ -235,7 +281,7 @@ class VolumeInterrogatorPlatform {
         // Underlying engine. Operating system dependent.
         try {
             switch (HOST_OPERATING_SYSTEM.toLowerCase()) {
-                // OSX & macOS
+                // OSX &amp; macOS
                 case SUPPORTED_OPERATING_SYSTEMS.OS_DARWIN: {
                     this._volumeInterrogator = new _VolInterrogatorDarwin(viConfig);
                 }
@@ -349,10 +395,10 @@ class VolumeInterrogatorPlatform {
         // Check for Settings
         if (theSettings !== undefined) {
             // Polling Interval {Hours}
-            if ((Object.prototype.hasOwnProperty.call(theSettings, 'polling_interval')) &&
+            if ((Object.prototype.hasOwnProperty.call(theSettings, 'polling_interval')) &amp;&amp;
                 (typeof(theSettings.polling_interval) === 'number')) {
-                if ((theSettings.polling_interval >= this._volumeInterrogator.MinimumPeriod) &&
-                    (theSettings.polling_interval <= this._volumeInterrogator.MaximumPeriod)) {
+                if ((theSettings.polling_interval >= this._volumeInterrogator.MinimumPeriod) &amp;&amp;
+                    (theSettings.polling_interval &lt;= this._volumeInterrogator.MaximumPeriod)) {
                     // Set the period (in hours)
                     this._volumeInterrogator.Period = theSettings.polling_interval;
                 }
@@ -398,7 +444,7 @@ class VolumeInterrogatorPlatform {
                 ],
             };
 
-            // Create & Configure the control services.
+            // Create &amp; Configure the control services.
             for (const serviceItem of Object.values(FIXED_ACCESSORY_INFO.CONTROLS.service_list)) {
                 const serviceType = this._getAccessoryServiceType(serviceItem.type);
                 const service = accessoryControls.addService(serviceType, serviceItem.uuid, serviceItem.udst);
@@ -529,8 +575,8 @@ class VolumeInterrogatorPlatform {
                     // Do we know this volume already?
                     const volIsKnown = this._accessories.has(volData.Name);
 
-                    // Is this volume visible & new to us?
-                    if ((volData.IsShown) &&
+                    // Is this volume visible &amp; new to us?
+                    if ((volData.IsShown) &amp;&amp;
                         (!volIsKnown)) {
                         // Does not exist. Add it
                         this._addBatteryServiceAccessory(volData.Name);
@@ -566,7 +612,7 @@ class VolumeInterrogatorPlatform {
                             const resultFound = data.results.find((element) => {
                                 return element.Name === volData.Name;
                             });
-                            if ((this._accessories.has(volData.Name)) &&
+                            if ((this._accessories.has(volData.Name)) &amp;&amp;
                                 ((!volData.IsShown) || (resultFound === undefined))) {
                                 purgeList.push(this._accessories.get(volData.Name));
                             }
@@ -574,7 +620,7 @@ class VolumeInterrogatorPlatform {
                         // Check for accessories whose volumes are unknown.
                         const excludedAccessoryKeys = [FIXED_ACCESSORY_INFO.CONTROLS.model];
                         for (const key of this._accessories.keys()) {
-                            if ((!this._volumesData.has(key)) &&
+                            if ((!this._volumesData.has(key)) &amp;&amp;
                                 (excludedAccessoryKeys.indexOf(key) === -1)) {
                                 purgeList.push(this._accessories.get(key));
                             }
@@ -591,7 +637,7 @@ class VolumeInterrogatorPlatform {
                     FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid,
                     FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst,
                 );
-                if ((serviceManlRefresh !== undefined) &&
+                if ((serviceManlRefresh !== undefined) &amp;&amp;
                     (this._getAccessorySwitchState(serviceManlRefresh))) {
                     // Ensure the switch is turned back off.
                     serviceManlRefresh.updateCharacteristic(_hap.Characteristic.On, false);
@@ -624,7 +670,7 @@ class VolumeInterrogatorPlatform {
         if ((name === undefined) || (typeof(name) !== 'string')) {
             throw new TypeError('name must be a string');
         }
-        if (name.length <= 0) {
+        if (name.length &lt;= 0) {
             throw new RangeError('name must be a non-zero length string.');
         }
         if (this._accessories.has(name)) {
@@ -678,9 +724,9 @@ class VolumeInterrogatorPlatform {
 
         let theSwitchStates;
         const theSettings = accessory.context.SETTINGS;
-        if ((theSettings !== undefined) &&
-            (typeof(theSettings) === 'object') &&
-            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates')) &&
+        if ((theSettings !== undefined) &amp;&amp;
+            (typeof(theSettings) === 'object') &amp;&amp;
+            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates')) &amp;&amp;
             (Array.isArray(theSettings.SwitchStates))) {
             theSwitchStates = theSettings.SwitchStates;
         }
@@ -692,11 +738,11 @@ class VolumeInterrogatorPlatform {
                 let switchStateValue = true;
                 if (Array.isArray(theSwitchStates)) {
                     for (const switchStateConfig of theSwitchStates) {
-                        if ((typeof(switchStateConfig) === 'object') &&
-                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &&
-                            (typeof(switchStateConfig.id) === 'string') &&
-                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &&
-                            (typeof(switchStateConfig.state) === 'boolean') &&
+                        if ((typeof(switchStateConfig) === 'object') &amp;&amp;
+                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'id')) &amp;&amp;
+                            (typeof(switchStateConfig.id) === 'string') &amp;&amp;
+                            (Object.prototype.hasOwnProperty.call(switchStateConfig, 'state')) &amp;&amp;
+                            (typeof(switchStateConfig.state) === 'boolean') &amp;&amp;
                             (switchStateConfig.id === service.displayName)) {
                             switchStateValue = switchStateConfig.state;
                             break;
@@ -894,7 +940,7 @@ class VolumeInterrogatorPlatform {
             throw new TypeError('\'event_info.accessory\' must be a PlatformAccessory');
         }
         if ((eventInfo.service_id === undefined) || (typeof(eventInfo.service_id) !== 'string') ||
-            (eventInfo.service_id.length <= 0)) {
+            (eventInfo.service_id.length &lt;= 0)) {
             throw new TypeError('\'event_info.service_id\' must be non-null string.');
         }
         const id = eventInfo.service_id.split('.');
@@ -955,7 +1001,7 @@ class VolumeInterrogatorPlatform {
             throw new TypeError('\'event_info.accessory\' must be a PlatformAccessory');
         }
         if ((eventInfo.service_id === undefined) || (typeof(eventInfo.service_id) !== 'string') ||
-            (eventInfo.service_id.length <= 0)) {
+            (eventInfo.service_id.length &lt;= 0)) {
             throw new TypeError('\'event_info.service_id\' must be non-null string.');
         }
         const id = eventInfo.service_id.split('.');
@@ -977,9 +1023,9 @@ class VolumeInterrogatorPlatform {
 
         let theSwitchState;
         const theSettings = eventInfo.accessory.context.SETTINGS;
-        if ((theSettings !== undefined) &&
-            (typeof(theSettings) === 'object') &&
-            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates')) &&
+        if ((theSettings !== undefined) &amp;&amp;
+            (typeof(theSettings) === 'object') &amp;&amp;
+            (Object.prototype.hasOwnProperty.call(theSettings, 'SwitchStates')) &amp;&amp;
             (Array.isArray(theSettings.SwitchStates))) {
             for (const candidateSwitchState of theSettings.SwitchStates) {
                 if (candidateSwitchState.id === theService.displayName) {
@@ -993,13 +1039,13 @@ class VolumeInterrogatorPlatform {
         try {
             // The processing of the request to set a switch is context (switch) specific.
             // The Manual Refresh switch has special logic.
-            if ((id[0] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid) &&
+            if ((id[0] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.uuid) &amp;&amp;
                 (id[1] === FIXED_ACCESSORY_INFO.CONTROLS.service_list.MANUAL_REFRESH.udst)) {
                 const currentValue = this._getAccessorySwitchState(theService);
 
                 // The user is not allowed to turn the switch off.
                 // It will auto reset when the current check is complete.
-                if ((!value) && (currentValue)) {
+                if ((!value) &amp;&amp; (currentValue)) {
                     // Attempting to turn the switch from on to off.
                     // Not permitted.
                     this._log.debug(`Unable to turn the '${eventInfo.accessory.displayName}' switch off.`);
@@ -1081,7 +1127,7 @@ class VolumeInterrogatorPlatform {
     _getAccessoryServiceType(serviceType) {
         // Validate arguments
         if ((serviceType === undefined) || (typeof(serviceType) !== 'number') ||
-            (Object.values(FIXED_ACCESSORY_SERVICE_TYPES).indexOf(serviceType) < 0)) {
+            (Object.values(FIXED_ACCESSORY_SERVICE_TYPES).indexOf(serviceType) &lt; 0)) {
             throw new TypeError(`service_type not a member of FIXED_ACCESSORY_SERVICE_TYPES. ${serviceType}`);
         }
 
@@ -1150,3 +1196,32 @@ export default (homebridgeAPI) => {
     _debug(`Registering platform: ${_PackageInfo.CONFIG_INFO.platform}`);
     homebridgeAPI.registerPlatform(_PackageInfo.CONFIG_INFO.platform, VolumeInterrogatorPlatform);
 };
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.10</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+<script src="scripts/collapse.js" defer></script>
+
+
+</body>
+</html>
