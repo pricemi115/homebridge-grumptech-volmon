@@ -70,6 +70,6 @@
   },
   "dependencies": {
     "debug": "^4.3.3",
-    "plist": "^3.0.4"
+    "plist": "^3.0.5"
   }
 }
