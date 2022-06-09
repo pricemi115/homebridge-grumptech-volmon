@@ -1,7 +1,7 @@
 {
   "name": "homebridge-grumptech-volmon",
   "displayName": "Homebridge Volume Monitor",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Free Space monitor for mounted volumes.",
   "type": "module",
   "main": "dist/homebridge-grumptech-volmon.js",
@@ -31,7 +31,7 @@
   "scripts": {
     "prepare": "npm run docs; npm run build",
     "run": "DEBUG=homebridge* homebridge -D -Q -P ./dist -U ./debug",
-    "build": "cp ./src/*.mjs ./dist/;mv ./dist/main.mjs ./dist/homebridge-grumptech-volmon.js",
+    "build": "npx webpack --mode=production",
     "docs": "docDir='./docs'; [[ -e \"$docDir\" ]] && rm -rf \"$docDir/\"*; cp ./security.md ./pages/; wait; cp ./license.md ./pages/; wait; npx jsdoc -c ./jsdoc.conf.json --destination \"$docDir/\"",
     "docs-dev": "docDir='./docs-dev'; [[ -e \"$docDir\" ]] && rm -rf \"$docDir/\"*; cp ./security.md ./pages/; cp ./license.md ./pages/; npx jsdoc -c ./jsdoc.conf.json --destination \"$docDir/\" --private",
     "test": "NODE_OPTIONS=--experimental-vm-modules npx jest"
@@ -58,18 +58,20 @@
   "license": "ISC",
   "devDependencies": {
     "docdash": "^1.2.0",
-    "eslint": "^8.9.0",
+    "eslint": "^8.16.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-jsdoc": "^37.9.1",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsdoc": "^39.3.2",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.2.0",
-    "homebridge": "^1.3.9",
-    "jest": "^27.5.1",
-    "jsdoc": "^3.6.10"
+    "eslint-plugin-promise": "^6.0.0",
+    "homebridge": "^1.4.1",
+    "jest": "^28.1.0",
+    "jsdoc": "^3.6.10",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2"
   },
   "dependencies": {
-    "debug": "^4.3.3",
+    "debug": "^4.3.4",
     "plist": "^3.0.5"
   }
 }

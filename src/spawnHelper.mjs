@@ -254,12 +254,11 @@ export class SpawnHelper extends EventEmitter {
                     }
                 }
             }
-            // If we got this far, then request.options must be legit
-            this._options = request.options;
+            throw new TypeError('request.options is nor supported!!');
         }
         else {
             // Use default
-            this._options = [];
+            this._options = undefined;
         }
 
         // Validate 'optional' token request.
@@ -284,7 +283,7 @@ export class SpawnHelper extends EventEmitter {
         this._pending           = true;  // Think positive :)
 
         // Spawn the request
-        const childProcess = _spawn(this._command, this._arguments, this._options);
+        const childProcess = _spawn(this._command, this._arguments);
         // Register for the stdout.data notifications
         childProcess.stdout.on('data', this._CB__process_stdout_data);
         // Register for the stderr.data notifications

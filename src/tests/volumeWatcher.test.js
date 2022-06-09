@@ -7,7 +7,7 @@ import {VolumeWatcher, VOLUME_WATCHER_EVENTS, VOLUME_CHANGE_DETECTION_BITMASK_DE
 import {SpawnHelper} from '../spawnHelper.mjs';
 
 import {fileURLToPath as _fileURLToPath} from 'url';
-import {join as _join, dirname as _dirname} from 'path';
+import {dirname as _dirname} from 'path';
 
 /**
  * @description Absolute path to this script file.
