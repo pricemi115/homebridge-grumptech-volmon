@@ -20,7 +20,7 @@ import {uptime as _upTime} from 'os';
 // eslint-disable-next-line no-unused-vars
 import {VOLUME_TYPES, VolumeData, CONVERSION_BASES} from './volumeData.mjs';
 import {VolumeWatcher as _volumeWatcher, VOLUME_WATCHER_EVENTS as _VOLUME_WATCHER_EVENTS} from './volumeWatchers.mjs';
-import {SpawnHelper} from './spawnHelper.mjs';
+import {default as SpawnHelper} from 'grumptech-spawn-helper';
 
 // External dependencies and imports.
 /**

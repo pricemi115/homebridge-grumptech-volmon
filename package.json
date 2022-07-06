@@ -73,6 +73,7 @@
   },
   "dependencies": {
     "debug": "^4.3.4",
+    "grumptech-spawn-helper": "^1.0.0",
     "plist": "^3.0.5"
   }
 }

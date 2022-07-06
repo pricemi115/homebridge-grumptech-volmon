@@ -12,7 +12,7 @@
 // Internal dependencies.
 import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase.mjs';
 import {VOLUME_TYPES, VolumeData} from './volumeData.mjs';
-import {SpawnHelper} from './spawnHelper.mjs';
+import {default as SpawnHelper, SPAWN_HELPER_EVENTS as _SpawnHelperEvents} from 'grumptech-spawn-helper';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
@@ -91,7 +91,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
     _initiateInterrogation() {
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const lsVolumes = new SpawnHelper();
-        lsVolumes.on('complete', this._CB__visible_volumes);
+        lsVolumes.on(_SpawnHelperEvents.EVENT_COMPLETE, this._CB__visible_volumes);
         // eslint-disable-next-line new-cap
         lsVolumes.Spawn({command: 'ls', arguments: ['/Volumes']});
     }
@@ -132,7 +132,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
     /**
      * @private
-     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @description Event handler for the SpawnHelper _SpawnHelperEvents.EVENT_COMPLETE Notification
      * @param {object} response - Spawn response.
      * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
      * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
@@ -156,7 +156,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
             // Spawn a 'lsvfs' to determine the number and types of known file systems.
             const diskutilList = new SpawnHelper();
-            diskutilList.on('complete', this._CB__list_known_virtual_filesystems_complete);
+            diskutilList.on(_SpawnHelperEvents.EVENT_COMPLETE, this._CB__list_known_virtual_filesystems_complete);
             // eslint-disable-next-line new-cap
             diskutilList.Spawn({command: 'lsvfs'});
         }
@@ -173,7 +173,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
     /**
      * @private
-     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @description Event handler for the SpawnHelper _SpawnHelperEvents.EVENT_COMPLETE Notification
      * @param {object} response - Spawn response.
      * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
      * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
@@ -225,7 +225,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
                             // Spawn a 'diskutil list' to see all the disk/volume data
                             _debug_process(`Spawn df for fs type '${newFS.type}'.`);
                             const diskUsage = new SpawnHelper();
-                            diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+                            diskUsage.on(_SpawnHelperEvents.EVENT_COMPLETE, this._CB__display_free_disk_space_complete);
                             // eslint-disable-next-line new-cap
                             diskUsage.Spawn({command: 'df', arguments: ['-a', '-b', '-T', newFS.type], token: newFS});
                         }
@@ -256,7 +256,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
     /**
      * @private
-     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @description Event handler for the SpawnHelper _SpawnHelperEvents.EVENT_COMPLETE Notification
      * @param {object} response - Spawn response.
      * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
      * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
@@ -365,7 +365,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
                     // Get more informaion on this volume.
                     _debug_process(`Initiating 'diskutil info' for DiskId '${volData.DeviceNode}'`);
                     const diskutilInfo = new SpawnHelper();
-                    diskutilInfo.on('complete', this._CB_process_diskUtil_info_complete);
+                    diskutilInfo.on(_SpawnHelperEvents.EVENT_COMPLETE, this._CB_process_diskUtil_info_complete);
                     // eslint-disable-next-line new-cap
                     diskutilInfo.Spawn({command: 'diskutil', arguments: ['info', '-plist', volData.DeviceNode], token: volData});
 
@@ -387,7 +387,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
     /**
      * @private
-     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @description Event handler for the SpawnHelper _SpawnHelperEvents.EVENT_COMPLETE Notification
      * @param {object} response - Spawn response.
      * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
      * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
@@ -497,7 +497,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
                                 // Spawn a disk usage statistics ('du') process to see the accurate storage information for the
                                 // APFS volumes.
                                 const du_process = new SpawnHelper();
-                                du_process.on('complete', this._CB_process_disk_utilization_stats_complete);
+                                du_process.on(_SpawnHelperEvents.EVENT_COMPLETE, this._CB_process_disk_utilization_stats_complete);
                                 du_process.Spawn({ command:'du', arguments:['-skHx', volData.MountPoint] });
                             }
 */
@@ -578,7 +578,7 @@ export class VolumeInterrogator_darwin extends _VolumeInterrogatorBase {    // e
 
     /**
      * @private
-     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @description Event handler for the SpawnHelper _SpawnHelperEvents.EVENT_COMPLETE Notification
      * @param {object} response - Spawn response.
      * @param {boolean} response.valid - - Flag indicating if the spoawned process was completed successfully.
      * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.
