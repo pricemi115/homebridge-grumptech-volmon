@@ -13,7 +13,7 @@
 // Internal dependencies.
 import {VolumeInterrogatorBase as _VolumeInterrogatorBase} from './volumeInterrogatorBase.mjs';
 import {VOLUME_TYPES, VolumeData} from './volumeData.mjs';
-import {SpawnHelper} from './spawnHelper.mjs';
+import {default as SpawnHelper, SPAWN_HELPER_EVENTS as _SpawnHelperEvents} from 'grumptech-spawn-helper';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
@@ -86,7 +86,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase { // eslin
 
         // Spawn a 'ls /Volumes' to get a listing of the 'visible' volumes.
         const diskUsage = new SpawnHelper();
-        diskUsage.on('complete', this._CB__display_free_disk_space_complete);
+        diskUsage.on(_SpawnHelperEvents.EVENT_COMPLETE, this._CB__display_free_disk_space_complete);
         // eslint-disable-next-line new-cap
         diskUsage.Spawn({command: 'df', arguments: ['--block-size=512', '--portability', '--print-type', '--exclude-type=tmpfs', '--exclude-type=devtmpfs']});
     }
@@ -124,7 +124,7 @@ export class VolumeInterrogator_linux extends _VolumeInterrogatorBase { // eslin
 
     /**
      * @private
-     * @description Event handler for the SpawnHelper 'complete' Notification
+     * @description Event handler for the SpawnHelper _SpawnHelperEvents.EVENT_COMPLETE Notification
      * @param {object} response - Spawn response.
      * @param {boolean} response.valid - Flag indicating if the spawned process was completed successfully.
      * @param {Buffer|string|*} response.result - Result or Error data provided by the spawned process.

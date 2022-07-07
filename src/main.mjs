@@ -312,6 +312,7 @@ class VolumeInterrogatorPlatform {
             // Cleanup the volume interrogator.
             if (this._volumeInterrogator !== undefined) {
                 this._log.debug('Terminating the volume interrogator.');
+                this._log.debug(err);
                 this._volumeInterrogator.removeListener('scanning', this._CB_VolumeIterrrogatorScanning);
                 this._volumeInterrogator.removeListener('ready',    this._CB_VolumeIterrrogatorReady);
                 // eslint-disable-next-line new-cap

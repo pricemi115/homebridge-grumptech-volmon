@@ -3,6 +3,7 @@
 
 # Debug Folder
 debug/
+debug.env
 
 # Node Modules
 node_modules/
@@ -14,4 +15,10 @@ debug.env
 
 # Source Files
 src/
-rollup.config.js
+webpack.config.js
+jsdoc.conf.json
+README.jsdoc.md
+
+# Documentation
+pages/
+docs-dev/

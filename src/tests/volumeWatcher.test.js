@@ -4,7 +4,7 @@
 /* eslint-disable new-cap */
 /* eslint-disable brace-style */
 import {VolumeWatcher, VOLUME_WATCHER_EVENTS, VOLUME_CHANGE_DETECTION_BITMASK_DEF} from '../volumeWatchers.mjs';
-import {SpawnHelper} from '../spawnHelper.mjs';
+import {default as SpawnHelper} from 'grumptech-spawn-helper';
 
 import {fileURLToPath as _fileURLToPath} from 'url';
 import {dirname as _dirname} from 'path';

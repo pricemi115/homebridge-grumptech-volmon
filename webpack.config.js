@@ -41,5 +41,10 @@ export default [
         externals: [
             'child_process', 'fs', 'fs/promises', 'url', 'os', 'path',
         ],
+        module: {
+            parser: {
+                javascript: {importMeta: false},
+            },
+        },
     },
 ];
