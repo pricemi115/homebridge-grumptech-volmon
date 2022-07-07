@@ -6,10 +6,10 @@ Change history for _homebridge-grumptech-volmon_
 
 ## [1.3.2] - 2022-07-06 (Belated 4th of July Release 🎇)
 ### What's new
-- Just some internal cleanup:
--- Switched the bundler from rollup to webpack
--- Updated dependencies
--- Removed internal `spawnHelper` module and switched to the published `grumptech-spawn-helper` module.
+- Just some internal cleanup:  
+-- Switched the bundler from rollup to webpack  
+-- Updated dependencies  
+-- Removed internal `spawnHelper` module and switched to the published `grumptech-spawn-helper` module.  
 - Note: if your operating system is not supported, please submit a request [here](https://github.com/pricemi115/homebridge-grumptech-volmon/issues) or, better yet, contribute a solution.
 
 ## [1.3.1] - 2021-11-07 (Thanskgiving Release 🦃)
