@@ -39,7 +39,7 @@ export default [
             },
         },
         externals: [
-            'child_process', 'fs', 'fs/promises', 'url', 'os', 'path',
+            'child_process', 'fs', 'fs/promises', 'url', 'os', 'path', 'buffer',
         ],
         module: {
             parser: {
