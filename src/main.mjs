@@ -137,13 +137,11 @@ const SUPPORTED_OPERATING_SYSTEMS = {
  */
 let _PackageInfo;
 
-// Accessory must be created from PlatformAccessory Constructor
 /**
  * @description Platform accessory reference
  * @private
  */
 let _PlatformAccessory;
-// Service and Characteristic are from hap-nodejs
 /**
  * @description Reference to the NodeJS Homekit Applicaiton Platform.
  * @private
@@ -1041,7 +1039,6 @@ class VolumeInterrogatorPlatform {
         callback(status);
     }
 
-    // eslint-disable-next-line class-methods-use-this
     /**
      * @description Get the value of the Service.Switch.On characteristic value
      * @param {object} switchService Switch Service (hap.Service)
