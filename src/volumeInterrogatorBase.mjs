@@ -145,6 +145,7 @@ const VOLUME_INTERROGATOR_BASE_EVENTS = {
  * @param {VolumeData} e.results - Flag indicating if the spawned task completed successfully.
  * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
  * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
+ * @private
  */
 /**
  * @description Base class for volume interrogation (operating system agnostic).
