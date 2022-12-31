@@ -29,7 +29,7 @@
     "transform": {}
   },
   "scripts": {
-    "clean": "setopt localoptions rmstarsilent; rm -f ./dist/*; rm -f ./docs/*",
+    "clean": "setopt localoptions rmstarsilent; rm -rf ./dist/*; rm -rf ./docs/*",
     "prepare": "npm run docs; npm run build",
     "build_dbg": "npx webpack --mode=development",
     "build": "npm run clean; npx webpack --mode=production",
@@ -58,17 +58,17 @@
   "author": "GrumpTech (Michael J. Price)",
   "license": "ISC",
   "devDependencies": {
-    "docdash": "^1.2.0",
+    "docdash": "^2.0.0",
     "eslint": "^8.19.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsdoc": "^39.3.3",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.0.0",
-    "jest": "^28.1.2",
-    "jsdoc": "^3.6.10",
+    "jest": "^29.3.1",
+    "jsdoc": "^4.0.0",
     "webpack": "^5.73.0",
-    "webpack-cli": "^4.10.0"
+    "webpack-cli": "^5.0.1"
   },
   "dependencies": {
     "debug": "^4.3.4",
