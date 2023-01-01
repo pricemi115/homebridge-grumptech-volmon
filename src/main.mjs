@@ -58,20 +58,6 @@ import {VolumeData} from './volumeData.mjs';
 
 // External dependencies and imports.
 import _debugModule from 'debug';
-import {readFileSync as _readFileSync} from 'fs';
-import {fileURLToPath as _fileURLToPath} from 'url';
-import {join as _join, dirname as _dirname} from 'path';
-
-/**
- * @description Absolute path to this script file.
- * @private
- */
-const __filename = _fileURLToPath(import.meta.url);
-/**
- * @description Absolute path to the folder of this script file.
- * @private
- */
-const __dirname = _dirname(__filename);
 
 /**
  * @private
@@ -135,7 +121,7 @@ const SUPPORTED_OPERATING_SYSTEMS = {
 /**
  * @description Package Information
  */
-let _PackageInfo;
+const _PackageInfo = {CONFIG_INFO: PLACEHOLDER_CONFIG_INFO, PLUGIN_VER: 'PLACEHOLDER_VERSION'};
 
 /**
  * @description Platform accessory reference
@@ -1105,29 +1091,12 @@ class VolumeInterrogatorPlatform {
 }
 
 /**
- * @description Helper to get the information of interest from the package.json file.
- * @returns {object} Data of interest.
- */
-function _getPackageInfo() {
-    const packageFilename = _join(__dirname, '../package.json');
-    const rawContents = _readFileSync(packageFilename);
-    const parsedData = JSON.parse(rawContents);
-
-    const pkgInfo = {CONFIG_INFO: parsedData.config_info, PLUGIN_VER: parsedData.version};
-
-    return pkgInfo;
-}
-
-/**
  * @description Exported default function for Homebridge integration.
  * @param {object} homebridgeAPI - reference to the Homebridge API.
  * @returns {void}
  */
 export default (homebridgeAPI) => {
     _debug(`homebridge API version: v${homebridgeAPI.version}`);
-
-    // Get the package information.
-    _PackageInfo = _getPackageInfo();
 
     // Accessory must be created from PlatformAccessory Constructor
     _PlatformAccessory  = homebridgeAPI.platformAccessory;
