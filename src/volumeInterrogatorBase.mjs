@@ -145,6 +145,7 @@ const VOLUME_INTERROGATOR_BASE_EVENTS = {
  * @param {VolumeData} e.results - Flag indicating if the spawned task completed successfully.
  * @param {Buffer} e.result - Buffer of result or error data returned by the spawned process.
  * @param {SpawnHelper} e.source - Reference to the spawn helper that raised the notification.
+ * @private
  */
 /**
  * @description Base class for volume interrogation (operating system agnostic).
@@ -352,11 +353,6 @@ export class VolumeInterrogatorBase extends EventEmitter {
      * @returns {void}
      */
     Start() {
-        // Clear the decoupled start timer, if active.
-        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
-            clearTimeout(this._decoupledStartTimeoutID);
-        }
-
         // Stop the interrogation in case it is running.
         // eslint-disable-next-line new-cap
         this.Stop();
@@ -376,13 +372,24 @@ export class VolumeInterrogatorBase extends EventEmitter {
     }
 
     /**
-     * @description Stop the interrogation process, if running.
+     * @description Stop the interrogation process.
      * @returns {void}
      */
     Stop() {
+        // Clear the periodic innterrogation timer, if active.
         if (this._timeoutID !== INVALID_TIMEOUT_ID) {
             clearTimeout(this._timeoutID);
             this._timeoutID = INVALID_TIMEOUT_ID;
+        }
+        // Clear the decoupled start timer, if active.
+        if (this._decoupledStartTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._decoupledStartTimeoutID);
+            this._decoupledStartTimeoutID = INVALID_TIMEOUT_ID;
+        }
+        // Clear the deferred interrogation initialization timer, if active.
+        if (this._deferInitCheckTimeoutID !== INVALID_TIMEOUT_ID) {
+            clearTimeout(this._deferInitCheckTimeoutID);
+            this._deferInitCheckTimeoutID = INVALID_TIMEOUT_ID;
         }
     }
 
